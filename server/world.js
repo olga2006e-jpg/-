@@ -76,6 +76,62 @@ export const NPCS = [
   }
 ];
 
+// Collectible items / artifacts distributed across chunks for the quest
+export const COLLECTIBLE_ITEMS = [
+  {
+    id: 'hourglass_relativity',
+    name: 'Песочные Часы Относительности',
+    type: 'artifact',
+    subType: 'hourglass',
+    chunkX: 0,
+    chunkZ: 0,
+    x: 4,
+    y: 0.8,
+    z: -3,
+    clue: 'Время замедляется в движении. Первая цифра кода: 2 (степень скорости света в E=mc²)',
+    icon: '⏳'
+  },
+  {
+    id: 'scroll_pyramid',
+    name: 'Папирус Геродота',
+    type: 'artifact',
+    subType: 'scroll',
+    chunkX: -2,
+    chunkZ: 2,
+    x: -45,
+    y: 0.8,
+    z: 45,
+    clue: 'Три великие пирамиды хранят тайны фараонов. Вторая цифра кода: 3',
+    icon: '📜'
+  },
+  {
+    id: 'flask_radium',
+    name: 'Колба со светящимся радием',
+    type: 'artifact',
+    subType: 'flask',
+    chunkX: 2,
+    chunkZ: -2,
+    x: 45,
+    y: 0.8,
+    z: -45,
+    clue: 'Радий принадлежит ко 2-й группе элементов таблицы Менделеева. Третья цифра кода: 2',
+    icon: '🧪'
+  },
+  {
+    id: 'key_crypt',
+    name: 'Печать Склепа №7',
+    type: 'artifact',
+    subType: 'key',
+    chunkX: -1,
+    chunkZ: -1,
+    x: -20,
+    y: 0.8,
+    z: -20,
+    clue: 'Семь печатей сорваны с гробницы знаний. Четвертая цифра кода: 7',
+    icon: '🗝️'
+  }
+];
+
 // Zone types based on chunk coordinates in BMSTU GZ
 function getZoneType(cx, cz) {
   if (cx === 0 && cz === 0) return { name: 'Циркуль ГЗ — Центральный Холл', type: 'circus' };
@@ -175,6 +231,23 @@ export function generateChunk(cx, cz) {
     });
   }
 
+  // Collectible items in this chunk
+  const itemsInChunk = COLLECTIBLE_ITEMS.filter(it => it.chunkX === cx && it.chunkZ === cz);
+  for (const item of itemsInChunk) {
+    objects.push({
+      type: 'artifact',
+      id: item.id,
+      name: item.name,
+      subType: item.subType,
+      clue: item.clue,
+      icon: item.icon,
+      x: item.x,
+      y: item.y,
+      z: item.z
+    });
+  }
+
+  // Check if any NPC is in this chunk
   const npcsInChunk = NPCS.filter(npc => npc.chunkX === cx && npc.chunkZ === cz);
 
   return {

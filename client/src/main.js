@@ -59,6 +59,10 @@ class GameApp {
       this.network.sendAgentChat(agentId, text);
     };
 
+    this.ui.onGateCodeSubmit = (code) => {
+      this.network.sendGateCode(code);
+    };
+
     this.ui.onModalStateChange = (isOpen) => {
       if (isOpen) {
         this.controls.enabled = false;
@@ -82,6 +86,9 @@ class GameApp {
       this.controls.enabled = true;
       this.chunkManager.forceReload();
       this.ui.updatePlayersList(this.myUsername, []);
+      if (msg.inventory) {
+        this.ui.updateInventory(msg.inventory);
+      }
     };
 
     this.network.onChunkReceived = (chunk) => {
@@ -102,6 +109,23 @@ class GameApp {
 
     this.network.onPlayersListChanged = (remoteList) => {
       this.ui.updatePlayersList(this.myUsername, remoteList);
+    };
+
+    this.network.onItemCollected = (msg) => {
+      this.ui.addNotification(`✨ Вы подобрали: ${msg.item.name}! ${msg.item.clue || ''}`);
+      this.ui.updateInventory(msg.inventory);
+    };
+
+    this.network.onNotification = (text) => {
+      this.ui.addNotification(text);
+    };
+
+    this.network.onVictory = (msg) => {
+      this.ui.showVictory(msg.message, msg.winner);
+    };
+
+    this.network.onCodeIncorrect = (msg) => {
+      this.ui.addNotification(`❌ ${msg.message}`);
     };
   }
 

@@ -43,6 +43,7 @@ export class UIManager {
     this.onSendDialogue = null;
     this.onLogin = null;
     this.onModalStateChange = null;
+    this.onGateCodeSubmit = null;
 
     this.setupListeners();
   }
@@ -65,7 +66,21 @@ export class UIManager {
     this.chatForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const text = this.chatInput.value.trim();
-      if (text && this.onSendChat) {
+      if (!text) return;
+
+      // Allow entering quest gate code directly in chat
+      if (text.startsWith('/code ') || text.startsWith('/gate ') || text.match(/^\d{4}$/)) {
+        const code = text.replace(/^\/(code|gate)\s*/, '').trim();
+        if (this.onGateCodeSubmit) {
+          this.onGateCodeSubmit(code);
+        }
+        this.addNotification(`Попытка ввода кода Врат: "${code}"...`);
+        this.chatInput.value = '';
+        this.chatInput.blur();
+        return;
+      }
+
+      if (this.onSendChat) {
         this.onSendChat(text);
         this.chatInput.value = '';
       }
@@ -279,5 +294,41 @@ export class UIManager {
     if (this.chatMessagesEl.children.length > 40) {
       this.chatMessagesEl.removeChild(this.chatMessagesEl.children[0]);
     }
+  }
+
+  addNotification(text) {
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg notification';
+    msg.innerHTML = `<span style="color: #50fa7b; font-weight: bold;">[Квест]</span> <span>${text}</span>`;
+    this.chatMessagesEl.appendChild(msg);
+    this.chatMessagesEl.scrollTop = this.chatMessagesEl.scrollHeight;
+  }
+
+  showVictory(message, winner) {
+    const banner = document.createElement('div');
+    banner.style.position = 'fixed';
+    banner.style.top = '30%';
+    banner.style.left = '50%';
+    banner.style.transform = 'translate(-50%, -50%)';
+    banner.style.background = 'rgba(20, 10, 40, 0.95)';
+    banner.style.border = '3px solid #f1fa8c';
+    banner.style.borderRadius = '16px';
+    banner.style.padding = '30px 40px';
+    banner.style.color = '#fff';
+    banner.style.textAlign = 'center';
+    banner.style.zIndex = '999999';
+    banner.style.boxShadow = '0 0 50px rgba(241, 250, 140, 0.6)';
+    banner.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 12px;">🏆</div>
+      <h1 style="font-family: 'Cinzel', serif; font-size: 32px; color: #f1fa8c; margin: 0 0 10px 0;">ВРАТА ВЕЧНОСТИ ОТКРЫТЫ!</h1>
+      <p style="font-size: 18px; line-height: 1.5; color: #f8f8f2;">${message}</p>
+      <button style="margin-top: 20px; padding: 10px 24px; background: #bd93f9; border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer;">Продолжить исследование</button>
+    `;
+    banner.querySelector('button').onclick = () => banner.remove();
+    document.body.appendChild(banner);
+  }
+
+  updateInventory(items) {
+    console.log('[Inventory updated]', items);
   }
 }
