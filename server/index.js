@@ -42,7 +42,7 @@ app.get('/api/status', (req, res) => {
     status: 'online',
     timestamp: Date.now(),
     totalChunks: TOTAL_WORLD_CHUNKS,
-    aiModel: process.env.OLLAMA_MODEL || 'qwen2.5:3b'
+    aiModel: process.env.OLLAMA_MODEL || 'qwen2.5:0.5b'
   });
 });
 

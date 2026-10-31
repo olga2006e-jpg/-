@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, '../data');
+const DATA_DIR = process.env.GAME_DATA_DIR ? path.resolve(process.env.GAME_DATA_DIR) : path.resolve(__dirname, '../data');
 const DB_FILE = path.join(DATA_DIR, 'gameState.json');
 
 try {

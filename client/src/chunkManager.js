@@ -120,52 +120,21 @@ export class ChunkManager {
 
   forceReload() {
     this.pendingRequests.clear();
-    const cx = this.currentChunkX ?? 0;
+    this.currentChunkX = null;
+    this.currentChunkZ = null;
+    const cx = 0;
     const cz = this.currentChunkZ ?? 0;
     this.onPlayerEnterChunk(cx, cz);
   }
 
   // Return the optimal 10 chunks for the current wing so all corridors and sealing walls are 100% visible
   getWingCoords(cx, cz) {
-    // 1. West Wing (K5, Museum, West Gallery)
-    if (cx < 0 && Math.abs(cz) <= 1) {
-      return [
-        { cx: -2, cz: 0 }, { cx: -1, cz: 0 }, { cx: -3, cz: 0 }, { cx: 0, cz: 0 },
-        { cx: -2, cz: -1 }, { cx: -1, cz: -1 }, { cx: -3, cz: -1 },
-        { cx: -2, cz: 1 }, { cx: -3, cz: 1 }, { cx: -1, cz: 1 }
-      ];
+    const coords=[];
+    for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+      const x=cx+dx,z=cz+dz;
+      if(x>=-5&&x<=4&&z>=-5&&z<=4)coords.push({cx:x,cz:z});
     }
-    // 2. East Wing (Photonics, K1, K2, East Gallery)
-    if (cx > 0 && Math.abs(cz) <= 1) {
-      return [
-        { cx: 2, cz: 0 }, { cx: 1, cz: 0 }, { cx: 3, cz: 0 }, { cx: 0, cz: 0 },
-        { cx: 2, cz: -1 }, { cx: 3, cz: -1 }, { cx: 1, cz: -1 },
-        { cx: 2, cz: 1 }, { cx: 3, cz: 1 }, { cx: 1, cz: 1 }
-      ];
-    }
-    // 3. North Wing (Math Analysis, Akhmetova 404, Library, Lecture Halls)
-    if (cz < 0 && Math.abs(cx) <= 1) {
-      return [
-        { cx: 0, cz: -2 }, { cx: 0, cz: -1 }, { cx: 0, cz: -3 }, { cx: 0, cz: 0 },
-        { cx: -1, cz: -2 }, { cx: 1, cz: -2 }, { cx: -1, cz: -3 }, { cx: 1, cz: -3 },
-        { cx: -1, cz: -1 }, { cx: 1, cz: -1 }
-      ];
-    }
-    // 4. South Wing (Scientific Council, Directorate, Rectorate)
-    if (cz > 0 && Math.abs(cx) <= 1) {
-      return [
-        { cx: 0, cz: 2 }, { cx: 0, cz: 1 }, { cx: 0, cz: 3 }, { cx: 0, cz: 0 },
-        { cx: -1, cz: 2 }, { cx: 1, cz: 2 }, { cx: 2, cz: 2 }, { cx: -2, cz: 2 },
-        { cx: -1, cz: 1 }, { cx: 1, cz: 1 }
-      ];
-    }
-    // 5. Central Grand Foyer (0, 0)
-    return [
-      { cx: 0, cz: 0 }, { cx: -1, cz: 0 }, { cx: 1, cz: 0 },
-      { cx: 0, cz: -1 }, { cx: 0, cz: 1 }, { cx: -2, cz: 0 },
-      { cx: 2, cz: 0 }, { cx: 0, cz: -2 }, { cx: 0, cz: 2 },
-      { cx: -1, cz: -1 }
-    ];
+    return coords;
   }
 
   onPlayerEnterChunk(cx, cz) {
@@ -223,6 +192,7 @@ export class ChunkManager {
   loadChunkData(chunkData) {
     const key = `${chunkData.cx},${chunkData.cz}`;
     this.pendingRequests.delete(key);
+    if (!this.getWingCoords(this.currentChunkX ?? 0,this.currentChunkZ ?? 0).some(c=>c.cx===chunkData.cx&&c.cz===chunkData.cz)) return;
 
     // If already loaded, skip
     if (this.loadedChunks.has(key)) return;
@@ -405,8 +375,8 @@ export class ChunkManager {
           maxX: obj.x + w / 2,
           minZ: obj.z - d / 2,
           maxZ: obj.z + d / 2,
-          minY: baseY - 0.2,
-          maxY: baseY + h + 0.2
+          minY: baseY - ((obj.type === "wall" || obj.type === "pillar") ? h / 2 : 0) - 0.2,
+          maxY: baseY + ((obj.type === "wall" || obj.type === "pillar") ? h / 2 : h) + 0.2
         });
       }
     }
@@ -467,7 +437,7 @@ export class ChunkManager {
   // Update animated objects (flickering torches, bobbing ghosts, rotating artifacts)
   animate(delta, elapsed, playerPos) {
     for (const obj of this.animatedObjects) {
-      if (obj.userData?.light) {
+      if (obj.userData?.light && Number.isFinite(obj.userData.baseIntensity)) {
         // Flickering torch
         const flicker = Math.sin(elapsed * 12 + obj.userData.timeOffset) * 0.25 + (Math.random() - 0.5) * 0.15;
         obj.userData.light.intensity = obj.userData.baseIntensity + flicker;

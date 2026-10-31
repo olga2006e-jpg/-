@@ -62,6 +62,7 @@ export class PlayerControls {
     });
 
     this.setupKeyboard();
+    window.addEventListener("blur", () => this.resetMovement());
   }
   setChunkManager(chunkManager) {
     this.chunkManager = chunkManager;
@@ -96,11 +97,7 @@ export class PlayerControls {
         case 'ShiftRight':
           this.isSprinting = true;
           break;
-        case 'KeyL':
-          if (this.playerBody) {
-            this.playerBody.toggleLantern();
-          }
-          break;
+
       }
     };
 
@@ -133,14 +130,23 @@ export class PlayerControls {
     window.addEventListener('keyup', onKeyUp);
   }
 
+  resetMovement() {
+    this.moveForward=this.moveBackward=this.moveLeft=this.moveRight=this.isSprinting=false;
+    this.velocity.set(0,0,0);
+  }
+
   unlock() {
+    this.resetMovement();
     if (document.exitPointerLock) {
       document.exitPointerLock();
     }
   }
 
   update(delta) {
-    if (!this.enabled) return;
+    if (!this.enabled || document.activeElement?.matches('input, textarea') || document.querySelector('.modal-overlay:not(.hidden)')) {
+      this.resetMovement();
+      return;
+    }
 
     const speed = this.isSprinting ? this.sprintSpeed : this.walkSpeed;
 
@@ -222,39 +228,11 @@ export class PlayerControls {
     }
 
     // Campus perimeter clamping: player can NEVER fall into the void!
-    const bound = 78;
+    const bound = 35.3;
     this.camera.position.x = THREE.MathUtils.clamp(nextX, -bound, bound);
     this.camera.position.z = THREE.MathUtils.clamp(nextZ, -bound, bound);
 
-    // Continuous Elevation System: Completely Seamless Multi-Floor Walking!
-    let targetEyeY = 1.6;
-    const px = this.camera.position.x;
-    const pz = this.camera.position.z;
-
-    // 1. Central Foyer chunk (0, 0)
-    if (Math.abs(px) <= 12.0 && pz >= -12.0 && pz <= 12.0) {
-      if (Math.abs(px) <= 3.4 && pz <= 1.0 && pz >= -9.0) {
-        // Climbing up/down the Grand Marble Staircase smoothly with WASD
-        const progress = Math.max(0, Math.min(1, (1.0 - pz) / 10.0));
-        targetEyeY = 1.6 + progress * 4.0; // rises from 1.6m up to 5.6m (Floor 2 level)
-      } else if (pz < -9.0 && pz >= -12.0 && Math.abs(px) <= 11.5) {
-        // On 2nd Floor Mezzanine Gallery (y = 4.0m floor + 1.6m eyes = 5.6m)
-        targetEyeY = 5.6;
-
-        // Balustrade safety barrier: prevent walking over railing into 1st floor central hall
-        if (Math.abs(px) > 3.4 && nextZ > -9.0) {
-          nextZ = -9.0;
-          this.camera.position.z = -9.0;
-        }
-      }
-    } else if (pz < -12.0) {
-      // Entire 2nd Floor Wings (Gallery, Department K5, Council Hall, Library, Photonics)
-      // All 2nd floor classrooms and hallways are physically at y = 4.0m floor!
-      targetEyeY = 5.6;
-    }
-
-    // Smooth camera step-up and step-down interpolation (no sharp cuts or jumps!)
-    this.camera.position.y += (targetEyeY - this.camera.position.y) * Math.min(1, delta * 14);
+    this.camera.position.y = 1.6;
 
     // Update player first-person body viewmodel & lantern sway
     if (this.playerBody) {

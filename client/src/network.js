@@ -26,14 +26,20 @@ export class NetworkClient {
   }
 
   connect(token, myUsername) {
+    clearTimeout(this.authTimeout);
+    this.isAuthenticated=false;
+    this.sendQueue=[];
+    if(this.ws){this.ws.onclose=null;this.ws.onerror=null;this.ws.onmessage=null;this.ws.close();}
+    for(const name of [...this.remotePlayers.keys()])this.removeRemotePlayer(name);
     this.token = token;
     this.myUsername = myUsername;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
 
     this.ws = new WebSocket(wsUrl);
 
+    this.authTimeout=setTimeout(()=>{if(!this.isAuthenticated){this.ws.close();this.onConnectionError?.('Сервер не ответил. Попробуйте войти ещё раз.');}},10000);
     this.ws.onopen = () => {
       console.log('[WS] Connected. Sending AUTH...');
       this.send({ type: 'AUTH', token: this.token });
@@ -50,11 +56,14 @@ export class NetworkClient {
     };
 
     this.ws.onclose = () => {
-      console.warn('[WS] Connection closed.');
+      this.isAuthenticated=false;
+      clearTimeout(this.authTimeout);
+      this.onConnectionError?.('Соединение потеряно. Войдите снова, чтобы продолжить.');
     };
 
     this.ws.onerror = (err) => {
-      console.error('[WS Error]', err);
+      this.isAuthenticated=false;
+      this.onConnectionError?.('Сервер недоступен. Проверьте подключение к локальной сети.');
     };
   }
 
@@ -74,7 +83,7 @@ export class NetworkClient {
       this.ws.send(JSON.stringify(msgObj));
     } else {
       // Buffer messages until authenticated
-      this.sendQueue.push(msgObj);
+      if(msgObj.type!=="MOVE"&&msgObj.type!=="REQUEST_CHUNK"&&this.sendQueue.length<20)this.sendQueue.push(msgObj);
     }
   }
 
@@ -104,7 +113,11 @@ export class NetworkClient {
 
   handleMessage(msg) {
     switch (msg.type) {
+      case 'AUTH_FAIL':
+        this.ws.close();
+        break;
       case 'AUTH_SUCCESS':
+        clearTimeout(this.authTimeout);
         console.log('[WS] Auth successful! Total chunks:', msg.totalWorldChunks);
         this.isAuthenticated = true;
         this.flushQueue();

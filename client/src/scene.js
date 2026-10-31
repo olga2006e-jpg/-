@@ -24,7 +24,7 @@ export class GameScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = false;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.35;
+    this.renderer.toneMappingExposure = 1.1;
     container.appendChild(this.renderer.domElement);
     // 4. Bright, warm lighting for Bauman GZ Halls
     this.setupBaumanLighting();
@@ -37,7 +37,7 @@ export class GameScene {
 
   setupBaumanLighting() {
     // 1. Warm gothic collegiate ambient illumination (balanced visibility with mystery)
-    const ambient = new THREE.AmbientLight(0x40315a, 0.95);
+    const ambient = new THREE.AmbientLight(0xc7d3dc, 1.2);
     this.scene.add(ambient);
 
     // 2. Cool silver-cyan moonlight angling through high Bauman windows
@@ -51,7 +51,7 @@ export class GameScene {
     this.scene.add(fillLight);
 
     // 4. Collegiate hemisphere: violet gothic ceiling, warm dark mahogany floor
-    const hemiLight = new THREE.HemisphereLight(0x523d78, 0x221834, 0.85);
+    const hemiLight = new THREE.HemisphereLight(0xc3d6df, 0x635443, 1.3);
     this.scene.add(hemiLight);
   }
 
