@@ -168,7 +168,10 @@ class GameApp {
       }
     }
 
-    // 6. Render 3D Scene
+    // 6. Update scene atmosphere (floating particles, breathing glow)
+    this.gameScene.update(delta, elapsed);
+
+    // 7. Render 3D Scene
     this.gameScene.render();
   }
 }

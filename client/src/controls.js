@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { soundEngine } from './audio.js';
 
 export class PlayerControls {
   constructor(camera, domElement) {
@@ -33,6 +34,8 @@ export class PlayerControls {
 
   setupPointerLock() {
     this.domElement.addEventListener('click', () => {
+      soundEngine.ensureContext();
+      soundEngine.startAmbientWind();
       if (!this.enabled) return;
       if (document.pointerLockElement !== this.domElement) {
         this.domElement.requestPointerLock();
@@ -142,6 +145,11 @@ export class PlayerControls {
     this.direction.z = Number(this.moveForward) - Number(this.moveBackward);
     this.direction.x = Number(this.moveRight) - Number(this.moveLeft);
     this.direction.normalize();
+
+    const isMoving = this.moveForward || this.moveBackward || this.moveLeft || this.moveRight;
+    if (isMoving) {
+      soundEngine.playFootstep();
+    }
 
     if (this.moveForward || this.moveBackward) {
       this.velocity.z -= this.direction.z * speed * delta * 12.0;

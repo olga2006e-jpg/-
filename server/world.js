@@ -121,6 +121,8 @@ export function generateChunk(cx, cz) {
   } else if (zone.type === 'library') {
     objects.push({ type: 'bookshelf', x: originX - 6, y: 2.5, z: originZ });
     objects.push({ type: 'bookshelf', x: originX + 6, y: 2.5, z: originZ });
+  } else if (zone.type === 'lab') {
+    objects.push({ type: 'cauldron', x: originX, y: 0, z: originZ - 2 });
   }
 
   // Halloween pumpkins & torches

@@ -5,6 +5,10 @@ import {
   createPumpkin,
   createTorch,
   createTombstone,
+  createTelescope,
+  createObelisk,
+  createBookshelf,
+  createCauldron,
   createGhostNPC
 } from './environment.js';
 
@@ -165,6 +169,14 @@ export class ChunkManager {
       } else if (obj.type === 'tombstone') {
         const tomb = createTombstone(obj.x, obj.y, obj.z, obj.label);
         chunkGroup.add(tomb);
+      } else if (obj.type === 'telescope') {
+        chunkGroup.add(createTelescope(obj.x, obj.y, obj.z));
+      } else if (obj.type === 'obelisk') {
+        chunkGroup.add(createObelisk(obj.x, obj.y, obj.z, obj.label));
+      } else if (obj.type === 'bookshelf') {
+        chunkGroup.add(createBookshelf(obj.x, obj.y, obj.z));
+      } else if (obj.type === 'cauldron') {
+        chunkGroup.add(createCauldron(obj.x, obj.y, obj.z));
       }
     }
 
@@ -236,12 +248,18 @@ export class ChunkManager {
         obj.userData.light.intensity = obj.userData.baseIntensity + flicker;
       }
       if (obj.userData?.npcData) {
-        // Bobbing ghost NPC
-        obj.position.y = obj.userData.baseY + Math.sin(elapsed * 2 + obj.userData.timeOffset) * 0.18;
+        // Smooth bobbing ghost NPC
+        obj.position.y = obj.userData.baseY + Math.sin(elapsed * 2.2 + obj.userData.timeOffset) * 0.18;
+        // Pulsing spectral breathing glow
+        if (obj.userData.npcMat) {
+          obj.userData.npcMat.emissiveIntensity = 0.55 + Math.sin(elapsed * 2.8 + obj.userData.timeOffset) * 0.25;
+        }
+        if (obj.userData.light) {
+          obj.userData.light.intensity = 1.4 + Math.sin(elapsed * 2.8 + obj.userData.timeOffset) * 0.35;
+        }
       }
     }
   }
-
   // Find nearest NPC to player position
   getNearbyNpc(playerX, playerZ, maxDistance = 3.5) {
     let closestNpc = null;

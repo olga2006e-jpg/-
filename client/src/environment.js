@@ -7,6 +7,17 @@ const stoneMaterial = new THREE.MeshStandardMaterial({
   metalness: 0.15
 });
 
+const darkWoodMaterial = new THREE.MeshStandardMaterial({
+  color: 0x3d2719,
+  roughness: 0.8
+});
+
+const brassMaterial = new THREE.MeshStandardMaterial({
+  color: 0xd4af37,
+  roughness: 0.35,
+  metalness: 0.8
+});
+
 const pumpkinSkinMaterial = new THREE.MeshStandardMaterial({
   color: 0xd95b00,
   roughness: 0.6
@@ -54,7 +65,7 @@ export function createPumpkin(x, y, z, glowing = true) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  // Pumpkin body (squashed sphere)
+  // Pumpkin body (squashed ribbed sphere)
   const bodyGeo = new THREE.SphereGeometry(0.5, 12, 10);
   bodyGeo.scale(1.2, 0.9, 1.2);
   const body = new THREE.Mesh(bodyGeo, pumpkinSkinMaterial);
@@ -97,8 +108,7 @@ export function createTorch(x, y, z) {
 
   // Wooden stick
   const stickGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.8, 6);
-  const stickMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18 });
-  const stick = new THREE.Mesh(stickGeo, stickMat);
+  const stick = new THREE.Mesh(stickGeo, darkWoodMaterial);
   stick.rotation.x = Math.PI / 6;
   group.add(stick);
 
@@ -160,7 +170,109 @@ export function createTombstone(x, y, z, label = 'RIP') {
   return group;
 }
 
-// 5. Floor Tile
+// 5. Astronomical Telescope (Einstein Observatory)
+export function createTelescope(x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  // Tripod legs
+  for (let i = 0; i < 3; i++) {
+    const angle = (i * Math.PI * 2) / 3;
+    const legGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.0);
+    const leg = new THREE.Mesh(legGeo, darkWoodMaterial);
+    leg.position.set(Math.sin(angle) * 0.5, 0.9, Math.cos(angle) * 0.5);
+    leg.rotation.z = Math.sin(angle) * 0.25;
+    leg.rotation.x = Math.cos(angle) * 0.25;
+    group.add(leg);
+  }
+
+  // Brass Tube
+  const tubeGeo = new THREE.CylinderGeometry(0.18, 0.24, 2.4, 12);
+  const tube = new THREE.Mesh(tubeGeo, brassMaterial);
+  tube.position.set(0, 1.9, 0);
+  tube.rotation.x = -Math.PI / 4;
+  group.add(tube);
+
+  return group;
+}
+
+// 6. Ancient Obelisk (Herodotus Crypt)
+export function createObelisk(x, y, z, label = 'Скрижаль') {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  const obeliskGeo = new THREE.CylinderGeometry(0.3, 0.6, 3.5, 4);
+  const obeliskMat = new THREE.MeshStandardMaterial({ color: 0x3d352e, roughness: 0.9 });
+  const obelisk = new THREE.Mesh(obeliskGeo, obeliskMat);
+  obelisk.position.y = 1.75;
+  obelisk.rotation.y = Math.PI / 4;
+  group.add(obelisk);
+
+  const tag = createNameTag(label, '#f1fa8c');
+  tag.position.set(0, 3.6, 0);
+  tag.scale.set(1.6, 0.45, 1);
+  group.add(tag);
+
+  return group;
+}
+
+// 7. Bookshelf (Ancient Library)
+export function createBookshelf(x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  const shelfGeo = new THREE.BoxGeometry(2.4, 3.2, 0.6);
+  const shelf = new THREE.Mesh(shelfGeo, darkWoodMaterial);
+  shelf.position.y = 1.6;
+  group.add(shelf);
+
+  // Colorful ancient books
+  const bookColors = [0x992d2d, 0x2d6899, 0x2d994e, 0x822d99];
+  for (let r = 0; r < 3; r++) {
+    for (let b = 0; b < 6; b++) {
+      const bookGeo = new THREE.BoxGeometry(0.12, 0.45, 0.4);
+      const bookMat = new THREE.MeshStandardMaterial({
+        color: bookColors[(r * 6 + b) % bookColors.length]
+      });
+      const book = new THREE.Mesh(bookGeo, bookMat);
+      book.position.set(-0.8 + b * 0.3, 0.6 + r * 0.9, 0.1);
+      group.add(book);
+    }
+  }
+
+  return group;
+}
+
+// 8. Alchemical Cauldron (Curie Lab)
+export function createCauldron(x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  // Cast iron bowl
+  const bowlGeo = new THREE.SphereGeometry(0.8, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.7);
+  const bowlMat = new THREE.MeshStandardMaterial({ color: 0x1f1f24, roughness: 0.7, metalness: 0.6 });
+  const bowl = new THREE.Mesh(bowlGeo, bowlMat);
+  bowl.position.y = 0.8;
+  bowl.rotation.x = Math.PI;
+  group.add(bowl);
+
+  // Glowing green brew
+  const brewGeo = new THREE.CircleGeometry(0.7, 12);
+  const brewMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b, transparent: true, opacity: 0.9 });
+  const brew = new THREE.Mesh(brewGeo, brewMat);
+  brew.rotation.x = -Math.PI / 2;
+  brew.position.y = 0.75;
+  group.add(brew);
+
+  // Green radioactive light
+  const cLight = new THREE.PointLight(0x50fa7b, 1.6, 8);
+  cLight.position.set(0, 1.2, 0);
+  group.add(cLight);
+
+  return group;
+}
+
+// 9. Floor Tile
 export function createFloorTile(x, y, z, width, depth, zoneType) {
   let floorColor = 0x161324;
   if (zoneType === 'observatory') floorColor = 0x121c2b;
@@ -180,19 +292,17 @@ export function createFloorTile(x, y, z, width, depth, zoneType) {
   return mesh;
 }
 
-// 6. Other Player Avatar (Floating Hooded Ghost with Nametag)
+// 10. Player Avatar with spectral breathing glow
 export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   const group = new THREE.Group();
-
   const color = new THREE.Color(colorHex);
 
-  // Translucent ghostly cloak
   const ghostMat = new THREE.MeshStandardMaterial({
     color: color,
     emissive: color,
-    emissiveIntensity: 0.4,
+    emissiveIntensity: 0.45,
     transparent: true,
-    opacity: 0.75,
+    opacity: 0.78,
     roughness: 0.3
   });
 
@@ -225,13 +335,18 @@ export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   group.add(nametag);
 
   // Ghostly aura point light
-  const aura = new THREE.PointLight(color, 0.8, 4);
+  const aura = new THREE.PointLight(color, 0.8, 5);
   aura.position.y = 0.8;
   group.add(aura);
 
   group.userData = {
     username,
-    targetPos: new THREE.Vector3(),
+    ghostMat,
+    aura,
+    baseY: 0,
+    targetX: 0,
+    targetY: 1.6,
+    targetZ: 0,
     targetRotY: 0,
     timeOffset: Math.random() * 10
   };
@@ -239,7 +354,7 @@ export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   return group;
 }
 
-// 7. Ghost NPC (Einstein, Herodotus, Curie)
+// 11. Ghost NPC (Einstein, Herodotus, Curie) with distinctive historical props
 export function createGhostNPC(npcData) {
   const group = new THREE.Group();
   group.position.set(npcData.x, npcData.y, npcData.z);
@@ -251,7 +366,7 @@ export function createGhostNPC(npcData) {
     emissive: auraColor,
     emissiveIntensity: 0.6,
     transparent: true,
-    opacity: 0.8,
+    opacity: 0.82,
     roughness: 0.2
   });
 
@@ -261,24 +376,34 @@ export function createGhostNPC(npcData) {
   head.position.y = 1.0;
   group.add(head);
 
+  // Glowing eyes
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const eyeGeo = new THREE.SphereGeometry(0.06, 8, 8);
+  const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+  eyeL.position.set(-0.13, 1.03, 0.32);
+  const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+  eyeR.position.set(0.13, 1.03, 0.32);
+  group.add(eyeL);
+  group.add(eyeR);
+
   // Body
   const bodyGeo = new THREE.CylinderGeometry(0.3, 0.5, 1.2, 16);
   const body = new THREE.Mesh(bodyGeo, npcMat);
   body.position.y = 0.4;
   group.add(body);
 
-  // Special visual distinction
+  // Distinct historical items
   if (npcData.id === 'einstein') {
     // Wild hair aura
     const hairGeo = new THREE.DodecahedronGeometry(0.55, 1);
     const hairMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.55,
       wireframe: true
     });
     const hair = new THREE.Mesh(hairGeo, hairMat);
-    hair.position.y = 1.1;
+    hair.position.y = 1.15;
     group.add(hair);
   } else if (npcData.id === 'herodotus') {
     // Ancient scroll in hand
@@ -289,7 +414,7 @@ export function createGhostNPC(npcData) {
     scroll.rotation.z = Math.PI / 4;
     group.add(scroll);
   } else if (npcData.id === 'curie') {
-    // Radioactive flask
+    // Glowing radioactive flask
     const flaskGeo = new THREE.OctahedronGeometry(0.2, 0);
     const flaskMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b });
     const flask = new THREE.Mesh(flaskGeo, flaskMat);
@@ -299,16 +424,18 @@ export function createGhostNPC(npcData) {
 
   // Floating Name / Role badge
   const nametag = createNameTag(npcData.name, npcData.color);
-  nametag.position.y = 1.8;
+  nametag.position.y = 1.85;
   group.add(nametag);
 
   // Point light
-  const light = new THREE.PointLight(auraColor, 1.5, 8);
+  const light = new THREE.PointLight(auraColor, 1.6, 9);
   light.position.y = 1.0;
   group.add(light);
 
   group.userData = {
     npcData,
+    npcMat,
+    light,
     baseY: npcData.y,
     timeOffset: Math.random() * 10
   };

@@ -1,3 +1,5 @@
+import { soundEngine } from './audio.js';
+
 export class UIManager {
   constructor() {
     // Cache monitor elements
@@ -192,6 +194,7 @@ export class UIManager {
     }
 
     this.dialogueModal.classList.remove('hidden');
+    soundEngine.playGhostChime();
     if (this.onModalStateChange) this.onModalStateChange(true);
     setTimeout(() => this.dialogueInput.focus(), 50);
   }
@@ -216,6 +219,7 @@ export class UIManager {
     this.dialogueTypingEl.classList.add('hidden');
     const speaker = replyData.agentName || (this.activeNpc ? this.activeNpc.name : 'Призрак');
     this.addDialogueTurn('agent', speaker, replyData.reply);
+    soundEngine.playGhostChime();
   }
 
   showAgentTyping() {
