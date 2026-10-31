@@ -5,21 +5,23 @@ import { CHUNK_SIZE } from './chunkManager.js';
 
 // Predefined landmark rooms for the building floorplan
 export const BUILDING_ROOMS = [
-  // Floor 2: Central, West & East Wings, Council
+  // Central, West & East Wings, Council
   { id: 'foyer', name: 'Центральный Вестибюль ГУК', code: 'ГУК-1', floor: 1, cx: 0, cz: 0, x: 0, z: 0, w: 22, h: 22, color: '#ed9337', icon: '🏛️' },
-  { id: 'room-227', name: 'Кафедра К5: Преподавательская (А.И. Канев)', code: 'Ауд. 227', floor: 2, cx: -2, cz: 0, x: -48, z: 0, w: 20, h: 20, color: '#005a7a', icon: '💻' },
-  { id: 'room-224', name: 'Кафедра К5: Методический кабинет & Сети', code: 'Ауд. 224', floor: 2, cx: -2, cz: -1, x: -48, z: -24, w: 20, h: 20, color: '#005a7a', icon: '🌐' },
-  { id: 'room-225', name: 'Компьютерный класс веб-разработки (РИП)', code: 'Ауд. 225', floor: 2, cx: -3, cz: 0, x: -72, z: 0, w: 20, h: 20, color: '#005a7a', icon: '🖥️' },
-  { id: 'room-223', name: 'Зал заседаний Учёного совета МГТУ', code: 'Ауд. 223', floor: 2, cx: 0, cz: 2, x: 0, z: 48, w: 22, h: 22, color: '#ff5555', icon: '⚖️' },
+  { id: 'room-227', name: 'Кафедра К5: Преподавательская (А.И. Канев)', code: 'Ауд. 227', floor: 2, cx: -2, cz: -1, x: -48, z: -24, w: 20, h: 20, color: '#005a7a', icon: '💻' },
+  { id: 'room-224', name: 'Кафедра К5: Сетевая лаборатория', code: 'Ауд. 224', floor: 2, cx: -1, cz: -1, x: -24, z: -24, w: 20, h: 20, color: '#005a7a', icon: '🌐' },
+  { id: 'room-225', name: 'Компьютерный класс веб-разработки (РИП)', code: 'Ауд. 225', floor: 2, cx: -3, cz: -1, x: -72, z: -24, w: 20, h: 20, color: '#005a7a', icon: '🖥️' },
+  { id: 'room-226', name: 'Ауд. 226: Серверная и Канцелярия К5', code: 'Ауд. 226', floor: 2, cx: -3, cz: 1, x: -72, z: 24, w: 20, h: 20, color: '#005a7a', icon: '🖧' },
+  { id: 'room-223', name: 'Зал заседаний Учёного совета МГТУ', code: 'Ауд. 223', floor: 2, cx: 0, cz: 3, x: 0, z: 72, w: 22, h: 22, color: '#ff5555', icon: '⚖️' },
   { id: 'room-205', name: 'Кабинет Директора МФ МГТУ', code: 'Ауд. 205', floor: 2, cx: -1, cz: 2, x: -24, z: 48, w: 20, h: 20, color: '#ed9337', icon: '👔' },
   { id: 'room-208', name: 'Приёмная ректората', code: 'Ауд. 208', floor: 2, cx: 1, cz: 2, x: 24, z: 48, w: 20, h: 20, color: '#ed9337', icon: '📋' },
-  { id: 'room-279', name: 'Лаборатория Фотоники & Лазеров (В.М. Коршунов)', code: 'Ауд. 279', floor: 2, cx: 2, cz: 0, x: 48, z: 0, w: 20, h: 20, color: '#50fa7b', icon: '🔬' },
-  { id: 'room-275', name: 'Лаборатория люминесценции лантаноидов', code: 'Ауд. 275', floor: 2, cx: 2, cz: -1, x: 48, z: -24, w: 20, h: 20, color: '#50fa7b', icon: '✨' },
-  { id: 'dep-k1', name: 'Кафедра К1 (Системы автоматического управления)', code: 'К1', floor: 2, cx: 3, cz: 0, x: 72, z: 0, w: 20, h: 20, color: '#50fa7b', icon: '⚙️' },
-  { id: 'room-404', name: 'Поточная аудитория Матанализа ФН (Ф.Х. Ахметова)', code: 'Ауд. 404', floor: 4, cx: 0, cz: -2, x: 0, z: -48, w: 22, h: 22, color: '#bd93f9', icon: '📐' },
+  { id: 'room-279', name: 'Лаборатория Фотоники & Лазеров (В.М. Коршунов)', code: 'Ауд. 279', floor: 2, cx: 2, cz: -1, x: 48, z: -24, w: 20, h: 20, color: '#50fa7b', icon: '🔬' },
+  { id: 'room-275', name: 'Лаборатория люминесценции лантаноидов', code: 'Ауд. 275', floor: 2, cx: 2, cz: 1, x: 48, z: 24, w: 20, h: 20, color: '#50fa7b', icon: '✨' },
+  { id: 'dep-k1', name: 'Кафедра К1 (Системы автоматического управления)', code: 'К1', floor: 2, cx: 3, cz: -1, x: 72, z: -24, w: 20, h: 20, color: '#50fa7b', icon: '⚙️' },
+  { id: 'dep-k2', name: 'Кафедра К2 (Информационно-измерительные системы)', code: 'К2', floor: 2, cx: 3, cz: 1, x: 72, z: 24, w: 20, h: 20, color: '#50fa7b', icon: '📊' },
+  { id: 'room-404', name: 'Поточная аудитория Матанализа ФН (Ф.Х. Ахметова)', code: 'Ауд. 404', floor: 4, cx: 0, cz: -3, x: 0, z: -72, w: 22, h: 22, color: '#bd93f9', icon: '📐' },
   { id: 'room-419', name: 'Поточная аудитория Высшей Математики', code: 'Ауд. 419', floor: 4, cx: -1, cz: -2, x: -24, z: -48, w: 20, h: 20, color: '#bd93f9', icon: '∫' },
   { id: 'library', name: 'Научная Библиотека & Читальный Зал', code: 'Библиотека', floor: 2, cx: 1, cz: -2, x: 24, z: -48, w: 20, h: 20, color: '#ffb86c', icon: '📚' },
-  { id: 'museum', name: 'Музей Истории Инженерии (Геродот)', code: 'Музей', floor: 1, cx: -2, cz: 2, x: -48, z: 48, w: 22, h: 22, color: '#f1fa8c', icon: '📜' },
+  { id: 'museum', name: 'Музей Истории Инженерии (Геродот)', code: 'Музей', floor: 1, cx: -2, cz: 1, x: -48, z: 24, w: 22, h: 22, color: '#f1fa8c', icon: '📜' },
   { id: 'observatory', name: 'Высотная Астрономическая Обсерватория', code: 'Обсерватория', floor: 5, cx: 2, cz: 2, x: 48, z: 48, w: 22, h: 22, color: '#8be9fd', icon: '🔭' }
 ];
 

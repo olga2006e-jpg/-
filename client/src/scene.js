@@ -54,6 +54,8 @@ export class GameScene {
     mainLight.shadow.camera.right = 60;
     mainLight.shadow.camera.top = 60;
     mainLight.shadow.camera.bottom = -60;
+    mainLight.shadow.bias = -0.0003;
+    mainLight.shadow.normalBias = 0.04;
     this.scene.add(mainLight);
 
     // Secondary fill light from opposite side

@@ -28,6 +28,7 @@ class GameApp {
       this.network,
       (cacheStats) => this.ui.updateCacheMonitor(cacheStats)
     );
+    this.controls.setChunkManager(this.chunkManager);
 
     // 6. Interactive Minimap & Campus Blueprint
     this.minimap = new MinimapManager();

@@ -69,7 +69,7 @@ const stemMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.8
 });
 
-// Create text sprite for nametags and classroom signs
+// 0a. Floating text billboard for NPC and Player nametags
 export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(15, 12, 28, 0.85)') {
   const canvas = document.createElement('canvas');
   canvas.width = 384;
@@ -95,6 +95,60 @@ export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(15, 12
   const sprite = new THREE.Sprite(spriteMaterial);
   sprite.scale.set(3.0, 0.56, 1);
   return sprite;
+}
+
+// 0b. Solid 3D Flat Plaque Mesh for Doors, Walls, and Tables (NEVER cuts into geometry!)
+export function createPlaqueMesh(text, colorHex = '#ffd700', bgColor = 'rgba(24, 18, 14, 0.98)', width = 1.35, height = 0.28) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  // High-contrast polished background
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, 512, 128);
+
+  // Classical collegiate brass border
+  ctx.strokeStyle = colorHex;
+  ctx.lineWidth = 8;
+  ctx.strokeRect(6, 6, 500, 116);
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(12, 12, 488, 104);
+
+  // Corner decorative rivets
+  const rivets = [[18, 18], [494, 18], [18, 110], [494, 110]];
+  ctx.fillStyle = colorHex;
+  for (const [rx, ry] of rivets) {
+    ctx.beginPath();
+    ctx.arc(rx, ry, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Text
+  ctx.font = 'bold 30px "SF Pro Display", -apple-system, sans-serif';
+  ctx.fillStyle = colorHex;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 256, 64);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+
+  const plaqueGeo = new THREE.PlaneGeometry(width, height);
+  const plaqueMat = new THREE.MeshStandardMaterial({
+    map: texture,
+    roughness: 0.3,
+    metalness: 0.6,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2
+  });
+
+  const mesh = new THREE.Mesh(plaqueGeo, plaqueMat);
+  return mesh;
 }
 
 // 1. Classical University Wall with Baseboard
@@ -170,13 +224,17 @@ export function createDoor(x, y, z, rotY = 0, roomNumber = '227', label = '') {
   handleBack.position.z = -0.06;
   hinge.add(handleBack);
 
-  // Brass Plaque with Room Number & Title
-  const tagText = `${roomNumber} ${label ? '• ' + label.slice(0, 14) : ''}`;
-  const plaque = createNameTag(tagText, '#ffd700', 'rgba(25, 20, 12, 0.95)');
-  plaque.position.set(leafWidth / 2, 0.65, 0.05);
-  plaque.scale.set(1.4, 0.32, 1);
+  // Solid Brass Plaque with Room Number & Title (Mounted flush on front face of door leaf)
+  const tagText = `${roomNumber} ${label ? '• ' + label.slice(0, 16) : ''}`;
+  const plaque = createPlaqueMesh(tagText, '#ffd700', 'rgba(25, 18, 12, 0.98)', 1.32, 0.28);
+  plaque.position.set(leafWidth / 2, 0.65, 0.045);
   hinge.add(plaque);
 
+  // Back face plaque for when inside the room
+  const backPlaque = createPlaqueMesh(tagText, '#ffd700', 'rgba(25, 18, 12, 0.98)', 1.32, 0.28);
+  backPlaque.rotation.y = Math.PI;
+  backPlaque.position.set(leafWidth / 2, 0.65, -0.045);
+  hinge.add(backPlaque);
   group.userData = {
     isDoor: true,
     hinge,
@@ -442,11 +500,11 @@ export function createCouncilTable(x, y, z) {
   base.position.y = 0.4;
   group.add(base);
 
-  // Emblem of BMSTU in center of table
-  const emblemTag = createNameTag('МГТУ ИМ. Н.Э. БАУМАНА • УЧЁНЫЙ СОВЕТ', '#ffd700', 'rgba(40, 15, 10, 0.95)');
-  emblemTag.position.set(0, 0.95, 0);
-  emblemTag.scale.set(3.2, 0.65, 1);
-  group.add(emblemTag);
+  // Solid Brass Emblem of BMSTU in center of table (flat on tabletop)
+  const emblem = createPlaqueMesh('МГТУ ИМ. Н.Э. БАУМАНА • УЧЁНЫЙ СОВЕТ', '#ffd700', 'rgba(40, 15, 10, 0.98)', 3.2, 0.65);
+  emblem.rotation.x = -Math.PI / 2;
+  emblem.position.set(0, 0.88, 0);
+  group.add(emblem);
 
   return group;
 }
@@ -490,10 +548,17 @@ export function createSignpost(x, y, z, rotY = 0, text = 'Кафедра') {
   group.position.set(x, y, z);
   group.rotation.y = rotY;
 
-  const tag = createNameTag(text, '#f1fa8c', 'rgba(10, 12, 24, 0.95)');
-  tag.position.y = 0;
-  tag.scale.set(4.5, 0.75, 1);
-  group.add(tag);
+  // Solid Oak Backing Board
+  const boardGeo = new THREE.BoxGeometry(4.4, 0.65, 0.08);
+  const boardMat = new THREE.MeshStandardMaterial({ color: 0x3d2719, roughness: 0.6 });
+  const board = new THREE.Mesh(boardGeo, boardMat);
+  board.castShadow = true;
+  group.add(board);
+
+  // Brass Directional Plaque flush on board face
+  const plaque = createPlaqueMesh(text, '#f1fa8c', 'rgba(12, 14, 26, 0.98)', 4.2, 0.52);
+  plaque.position.set(0, 0, 0.045);
+  group.add(plaque);
 
   return group;
 }

@@ -93,11 +93,17 @@ export class ChunkManager {
   }
 
   onPlayerEnterChunk(cx, cz) {
-    // Current chunk + adjacent neighbors within 3x3 window (9 chunks <= 10 chunks budget)
+    // Current chunk + adjacent neighbors within 3x3 window (<= 10 chunks budget)
     const neededCoords = [];
     for (let dx = -1; dx <= 1; dx++) {
       for (let dz = -1; dz <= 1; dz++) {
-        neededCoords.push({ cx: cx + dx, cz: cz + dz });
+        const targetCx = cx + dx;
+        const targetCz = cz + dz;
+        // 1. MUST NEVER exceed 10x10 world grid bounds [-5, 4]
+        if (targetCx < -5 || targetCx > 4 || targetCz < -5 || targetCz > 4) continue;
+        // 2. Strict building boundary clamping: do not request empty campus tiles beyond [-3, 3]!
+        if (Math.abs(targetCx) > 3 || Math.abs(targetCz) > 3) continue;
+        neededCoords.push({ cx: targetCx, cz: targetCz });
       }
     }
 
@@ -133,12 +139,13 @@ export class ChunkManager {
   // Strict LRU / Distance Eviction to guarantee <= 10%
   enforceCacheLimit(centerCx, centerCz) {
     while (this.loadedChunks.size >= this.maxCacheLimit) {
-      // Find chunk farthest from current player chunk
+      // Find chunk farthest from current player chunk, but NEVER unload active chunk!
       let maxDist = -1;
       let farthestKey = null;
 
       for (const [key, chunkEntry] of this.loadedChunks.entries()) {
         const [kcx, kcz] = key.split(',').map(Number);
+        if (kcx === centerCx && kcz === centerCz) continue;
         const dist = Math.hypot(kcx - centerCx, kcz - centerCz);
         if (dist > maxDist) {
           maxDist = dist;
@@ -350,5 +357,21 @@ export class ChunkManager {
     }
 
     return closestNpc;
+  }
+  // Get all active wall collision boxes near the player
+  getNearbyWalls(px, pz, radius = 28) {
+    const walls = [];
+    for (const [key, entry] of this.loadedChunks.entries()) {
+      if (!entry.data?.objects) continue;
+      for (const obj of entry.data.objects) {
+        if (obj.type === 'wall') {
+          // Only include walls at body/head height (ignore transoms above 3.0m)
+          if (obj.y <= 3.0 && Math.hypot(obj.x - px, obj.z - pz) < radius) {
+            walls.push(obj);
+          }
+        }
+      }
+    }
+    return walls;
   }
 }

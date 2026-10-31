@@ -9,12 +9,12 @@ export const TOTAL_WORLD_CHUNKS = TOTAL_CHUNKS_X * TOTAL_CHUNKS_Z; // 100
 export const CHUNK_SIZE = 24; // 24 units wide (meters)
 
 // Exact building wings and auditoriums from BMSTU map:
-// cx: -2, cz: 0  -> Кафедра К5 (ИУ5), Ауд. 227 (Преподавательская А.И. Канева)
-// cx:  0, cz: -2 -> Северное крыло, Ауд. 404 (Поточная лекционная Высшей Математики ФН, Ф.Х. Ахметова)
-// cx:  2, cz: 0  -> Восточное крыло, Ауд. 279 (Лаборатория Фотоники и Лазеров, В.М. Коршунов)
-// cx:  0, cz: 0  -> ГУК: Центральный Вестибюль 1-го этажа, турникеты и парадная лестница (Альберт Эйнштейн)
-// cx: -2, cz: 2  -> Музей Истории Инженерии МГТУ (Геродот Галикарнасский)
-// cx:  0, cz: 2  -> Ауд. 223: Зал заседаний Учёного совета МГТУ им. Баумана
+// cx:  0, cz:  0 -> ГУК: Центральный Вестибюль (Турникеты, Парадная лестница, Альберт Эйнштейн)
+// cx: -2, cz: -1 -> Кафедра К5 (ИУ5), Ауд. 227 (Преподавательская А.И. Канева)
+// cx:  0, cz: -3 -> Северное крыло, Ауд. 404 (Поточная лекционная Высшей Математики ФН, Ф.Х. Ахметова)
+// cx:  2, cz: -1 -> Восточное крыло, Ауд. 279 (Лаборатория Фотоники и Лазеров, В.М. Коршунов)
+// cx: -2, cz:  1 -> Музей Истории Инженерии МГТУ (Геродот Галикарнасский)
+// cx:  0, cz:  3 -> Ауд. 223: Зал заседаний Учёного совета МГТУ им. Баумана
 export const NPCS = [
   {
     id: 'einstein',
@@ -34,10 +34,10 @@ export const NPCS = [
     name: 'Антон Игоревич Канев',
     role: 'Кафедра К5 (ИУ5) • Ауд. 227',
     chunkX: -2,
-    chunkZ: 0,
+    chunkZ: -1,
     x: -48,
     y: 0.8,
-    z: 0,
+    z: -24,
     color: '#8be9fd',
     dialogueTopic: 'software_engineering',
     greeting: 'Здравствуйте! Рад видеть вас на кафедре К5 (ИУ-5). Ночь на 31 октября — самое время защитить лабораторную по РИП и Сетям. Какой вопрос по архитектуре или протоколам хотите разобрать?'
@@ -47,10 +47,10 @@ export const NPCS = [
     name: 'Фания Харисовна Ахметова',
     role: 'Кафедра Высшей Математики ФН • Ауд. 404',
     chunkX: 0,
-    chunkZ: -2,
+    chunkZ: -3,
     x: 0,
     y: 0.8,
-    z: -48,
+    z: -72,
     color: '#ff79c6',
     dialogueTopic: 'math_analysis',
     greeting: 'Здравствуйте, студенты! В аудитории 404 матанализ не спит даже на Хэллоуин. Напомните мне строгое определение предела по Коши через эпсилон и дельта для допуска к зачёту!'
@@ -60,10 +60,10 @@ export const NPCS = [
     name: 'Владислав Михайлович Коршунов',
     role: 'Лаборатория Фотоники • Ауд. 279',
     chunkX: 2,
-    chunkZ: 0,
+    chunkZ: -1,
     x: 48,
     y: 0.8,
-    z: 0,
+    z: -24,
     color: '#50fa7b',
     dialogueTopic: 'photonics',
     greeting: 'Приветствую в оптической лаборатории аудитории 279! Видите, как светятся эти тыквы и спектральные лампы? Это закон Стокса и антенный эффект люминофоров. Готовы к вопросам по фотонике?'
@@ -73,10 +73,10 @@ export const NPCS = [
     name: 'Геродот Галикарнасский',
     role: 'Музей Истории Инженерии МГТУ',
     chunkX: -2,
-    chunkZ: 2,
+    chunkZ: 1,
     x: -48,
     y: 0.8,
-    z: 48,
+    z: 24,
     color: '#bd93f9',
     dialogueTopic: 'egypt',
     greeting: 'Приветствую вас, юные зодчие! В архивах МГТУ хранятся чертежи, достойные строителей пирамид Гизы. О каких тайнах древней механики вам рассказать?'
@@ -104,10 +104,10 @@ export const COLLECTIBLE_ITEMS = [
     type: 'artifact',
     subType: 'scroll',
     chunkX: -2,
-    chunkZ: 2,
+    chunkZ: 1,
     x: -45,
     y: 0.8,
-    z: 45,
+    z: 21,
     clue: 'Три великие пирамиды хранят тайны фараонов. Вторая цифра кода: 3',
     icon: '📜'
   },
@@ -117,10 +117,10 @@ export const COLLECTIBLE_ITEMS = [
     type: 'artifact',
     subType: 'flask',
     chunkX: 2,
-    chunkZ: -2,
+    chunkZ: -1,
     x: 45,
     y: 0.8,
-    z: -45,
+    z: -21,
     clue: 'Радий принадлежит ко 2-й группе элементов таблицы Менделеева. Третья цифра кода: 2',
     icon: '🧪'
   },
@@ -131,9 +131,9 @@ export const COLLECTIBLE_ITEMS = [
     subType: 'key',
     chunkX: -1,
     chunkZ: -1,
-    x: -20,
+    x: -21,
     y: 0.8,
-    z: -20,
+    z: -21,
     clue: 'Семь печатей сорваны с гробницы знаний. Четвертая цифра кода: 7',
     icon: '🗝️'
   }
@@ -141,7 +141,7 @@ export const COLLECTIBLE_ITEMS = [
 
 // Architectural Building Classification for all 100 chunks
 export function getZoneMeta(cx, cz) {
-  // Center: Entrance Foyer & Stairs
+  // Center: Entrance Foyer & Grand Stairs
   if (cx === 0 && cz === 0) {
     return {
       name: 'ГУК: Центральный Вестибюль (Турникеты & Парадная лестница)',
@@ -153,8 +153,9 @@ export function getZoneMeta(cx, cz) {
     };
   }
 
-  // West Wing: Department K5 (IU5) Computer Systems, Web & Networks
-  if (cx === -2 && cz === 0) {
+  // --- WEST WING: Department K5 (IU5) Computer Systems & Networks ---
+  // Classrooms North of the West Corridor (cz = -1):
+  if (cx === -2 && cz === -1) {
     return {
       name: 'Кафедра К5: Ауд. 227 — Преподавательская (А.И. Канев)',
       type: 'k5_office',
@@ -164,9 +165,9 @@ export function getZoneMeta(cx, cz) {
       color: '#005a7a'
     };
   }
-  if (cx === -2 && cz === -1) {
+  if (cx === -1 && cz === -1) {
     return {
-      name: 'Кафедра К5: Ауд. 224 — Методический кабинет и Сетевая лаборатория',
+      name: 'Кафедра К5: Ауд. 224 — Сетевая лаборатория',
       type: 'k5_lab',
       roomCode: 'Ауд. 224',
       floor: 2,
@@ -174,7 +175,7 @@ export function getZoneMeta(cx, cz) {
       color: '#005a7a'
     };
   }
-  if (cx === -3 && cz === 0) {
+  if (cx === -3 && cz === -1) {
     return {
       name: 'Ауд. 225: Компьютерный класс веб-разработки (РИП)',
       type: 'computer_class',
@@ -184,7 +185,18 @@ export function getZoneMeta(cx, cz) {
       color: '#005a7a'
     };
   }
-  if (cx === -3 && cz === -1) {
+  // Classrooms South of the West Corridor (cz = 1):
+  if (cx === -2 && cz === 1) {
+    return {
+      name: 'Музей Истории Инженерии МГТУ (Геродот Галикарнасский)',
+      type: 'history_museum',
+      roomCode: 'Музей МГТУ',
+      floor: 1,
+      wing: 'Юго-западный флигель',
+      color: '#f1fa8c'
+    };
+  }
+  if (cx === -3 && cz === 1) {
     return {
       name: 'Ауд. 226: Серверная и Канцелярия К5',
       type: 'server_room',
@@ -195,8 +207,8 @@ export function getZoneMeta(cx, cz) {
     };
   }
 
-  // North Wing: Fundamental Sciences (FN) & Mathematics
-  if (cx === 0 && cz === -2) {
+  // --- NORTH WING: Fundamental Sciences (FN) & Mathematics ---
+  if (cx === 0 && cz === -3) {
     return {
       name: 'Кафедра ФН: Ауд. 404 — Поточная аудитория Матанализа (Ф.Х. Ахметова)',
       type: 'math_lecture',
@@ -226,19 +238,9 @@ export function getZoneMeta(cx, cz) {
       color: '#ffb86c'
     };
   }
-  if (cx === 0 && cz === -3) {
-    return {
-      name: 'Ауд. 421: Кафедральный семинар теории функций',
-      type: 'seminar_room',
-      roomCode: 'Ауд. 421',
-      floor: 4,
-      wing: 'Северное крыло (ФН)',
-      color: '#bd93f9'
-    };
-  }
 
-  // East Wing: Photonics, Laser Physics & Departments K1, K2
-  if (cx === 2 && cz === 0) {
+  // --- EAST WING: Photonics, Laser Physics & Departments K1, K2 ---
+  if (cx === 2 && cz === -1) {
     return {
       name: 'Ауд. 279: Лаборатория Фотоники и Лазеров (В.М. Коршунов)',
       type: 'photonics_lab',
@@ -248,7 +250,7 @@ export function getZoneMeta(cx, cz) {
       color: '#50fa7b'
     };
   }
-  if (cx === 2 && cz === -1) {
+  if (cx === 2 && cz === 1) {
     return {
       name: 'Ауд. 275: Лаборатория люминесценции и спектроскопии лантаноидов',
       type: 'laser_lab',
@@ -258,7 +260,7 @@ export function getZoneMeta(cx, cz) {
       color: '#50fa7b'
     };
   }
-  if (cx === 3 && cz === 0) {
+  if (cx === 3 && cz === -1) {
     return {
       name: 'Кафедра К1: Системы автоматического управления',
       type: 'dep_k1',
@@ -268,7 +270,7 @@ export function getZoneMeta(cx, cz) {
       color: '#50fa7b'
     };
   }
-  if (cx === 3 && cz === -1) {
+  if (cx === 3 && cz === 1) {
     return {
       name: 'Кафедра К2: Информационно-измерительные системы',
       type: 'dep_k2',
@@ -279,8 +281,8 @@ export function getZoneMeta(cx, cz) {
     };
   }
 
-  // South Wing: Administration & Scientific Council Hall (Учёный совет)
-  if (cx === 0 && cz === 2) {
+  // --- SOUTH WING: Administration & Scientific Council Hall (Учёный совет) ---
+  if (cx === 0 && cz === 3) {
     return {
       name: 'Ауд. 223: Зал заседаний Учёного совета МГТУ им. Н.Э. Баумана',
       type: 'council_hall',
@@ -310,28 +312,6 @@ export function getZoneMeta(cx, cz) {
       color: '#ed9337'
     };
   }
-  if (cx === 0 && cz === 3) {
-    return {
-      name: 'Актовый Конференц-Зал МГТУ им. Баумана',
-      type: 'conference_hall',
-      roomCode: 'Актовый зал',
-      floor: 2,
-      wing: 'Южное крыло',
-      color: '#ff79c6'
-    };
-  }
-
-  // History Museum & Tower
-  if (cx === -2 && cz === 2) {
-    return {
-      name: 'Музей Истории Инженерии МГТУ (Геродот Галикарнасский)',
-      type: 'history_museum',
-      roomCode: 'Музей МГТУ',
-      floor: 1,
-      wing: 'Юго-западный флигель',
-      color: '#f1fa8c'
-    };
-  }
   if (cx === 2 && cz === 2) {
     return {
       name: 'Высотная Астрономическая Обсерватория МГТУ',
@@ -343,50 +323,34 @@ export function getZoneMeta(cx, cz) {
     };
   }
 
-  // Main Corridors & Galleries connecting all wings
-  if (cz === 0 && Math.abs(cx) <= 4) {
+  // --- CONTINUOUS MAIN CORRIDORS & GALLERIES ---
+  // East-West Main Spine (cz = 0, cx between -3 and +3)
+  if (cz === 0 && Math.abs(cx) <= 3) {
+    const sub = cx < 0 ? 'Западная' : cx > 0 ? 'Восточная' : 'Центральная';
     return {
-      name: 'Главная Поперечная Галерея ГУК (Коридор 2-го этажа)',
+      name: `${sub} Галерея ГУК (Коридор 2-го этажа)`,
       type: 'corridor_h',
-      roomCode: 'Галерея-X',
+      roomCode: `Галерея-${cx < 0 ? 'Запад' : cx > 0 ? 'Восток' : 'Центр'}`,
       floor: 2,
       wing: 'Центральный переход',
       color: '#6272a4'
     };
   }
-  if (cx === 0 && Math.abs(cz) <= 4) {
+  // North-South Main Spine (cx = 0, cz between -2 and +2)
+  if (cx === 0 && Math.abs(cz) <= 2) {
+    const sub = cz < 0 ? 'Северная' : 'Южная';
     return {
-      name: 'Центральная Продольная Галерея ГУК (Парадный переход)',
+      name: `${sub} Продольная Галерея ГУК`,
       type: 'corridor_v',
-      roomCode: 'Галерея-Z',
+      roomCode: `Галерея-${sub}`,
       floor: 2,
       wing: 'Центральный переход',
-      color: '#6272a4'
-    };
-  }
-  if (cz === -2 && Math.abs(cx) <= 3) {
-    return {
-      name: 'Северный Коридор кафедр фундаментальных наук (ФН)',
-      type: 'corridor_h',
-      roomCode: 'Коридор-ФН',
-      floor: 4,
-      wing: 'Северное крыло',
-      color: '#6272a4'
-    };
-  }
-  if (cz === 2 && Math.abs(cx) <= 3) {
-    return {
-      name: 'Южный Коридор Директората и Учёного Совета',
-      type: 'corridor_h',
-      roomCode: 'Коридор-Юг',
-      floor: 2,
-      wing: 'Южное крыло',
       color: '#6272a4'
     };
   }
 
-  // Courtyards between wings
-  if ((cx === -1 || cx === 1) && (cz === -1 || cz === 1)) {
+  // Internal Courtyards (Open sky gardens between wings)
+  if ((cx === -1 || cx === 1) && (cz === 1)) {
     return {
       name: 'Внутренний Дворик Кампуса (Сад МГТУ им. Баумана)',
       type: 'courtyard',
@@ -397,7 +361,7 @@ export function getZoneMeta(cx, cz) {
     };
   }
 
-  // Campus Grounds & Academic Parks
+  // Outer Campus Grounds & Academic Parks
   return {
     name: 'Кампус МГТУ им. Н.Э. Баумана (Парк & Аллеи инженеров)',
     type: 'campus_grounds',
@@ -415,7 +379,7 @@ function hash2(x, z) {
   return ((h ^ (h >> 16)) >>> 0) / 4294967296;
 }
 
-// Helper to construct fully enclosed architectural room with 4 walls and swinging doorway
+// Helper to construct fully enclosed architectural room with 4 solid walls and a swinging collegiate doorway
 function buildRoom(objects, originX, originZ, half, doorSide, doorNumber, doorLabel, interiorProps = []) {
   const wallH = 5.0;
   const wallD = 0.4;
@@ -435,7 +399,7 @@ function buildRoom(objects, originX, originZ, half, doorSide, doorNumber, doorLa
     objects.push({ type: 'wall', x: originX + half - 0.2, y: 2.5, z: originZ, width: wallD, height: wallH, depth: CHUNK_SIZE, rotY: 0 });
   }
 
-  // 2. Doorway wall on doorSide (left wall + right wall + top transom above door)
+  // 2. Doorway wall on doorSide (left wall + right wall + top transom above door + swinging door)
   if (doorSide === 'north') {
     const wallZ = originZ - half + 0.2;
     objects.push({ type: 'wall', x: originX - 6.55, y: 2.5, z: wallZ, width: segW, height: wallH, depth: wallD, rotY: 0 });
@@ -510,7 +474,7 @@ export function generateChunk(cx, cz) {
 
   // 3. Walls & Architectural Structure according to Room / Corridor Type
   if (zone.type === 'foyer') {
-    // Central Grand Foyer (1st floor): Monumental Columns, Turnstiles, Directory Board
+    // Central Grand Foyer (1st floor): Monumental Columns, Turnstiles, Arches into Wings
     objects.push({ type: 'turnstile', x: originX - 4, y: 0, z: originZ + 5, rotY: 0 });
     objects.push({ type: 'turnstile', x: originX,     y: 0, z: originZ + 5, rotY: 0 });
     objects.push({ type: 'turnstile', x: originX + 4, y: 0, z: originZ + 5, rotY: 0 });
@@ -520,10 +484,11 @@ export function generateChunk(cx, cz) {
     objects.push({ type: 'pillar', x: originX - 7, y: 2.5, z: originZ + 7, height: 5 });
     objects.push({ type: 'pillar', x: originX + 7, y: 2.5, z: originZ + 7, height: 5 });
 
-    // Arches leading into the wings
+    // Classical Arches leading into West, East, North, and South corridors
     objects.push({ type: 'arch', x: originX - half + 0.2, y: 2.5, z: originZ, rotY: Math.PI / 2 });
     objects.push({ type: 'arch', x: originX + half - 0.2, y: 2.5, z: originZ, rotY: -Math.PI / 2 });
     objects.push({ type: 'arch', x: originX, y: 2.5, z: originZ - half + 0.2, rotY: 0 });
+    objects.push({ type: 'arch', x: originX, y: 2.5, z: originZ + half - 0.2, rotY: Math.PI });
 
     // Direction Signpost
     objects.push({
@@ -535,37 +500,71 @@ export function generateChunk(cx, cz) {
       text: '← Кафедра К5 (ИУ5) • Ауд. 227  |  Учёный Совет • Ауд. 223 →'
     });
   } else if (zone.type === 'corridor_h') {
-    // East-West Main Hallway: North and South walls with arched portals and corridor sconces
-    objects.push({ type: 'wall', x: originX, y: 2.5, z: originZ - 4.5, width: CHUNK_SIZE, height: 5, depth: 0.4, rotY: 0 });
-    objects.push({ type: 'wall', x: originX, y: 2.5, z: originZ + 4.5, width: CHUNK_SIZE, height: 5, depth: 0.4, rotY: 0 });
+    // East-West Main Hallway: Grand gallery with pillars and corridor sconces
+    objects.push({ type: 'pillar', x: originX - 5, y: 2.5, z: originZ - 5, height: 5 });
+    objects.push({ type: 'pillar', x: originX + 5, y: 2.5, z: originZ - 5, height: 5 });
+    objects.push({ type: 'pillar', x: originX - 5, y: 2.5, z: originZ + 5, height: 5 });
+    objects.push({ type: 'pillar', x: originX + 5, y: 2.5, z: originZ + 5, height: 5 });
+
+    objects.push({ type: 'torch', x: originX - 5, y: 2.2, z: originZ - 4.5 });
+    objects.push({ type: 'torch', x: originX + 5, y: 2.2, z: originZ + 4.5 });
+
+    // Arches along corridor for regal neoclassical cadence
     objects.push({ type: 'arch', x: originX, y: 2.5, z: originZ, rotY: Math.PI / 2 });
-    objects.push({ type: 'torch', x: originX - 5, y: 2.2, z: originZ - 4.2 });
-    objects.push({ type: 'torch', x: originX + 5, y: 2.2, z: originZ + 4.2 });
+
+    // If at the far WEST end of the corridor (cx = -3): solid wall sealing the building!
+    if (cx === -3) {
+      objects.push({ type: 'wall', x: originX - half + 0.2, y: 2.5, z: originZ, width: 0.4, height: 5, depth: CHUNK_SIZE, rotY: 0 });
+      objects.push({
+        type: 'signpost',
+        x: originX - half + 0.5,
+        y: 2.8,
+        z: originZ,
+        rotY: Math.PI / 2,
+        text: 'ЗАПАДНОЕ КРЫЛО • КАФЕДРА К5 (ИУ-5)'
+      });
+    }
+    // If at the far EAST end of the corridor (cx = 3): solid wall sealing the building!
+    if (cx === 3) {
+      objects.push({ type: 'wall', x: originX + half - 0.2, y: 2.5, z: originZ, width: 0.4, height: 5, depth: CHUNK_SIZE, rotY: 0 });
+      objects.push({
+        type: 'signpost',
+        x: originX + half - 0.5,
+        y: 2.8,
+        z: originZ,
+        rotY: -Math.PI / 2,
+        text: 'ВОСТОЧНОЕ КРЫЛО • ЛАБОРАТОРИИ ФОТОНИКИ'
+      });
+    }
   } else if (zone.type === 'corridor_v') {
-    // North-South Gallery: West and East walls with arched portals
-    objects.push({ type: 'wall', x: originX - 4.5, y: 2.5, z: originZ, width: 0.4, height: 5, depth: CHUNK_SIZE, rotY: 0 });
-    objects.push({ type: 'wall', x: originX + 4.5, y: 2.5, z: originZ, width: 0.4, height: 5, depth: CHUNK_SIZE, rotY: 0 });
+    // North-South Gallery: Grand gallery with pillars and corridor sconces
+    objects.push({ type: 'pillar', x: originX - 5, y: 2.5, z: originZ - 5, height: 5 });
+    objects.push({ type: 'pillar', x: originX + 5, y: 2.5, z: originZ - 5, height: 5 });
+    objects.push({ type: 'pillar', x: originX - 5, y: 2.5, z: originZ + 5, height: 5 });
+    objects.push({ type: 'pillar', x: originX + 5, y: 2.5, z: originZ + 5, height: 5 });
+
+    objects.push({ type: 'torch', x: originX - 4.5, y: 2.2, z: originZ - 5 });
+    objects.push({ type: 'torch', x: originX + 4.5, y: 2.2, z: originZ + 5 });
+
     objects.push({ type: 'arch', x: originX, y: 2.5, z: originZ, rotY: 0 });
-    objects.push({ type: 'torch', x: originX - 4.2, y: 2.2, z: originZ - 5 });
-    objects.push({ type: 'torch', x: originX + 4.2, y: 2.2, z: originZ + 5 });
   } else if (zone.type === 'k5_office') {
-    // Department K5: Ауд. 227 — Преподавательская А.И. Канева
-    buildRoom(objects, originX, originZ, half, 'east', 'Ауд. 227', 'Кафедра К5 (ИУ-5)', [
+    // Department K5: Ауд. 227 — Преподавательская А.И. Канева (door opens South into West Corridor)
+    buildRoom(objects, originX, originZ, half, 'south', 'Ауд. 227', 'Кафедра К5 (ИУ-5)', [
       { type: 'server_rack', x: originX - 6, y: 0, z: originZ - 5, rotY: 0 },
       { type: 'server_rack', x: originX - 4, y: 0, z: originZ - 5, rotY: 0 },
       { type: 'desk_row', x: originX + 2, y: 0, z: originZ - 2, rotY: 0 },
       { type: 'blackboard', x: originX, y: 2.0, z: originZ - half + 0.6, rotY: 0, formulaType: 'rip_network' }
     ]);
   } else if (zone.type === 'k5_lab') {
-    // Ауд. 224: Методический кабинет & Сетевая лаборатория К5
+    // Ауд. 224: Сетевая лаборатория К5 (door opens South into West Corridor)
     buildRoom(objects, originX, originZ, half, 'south', 'Ауд. 224', 'Сетевая лаборатория', [
       { type: 'server_rack', x: originX - 6, y: 0, z: originZ - 4, rotY: 0 },
       { type: 'desk_row', x: originX, y: 0, z: originZ + 2, rotY: 0 },
       { type: 'blackboard', x: originX, y: 2.0, z: originZ - half + 0.6, rotY: 0, formulaType: 'rip_network' }
     ]);
   } else if (zone.type === 'computer_class') {
-    // Ауд. 225: Компьютерный класс веб-разработки (РИП)
-    buildRoom(objects, originX, originZ, half, 'east', 'Ауд. 225', 'Класс РИП (К5)', [
+    // Ауд. 225: Компьютерный класс веб-разработки (РИП) (door opens South into West Corridor)
+    buildRoom(objects, originX, originZ, half, 'south', 'Ауд. 225', 'Класс РИП (К5)', [
       { type: 'desk_row', x: originX - 2, y: 0, z: originZ - 4, rotY: 0 },
       { type: 'desk_row', x: originX - 2, y: 0, z: originZ, rotY: 0 },
       { type: 'desk_row', x: originX - 2, y: 0, z: originZ + 4, rotY: 0 },
@@ -573,15 +572,15 @@ export function generateChunk(cx, cz) {
       { type: 'blackboard', x: originX - 2, y: 2.0, z: originZ - half + 0.6, rotY: 0, formulaType: 'rip_network' }
     ]);
   } else if (zone.type === 'server_room') {
-    // Ауд. 226: Серверная и Канцелярия К5
-    buildRoom(objects, originX, originZ, half, 'south', 'Ауд. 226', 'Серверная К5', [
+    // Ауд. 226: Серверная и Канцелярия К5 (door opens North into West Corridor)
+    buildRoom(objects, originX, originZ, half, 'north', 'Ауд. 226', 'Серверная К5', [
       { type: 'server_rack', x: originX - 5, y: 0, z: originZ - 3, rotY: 0 },
       { type: 'server_rack', x: originX - 2, y: 0, z: originZ - 3, rotY: 0 },
       { type: 'server_rack', x: originX + 2, y: 0, z: originZ - 3, rotY: 0 },
       { type: 'desk_row', x: originX, y: 0, z: originZ + 3, rotY: 0 }
     ]);
   } else if (zone.type === 'math_lecture') {
-    // Ауд. 404: Поточная аудитория Матанализа ФН (Ф.Х. Ахметова)
+    // Ауд. 404: Поточная аудитория Матанализа ФН (Ф.Х. Ахметова) (door opens South into North Corridor)
     buildRoom(objects, originX, originZ, half, 'south', 'Ауд. 404', 'Высшая Математика ФН', [
       { type: 'blackboard', x: originX, y: 2.2, z: originZ - half + 0.6, rotY: 0, formulaType: 'math_analysis' },
       { type: 'desk_row', x: originX, y: 0, z: originZ - 2, rotY: 0 },
@@ -589,88 +588,81 @@ export function generateChunk(cx, cz) {
       { type: 'desk_row', x: originX, y: 0, z: originZ + 6, rotY: 0 }
     ]);
   } else if (zone.type === 'lecture_hall') {
-    // Ауд. 419: Поточная лекционная аудитория (Высшая математика)
-    buildRoom(objects, originX, originZ, half, 'south', 'Ауд. 419', 'Поточная Лекционная', [
+    // Ауд. 419: Поточная лекционная аудитория (door opens East into North Corridor)
+    buildRoom(objects, originX, originZ, half, 'east', 'Ауд. 419', 'Поточная Лекционная', [
       { type: 'blackboard', x: originX, y: 2.2, z: originZ - half + 0.6, rotY: 0, formulaType: 'math_analysis' },
       { type: 'desk_row', x: originX, y: 0, z: originZ - 2, rotY: 0 },
       { type: 'desk_row', x: originX, y: 0, z: originZ + 3, rotY: 0 }
     ]);
-  } else if (zone.type === 'seminar_room') {
-    // Ауд. 421: Кафедральный семинар теории функций
-    buildRoom(objects, originX, originZ, half, 'south', 'Ауд. 421', 'Семинарская ФН', [
-      { type: 'blackboard', x: originX, y: 2.0, z: originZ - half + 0.6, rotY: 0, formulaType: 'math_analysis' },
-      { type: 'desk_row', x: originX, y: 0, z: originZ, rotY: 0 }
-    ]);
-  } else if (zone.type === 'photonics_lab') {
-    // Ауд. 279: Лаборатория Фотоники и Лазеров (В.М. Коршунов)
-    buildRoom(objects, originX, originZ, half, 'west', 'Ауд. 279', 'Фотоника и Лазеры ФН', [
-      { type: 'laser_bench', x: originX - 3, y: 0, z: originZ - 1, rotY: 0 },
-      { type: 'laser_bench', x: originX + 4, y: 0, z: originZ - 1, rotY: 0 },
-      { type: 'blackboard', x: originX, y: 2.0, z: originZ - half + 0.6, rotY: 0, formulaType: 'photonics_stokes' }
-    ]);
-  } else if (zone.type === 'laser_lab') {
-    // Ауд. 275: Лаборатория люминесценции лантаноидов
-    buildRoom(objects, originX, originZ, half, 'south', 'Ауд. 275', 'Лаборатория Люминесценции', [
-      { type: 'laser_bench', x: originX, y: 0, z: originZ, rotY: 0 },
-      { type: 'blackboard', x: originX, y: 2.0, z: originZ - half + 0.6, rotY: 0, formulaType: 'photonics_stokes' }
-    ]);
-  } else if (zone.type === 'dep_k1' || zone.type === 'dep_k2') {
-    // Кафедры К1, К2 (Восточное крыло)
-    buildRoom(objects, originX, originZ, half, 'west', zone.roomCode, zone.name, [
-      { type: 'server_rack', x: originX - 6, y: 0, z: originZ - 4, rotY: 0 },
-      { type: 'desk_row', x: originX + 2, y: 0, z: originZ, rotY: 0 }
-    ]);
-  } else if (zone.type === 'council_hall') {
-    // Ауд. 223: Зал заседаний Учёного совета МГТУ им. Н.Э. Баумана
-    buildRoom(objects, originX, originZ, half, 'north', 'Ауд. 223', 'Учёный Совет МГТУ', [
-      { type: 'council_table', x: originX, y: 0, z: originZ },
-      { type: 'pillar', x: originX - 7, y: 2.5, z: originZ - 7, height: 5 },
-      { type: 'pillar', x: originX + 7, y: 2.5, z: originZ - 7, height: 5 }
-    ]);
-  } else if (zone.type === 'director_office') {
-    // Ауд. 205: Кабинет Директора МФ МГТУ им. Баумана
-    buildRoom(objects, originX, originZ, half, 'north', 'Ауд. 205', 'Директорат', [
-      { type: 'council_table', x: originX, y: 0, z: originZ },
-      { type: 'bookshelf', x: originX - 7, y: 2.5, z: originZ - 5 }
-    ]);
-  } else if (zone.type === 'rector_office') {
-    // Ауд. 208/213: Приёмная и кабинет советника ректора МГТУ
-    buildRoom(objects, originX, originZ, half, 'north', 'Ауд. 208', 'Ректорат', [
-      { type: 'desk_row', x: originX, y: 0, z: originZ, rotY: 0 },
-      { type: 'bookshelf', x: originX + 7, y: 2.5, z: originZ - 5 }
-    ]);
-  } else if (zone.type === 'conference_hall') {
-    // Актовый Конференц-Зал МГТУ им. Баумана
-    buildRoom(objects, originX, originZ, half, 'north', 'Актовый Зал', 'Конференц-Зал', [
-      { type: 'council_table', x: originX, y: 0, z: originZ - 4 },
-      { type: 'desk_row', x: originX, y: 0, z: originZ + 2, rotY: 0 },
-      { type: 'desk_row', x: originX, y: 0, z: originZ + 6, rotY: 0 }
-    ]);
   } else if (zone.type === 'library') {
-    // Университетская Научная Библиотека & Читальный Зал
-    buildRoom(objects, originX, originZ, half, 'south', 'Библиотека', 'Научный Читальный Зал', [
+    // Университетская Научная Библиотека & Читальный Зал (door opens West into North Corridor)
+    buildRoom(objects, originX, originZ, half, 'west', 'Библиотека', 'Научный Читальный Зал', [
       { type: 'bookshelf', x: originX - 7, y: 2.5, z: originZ - 5 },
       { type: 'bookshelf', x: originX - 7, y: 2.5, z: originZ + 5 },
       { type: 'bookshelf', x: originX + 7, y: 2.5, z: originZ - 5 },
       { type: 'bookshelf', x: originX + 7, y: 2.5, z: originZ + 5 },
       { type: 'desk_row', x: originX, y: 0, z: originZ, rotY: 0 }
     ]);
+  } else if (zone.type === 'photonics_lab') {
+    // Ауд. 279: Лаборатория Фотоники и Лазеров (В.М. Коршунов) (door opens South into East Corridor)
+    buildRoom(objects, originX, originZ, half, 'south', 'Ауд. 279', 'Фотоника и Лазеры ФН', [
+      { type: 'laser_bench', x: originX - 3, y: 0, z: originZ - 1, rotY: 0 },
+      { type: 'laser_bench', x: originX + 4, y: 0, z: originZ - 1, rotY: 0 },
+      { type: 'blackboard', x: originX, y: 2.0, z: originZ - half + 0.6, rotY: 0, formulaType: 'photonics_stokes' }
+    ]);
+  } else if (zone.type === 'laser_lab') {
+    // Ауд. 275: Лаборатория люминесценции лантаноидов (door opens North into East Corridor)
+    buildRoom(objects, originX, originZ, half, 'north', 'Ауд. 275', 'Лаборатория Люминесценции', [
+      { type: 'laser_bench', x: originX, y: 0, z: originZ, rotY: 0 },
+      { type: 'blackboard', x: originX, y: 2.0, z: originZ - half + 0.6, rotY: 0, formulaType: 'photonics_stokes' }
+    ]);
+  } else if (zone.type === 'dep_k1') {
+    // Кафедра К1 (door opens South into East Corridor)
+    buildRoom(objects, originX, originZ, half, 'south', 'Кафедра К1', 'Кафедра К1 (САУ)', [
+      { type: 'server_rack', x: originX - 6, y: 0, z: originZ - 4, rotY: 0 },
+      { type: 'desk_row', x: originX + 2, y: 0, z: originZ, rotY: 0 }
+    ]);
+  } else if (zone.type === 'dep_k2') {
+    // Кафедра К2 (door opens North into East Corridor)
+    buildRoom(objects, originX, originZ, half, 'north', 'Кафедра К2', 'Кафедра К2 (ИИС)', [
+      { type: 'server_rack', x: originX - 6, y: 0, z: originZ - 4, rotY: 0 },
+      { type: 'desk_row', x: originX + 2, y: 0, z: originZ, rotY: 0 }
+    ]);
+  } else if (zone.type === 'council_hall') {
+    // Ауд. 223: Зал заседаний Учёного совета МГТУ им. Н.Э. Баумана (door opens North into South Corridor)
+    buildRoom(objects, originX, originZ, half, 'north', 'Ауд. 223', 'Учёный Совет МГТУ', [
+      { type: 'council_table', x: originX, y: 0, z: originZ },
+      { type: 'pillar', x: originX - 7, y: 2.5, z: originZ - 7, height: 5 },
+      { type: 'pillar', x: originX + 7, y: 2.5, z: originZ - 7, height: 5 }
+    ]);
+  } else if (zone.type === 'director_office') {
+    // Ауд. 205: Кабинет Директора МФ МГТУ (door opens East into South Corridor)
+    buildRoom(objects, originX, originZ, half, 'east', 'Ауд. 205', 'Директорат', [
+      { type: 'council_table', x: originX, y: 0, z: originZ },
+      { type: 'bookshelf', x: originX - 7, y: 2.5, z: originZ - 5 }
+    ]);
+  } else if (zone.type === 'rector_office') {
+    // Ауд. 208/213: Приёмная советника ректора МГТУ (door opens West into South Corridor)
+    buildRoom(objects, originX, originZ, half, 'west', 'Ауд. 208', 'Ректорат', [
+      { type: 'desk_row', x: originX, y: 0, z: originZ, rotY: 0 },
+      { type: 'bookshelf', x: originX + 7, y: 2.5, z: originZ - 5 }
+    ]);
   } else if (zone.type === 'history_museum') {
-    // Музей Истории Инженерии МГТУ (Геродот Галикарнасский)
+    // Музей Истории Инженерии МГТУ (Геродот Галикарнасский) (door opens North into West Corridor)
     buildRoom(objects, originX, originZ, half, 'north', 'Музей МГТУ', 'Музей Инженерии', [
       { type: 'obelisk', x: originX - 4, y: 2, z: originZ, label: 'Летописи Бауманки' },
       { type: 'obelisk', x: originX + 4, y: 2, z: originZ, label: 'Механика Античности' },
       { type: 'bookshelf', x: originX, y: 2.5, z: originZ - 7 }
     ]);
   } else if (zone.type === 'observatory') {
-    // Высотная Астрономическая Обсерватория МГТУ
-    buildRoom(objects, originX, originZ, half, 'north', 'Обсерватория', 'Астрономическая башня', [
+    // Высотная Астрономическая Обсерватория МГТУ (door opens West into South Corridor)
+    buildRoom(objects, originX, originZ, half, 'west', 'Обсерватория', 'Астрономическая башня', [
       { type: 'telescope', x: originX, y: 1.5, z: originZ },
       { type: 'pillar', x: originX - 6, y: 2.5, z: originZ - 6, height: 5 },
       { type: 'pillar', x: originX + 6, y: 2.5, z: originZ - 6, height: 5 }
     ]);
   } else if (zone.type === 'courtyard') {
-    // Внутренний Дворик Кампуса (Сад МГТУ им. Баумана) — открытое небо!
+    // Внутренний Дворик Кампуса (Сад МГТУ им. Баумана) — открытое ночное небо!
     objects.push({ type: 'pillar', x: originX - 6, y: 2.5, z: originZ - 6, height: 5 });
     objects.push({ type: 'pillar', x: originX + 6, y: 2.5, z: originZ - 6, height: 5 });
     objects.push({ type: 'pillar', x: originX - 6, y: 2.5, z: originZ + 6, height: 5 });
