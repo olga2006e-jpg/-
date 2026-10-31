@@ -520,7 +520,10 @@ export function generateChunk(cx, cz) {
     objects.push({ type: 'pumpkin', x: originX + 2.8, y: 0, z: originZ + 2.4, glowing: true });
     objects.push({ type: 'floating_candle', x: originX - 4.0, y: 3.2, z: originZ });
     objects.push({ type: 'floating_candle', x: originX + 4.0, y: 3.2, z: originZ });
-
+    // Grand Chandelier in Vestibule ceiling & torches by entrance
+    objects.push({ type: 'ceiling_lamp', x: originX, y: 4.85, z: originZ + 3.0 });
+    objects.push({ type: 'torch', x: originX - 6.8, y: 2.2, z: originZ + 7.5, rotY: 0 });
+    objects.push({ type: 'torch', x: originX + 6.8, y: 2.2, z: originZ + 7.5, rotY: 0 });
   } else if (zone.type === 'cafeteria') {
     // --- (1, 0): «Кафедра Питания» (Студенческая столовая ГУК №1) ---
     buildRoom(objects, originX, originZ, half, 'west', 'Столовая ГУК', 'Кафедра Питания', [
@@ -615,7 +618,7 @@ export function generateChunk(cx, cz) {
     objects.push({ type: 'pumpkin', x: originX - 3.5, y: baseY, z: originZ - 3.5, glowing: true });
     objects.push({ type: 'pumpkin', x: originX + 3.5, y: baseY, z: originZ - 3.5, glowing: true });
     objects.push({ type: 'floating_candle', x: originX, y: baseY + 2.8, z: originZ - 2.0 });
-
+    objects.push({ type: 'ceiling_lamp', x: originX, y: baseY + 4.85, z: originZ });
   } else if (zone.type === 'council_hall') {
     // --- (0, -2): Зал Учёного Совета МГТУ им. Н.Э. Баумана (Ауд. 223) ---
     // Door on South wall connecting to Foyer Floor 2!
@@ -661,7 +664,7 @@ export function generateChunk(cx, cz) {
     objects.push({ type: 'radiator', x: originX - 6, y: baseY, z: originZ + half - 0.6, rotY: 0 });
     objects.push({ type: 'radiator', x: originX + 6, y: baseY, z: originZ + half - 0.6, rotY: 0 });
     objects.push({ type: 'pumpkin', x: originX - 4, y: baseY, z: originZ + 3, glowing: true });
-
+    objects.push({ type: 'ceiling_lamp', x: originX, y: baseY + 4.85, z: originZ - 4.0 });
   } else if (zone.type === 'k5_office') {
     // --- (-2, -1): Кафедра К5: Ауд. 227 — Преподавательская А.И. Канева ---
     const wallH = 5.0;
@@ -690,7 +693,7 @@ export function generateChunk(cx, cz) {
     objects.push({ type: 'bench', x: originX, y: baseY, z: originZ + half - 1.2, rotY: 0 });
     objects.push({ type: 'radiator', x: originX - 6, y: baseY, z: originZ + half - 0.6, rotY: 0 });
     objects.push({ type: 'pumpkin', x: originX + 5.0, y: baseY, z: originZ - 4.0, glowing: true });
-
+    objects.push({ type: 'ceiling_lamp', x: originX, y: baseY + 4.85, z: originZ - 4.0 });
   } else if (zone.type === 'computer_class') {
     // --- (-3, -1): Ауд. 225: Компьютерный класс веб-разработки (РИП) ---
     buildRoom(objects, originX, originZ, half, 'east', 'Ауд. 225', 'Класс РИП (К5)', [
@@ -741,7 +744,7 @@ export function generateChunk(cx, cz) {
     objects.push({ type: 'bench', x: originX, y: baseY, z: originZ + half - 1.2, rotY: 0 });
     objects.push({ type: 'floating_candle', x: originX, y: baseY + 2.8, z: originZ - 4 });
     objects.push({ type: 'pumpkin', x: originX + 4, y: baseY, z: originZ + 3, glowing: true });
-
+    objects.push({ type: 'ceiling_lamp', x: originX, y: baseY + 4.85, z: originZ - 4.0 });
   } else if (zone.type === 'photonics_lab') {
     // --- (2, -1): Ауд. 279: Лаборатория Фотоники и Лазеров (В.М. Коршунов) ---
     const wallH = 5.0;
@@ -767,7 +770,7 @@ export function generateChunk(cx, cz) {
     objects.push({ type: 'blackboard', x: originX, y: baseY + 2.0, z: originZ - half + 0.6, rotY: 0, formulaType: 'photonics_stokes' });
     objects.push({ type: 'bench', x: originX, y: baseY, z: originZ + half - 1.2, rotY: 0 });
     objects.push({ type: 'pumpkin', x: originX + 6, y: baseY, z: originZ - 4, glowing: true });
-
+    objects.push({ type: 'ceiling_lamp', x: originX, y: baseY + 4.85, z: originZ - 4.0 });
   } else if (zone.type === 'laser_lab') {
     // --- (3, -1): Ауд. 275: Лаборатория Радиохимии & Люминесценции (Мария Кюри) ---
     buildRoom(objects, originX, originZ, half, 'west', 'Ауд. 275', 'Лаборатория Радиохимии', [

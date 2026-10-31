@@ -134,7 +134,7 @@ export class PlayerBody {
     this.lanternGroup.add(this.flameMesh);
 
     // Dynamic point light casting warm illumination ahead
-    this.lanternLight = new THREE.PointLight(0xffa147, 2.4, 15, 1.4);
+    this.lanternLight = new THREE.PointLight(0xffb35c, 3.2, 24, 1.2);
     this.lanternLight.position.set(0, 0.02, 0);
     this.lanternGroup.add(this.lanternLight);
 
@@ -277,9 +277,8 @@ export class PlayerBody {
 
     // Flame flicker in lantern
     if (this.lanternLight) {
-      const flicker = Math.sin(time * 18.0) * 0.15 + Math.cos(time * 31.0) * 0.08;
-      this.lanternLight.intensity = 2.4 + flicker;
-      this.flameMesh.scale.set(1.0 + flicker * 0.2, 1.0 + flicker * 0.3, 1.0 + flicker * 0.2);
+      const flicker = Math.sin(time * 18.0) * 0.18 + Math.cos(time * 31.0) * 0.1;
+      this.lanternLight.intensity = 3.2 + flicker;
     }
 
     // 2. Walking bob and step cadence

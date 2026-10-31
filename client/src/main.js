@@ -148,6 +148,14 @@ class GameApp {
 
   setupKeyBindings() {
     window.addEventListener('keydown', (e) => {
+      // Toggle handheld brass lantern with [L]
+      if (e.code === 'KeyL' && !this.ui.isModalOpen()) {
+        if (this.controls && this.controls.playerBody) {
+          const isOn = this.controls.playerBody.toggleLantern();
+          this.ui.addNotification(isOn ? '💡 Фонарь зажжён' : '🌑 Фонарь погашен');
+        }
+      }
+
       if (e.code === 'KeyE' && !this.ui.isModalOpen()) {
         if (this.nearbyNpc) {
           this.ui.openDialogue(this.nearbyNpc);
