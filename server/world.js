@@ -168,7 +168,8 @@ const ROOMS = {
     '0,0': { name: 'Центральный холл', type: 'foyer', code: '00' },
     '-1,0': { name: 'Цифровая лаборатория', type: 'k5_lab', code: '01', side: 'east' },
     '0,-1': { name: 'Математическая гостиная', type: 'math_lecture', code: '02', side: 'south' },
-    '1,0': { name: 'Лаборатория света', type: 'photonics_lab', code: '03', side: 'west' }
+    '1,0': { name: 'Лаборатория света', type: 'photonics_lab', code: '03', side: 'west' },
+    '0,1': { name: 'Трапезная и Лабиринт', type: 'canteen_maze', code: '04', side: 'north' }
 };
 export function getZoneMeta(cx, cz) {
     const r = ROOMS[`${cx},${cz}`];
@@ -202,21 +203,23 @@ export function generateChunk(cx, cz) {
         if (room.side)
             buildRoom(objects, x, z, 12, room.side, room.code, room.name, [], 0);
         else {
-            // Three wide portals connect the hub to the classrooms without stairs.
-            for (const side of ['north', 'west', 'east']) {
-                const vertical = side !== 'north', edge = side === 'west' ? -11.8 : 11.8;
-                for (const offset of [-7.5, 7.5])
-                    objects.push({ type: 'wall', x: vertical ? edge : offset, y: 2.5, z: vertical ? offset : -11.8, width: vertical ? 0.4 : 9, height: 5, depth: vertical ? 9 : 0.4 });
+            // Four wide portals connect the hub to all surrounding halls without stairs.
+            for (const side of ['north', 'south', 'west', 'east']) {
+                const vertical = side === 'west' || side === 'east';
+                const edge = side === 'west' ? -11.8 : 11.8;
+                for (const offset of [-7.5, 7.5]) {
+                    const zPos = side === 'north' ? -11.8 : side === 'south' ? 11.8 : offset;
+                    objects.push({ type: 'wall', x: vertical ? edge : offset, y: 2.5, z: zPos, width: vertical ? 0.4 : 9, height: 5, depth: vertical ? 9 : 0.4 });
+                }
             }
-            objects.push({ type: 'wall', x: 0, y: 2.5, z: 11.8, width: 24, height: 5, depth: 0.4 });
             objects.push({ type: 'founders_safe', x: 7, y: 0, z: 7, rotY: Math.PI });
             for (const px of [-8, 8])
                 objects.push({ type: 'pillar', x: px, y: 2.5, z: 8, height: 5 });
             objects.push({ type: 'signpost', x: 0, y: 3.5, z: -11.5, rotY: 0, text: '02  /  МАТЕМАТИКА' });
             objects.push({ type: 'signpost', x: -11.5, y: 3.5, z: 0, rotY: Math.PI / 2, text: '01  /  ТЕХНОЛОГИИ' });
             objects.push({ type: 'signpost', x: 11.5, y: 3.5, z: 0, rotY: -Math.PI / 2, text: '03  /  СВЕТ' });
-            for (const px of [-7])
-                objects.push({ type: 'bench', x: px, y: 0, z: 9.5, rotY: 0 });
+            objects.push({ type: 'signpost', x: 0, y: 3.5, z: 11.5, rotY: Math.PI, text: '04  /  ТРАПЕЗНАЯ И ЛАБИРИНТ' });
+            objects.push({ type: 'bench', x: -7, y: 0, z: 9.5, rotY: 0 });
             objects.push(
                 { id: 'pumpkin_hub_1', type: 'pumpkin', x: 5.8, y: 0.35, z: 8.4, glowing: true, isMovable: true, label: 'Тыква-фонарь' },
                 { id: 'pumpkin_hub_2', type: 'pumpkin', x: -6.5, y: 0.35, z: 6.8, glowing: true, isMovable: true, label: 'Тыква-фонарь' },
@@ -312,6 +315,50 @@ export function generateChunk(cx, cz) {
                 { type: 'floating_candle', x, y: 3.0, z: z - 2 },
                 { type: 'cobweb', x: x - 11.2, y: 4.4, z: z - 11.2, rotY: 0 },
                 { type: 'cobweb', x: x + 11.2, y: 4.4, z: z - 11.2, rotY: Math.PI / 2 }
+            );
+        }
+        else if (cz === 1) {
+            // Room 04: Dining Hall (Столовая) & Labyrinth of Shadows (Лабиринт)
+            // 1. Dining Hall Section
+            objects.push(
+                { type: 'food_counter', x, y: 0, z: z - 7.5, rotY: 0 },
+                { type: 'cafeteria_menu', x: x - 11.2, y: 1.5, z: z - 6.5, rotY: Math.PI / 2 },
+                { type: 'dining_table', x: x - 5.5, y: 0, z: z - 3.5 },
+                { type: 'dining_table', x: x + 5.5, y: 0, z: z - 3.5 },
+                { type: 'bench', x: x - 5.5, y: 0, z: z - 2.2, rotY: 0 },
+                { type: 'bench', x: x + 5.5, y: 0, z: z - 2.2, rotY: 0 },
+                { id: 'tome_canteen_recipe', type: 'tome', x: x - 5.5, y: 0.8, z: z - 3.5, isMovable: true, label: 'Рецепты Зелий Столовой' },
+                { id: 'pumpkin_canteen_1', type: 'pumpkin', x: x + 5.5, y: 0.8, z: z - 3.5, glowing: true, isMovable: true, label: 'Тыква на столе' },
+                { id: 'candelabra_canteen_1', type: 'candelabra', x, y: 1.1, z: z - 7.5, isMovable: true, label: 'Канделябр Буфета' },
+                { type: 'torch', x: x - 11.4, y: 2.4, z: z - 8 },
+                { type: 'torch', x: x + 11.4, y: 2.4, z: z - 8 }
+            );
+
+            // 2. Labyrinth Dividing Wall with 2.8m Central Portal Opening
+            objects.push(
+                { type: 'wall', x: x - 6.5, y: 1.5, z: z - 0.5, width: 10.6, height: 3.0, depth: 0.4 },
+                { type: 'wall', x: x + 6.5, y: 1.5, z: z - 0.5, width: 10.6, height: 3.0, depth: 0.4 },
+                { type: 'signpost', x, y: 3.0, z: z - 0.7, rotY: 0, text: 'ТАЙНЫЙ ЛАБИРИНТ ТЕНЕЙ' }
+            );
+
+            // 3. Mini-Labyrinth Maze Walls (Solid AABB sliding collision)
+            objects.push(
+                { type: 'wall', x, y: 1.4, z: z + 2.5, width: 0.35, height: 2.8, depth: 4.5 },
+                { type: 'wall', x: x - 4.5, y: 1.4, z: z + 2.0, width: 6.0, height: 2.8, depth: 0.35 },
+                { type: 'wall', x: x + 4.5, y: 1.4, z: z + 2.0, width: 6.0, height: 2.8, depth: 0.35 },
+                { type: 'wall', x: x - 7.5, y: 1.4, z: z + 5.5, width: 0.35, height: 2.8, depth: 6.5 },
+                { type: 'wall', x: x + 7.5, y: 1.4, z: z + 5.5, width: 0.35, height: 2.8, depth: 6.5 },
+                { type: 'wall', x: x - 3.5, y: 1.4, z: z + 8.5, width: 7.5, height: 2.8, depth: 0.35 },
+                { type: 'wall', x: x + 3.5, y: 1.4, z: z + 8.5, width: 7.5, height: 2.8, depth: 0.35 },
+                { type: 'wall', x, y: 1.4, z: z + 11.5, width: 15.0, height: 2.8, depth: 0.35 },
+                // Atmospheric props inside the maze
+                { type: 'floating_candle', x: x - 3.5, y: 2.6, z: z + 4.5 },
+                { type: 'floating_candle', x: x + 3.5, y: 2.6, z: z + 4.5 },
+                { id: 'skull_maze_1', type: 'skull', x: x - 6.5, y: 0.3, z: z + 7.5, isMovable: true, label: 'Череп Заблудшего' },
+                { id: 'crystal_maze_1', type: 'crystal', x: x + 6.5, y: 0.3, z: z + 7.5, isMovable: true, label: 'Кристалл Пути', color: 0xff79c6 },
+                // 4. Center Sanctum: Towering Light Beacon & Golden Chalice Relic
+                { type: 'beacon', x, y: 0, z: z + 5.5, colorHex: 0xffd700 },
+                { id: 'chalice_maze_relic', type: 'chalice', x, y: 0.25, z: z + 5.5, isMovable: true, label: 'Золотой Кубок Знаний' }
             );
         }
     }

@@ -47,7 +47,9 @@ import {
   createSkullProp,
   createCrystalProp,
   createCandelabraProp,
-  createCauldron
+  createCauldron,
+  createLightBeacon,
+  createChaliceRelic
 } from './environment.js';
 import { soundEngine } from './audio.js';
 
@@ -359,6 +361,17 @@ export class ChunkManager {
         const safe = createFoundersSafe(obj.x, obj.y, obj.z, obj.rotY);
         chunkGroup.add(safe);
         this.animatedObjects.push(safe);
+      } else if (obj.type === 'beacon') {
+        const beacon = createLightBeacon(obj.x, obj.y, obj.z, obj.colorHex);
+        chunkGroup.add(beacon);
+        this.animatedObjects.push(beacon);
+      } else if (obj.type === 'chalice') {
+        const chalice = createChaliceRelic(obj.x, obj.y, obj.z, obj.label);
+        const propId = obj.id || `chalice_${obj.x}_${obj.z}`;
+        chalice.userData.propId = propId;
+        chunkGroup.add(chalice);
+        this.animatedObjects.push(chalice);
+        this.movableProps.set(propId, chalice);
       }
     }
 
@@ -529,8 +542,15 @@ export class ChunkManager {
         obj.rotation.y += delta * 1.5;
         obj.position.y = obj.userData.baseY + Math.sin(elapsed * 2.5 + obj.userData.timeOffset) * 0.12;
       }
+      if (obj.userData?.isBeacon) {
+        if (obj.userData.ring) {
+          obj.userData.ring.rotation.z += delta * 0.45;
+        }
+        if (obj.userData.beam && obj.userData.beam.material) {
+          obj.userData.beam.material.opacity = 0.32 + Math.sin(elapsed * 2.2) * 0.08;
+        }
+      }
       if (obj.userData?.isDoor && playerPos) {
-        // Distance from player to door
         const dx = playerPos.x - obj.position.x;
         const dz = playerPos.z - obj.position.z;
         const dist = Math.hypot(dx, dz);

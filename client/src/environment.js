@@ -2583,3 +2583,129 @@ export function createCauldron(x, y, z) {
   group.userData = { light: pLight, baseIntensity: 1.5, timeOffset: Math.random() * 10 };
   return group;
 }
+
+// 47. Mystical Light Beacon with Rotating Runic Floor Ring
+export function createLightBeacon(x, y, z, colorHex = 0xffd700) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  const beamColor = new THREE.Color(colorHex);
+
+  // Outer soft translucent light pillar (5m high)
+  const beamGeo = new THREE.CylinderGeometry(0.38, 0.48, 5.0, 16, 1, true);
+  const beamMat = new THREE.MeshBasicMaterial({
+    color: beamColor,
+    transparent: true,
+    opacity: 0.38,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const beam = new THREE.Mesh(beamGeo, beamMat);
+  beam.position.y = 2.5;
+  group.add(beam);
+
+  // Inner bright concentrated core
+  const coreGeo = new THREE.CylinderGeometry(0.12, 0.16, 5.0, 12, 1, true);
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.65,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  core.position.y = 2.5;
+  group.add(core);
+
+  // Ground rotating runic sigil ring
+  const ringGeo = new THREE.RingGeometry(0.65, 1.25, 24);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: beamColor,
+    transparent: true,
+    opacity: 0.72,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.04;
+  group.add(ring);
+
+  // Dynamic PointLight
+  const pLight = new THREE.PointLight(beamColor, 2.8, 12);
+  pLight.position.y = 1.2;
+  group.add(pLight);
+
+  group.userData = {
+    isBeacon: true,
+    ring,
+    beam,
+    light: pLight,
+    baseIntensity: 2.8,
+    timeOffset: Math.random() * 10
+  };
+  return group;
+}
+
+// 48. Legendary Chalice / Relic of the Dining Hall Labyrinth
+export function createChaliceRelic(x, y, z, label = 'Золотой Кубок Знаний') {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  const goldMat = new THREE.MeshStandardMaterial({
+    color: 0xffd700,
+    metalness: 0.9,
+    roughness: 0.2,
+    emissive: 0xff9900,
+    emissiveIntensity: 0.45
+  });
+
+  // 1. Pedestal base
+  const baseGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.08, 12);
+  const base = new THREE.Mesh(baseGeo, goldMat);
+  base.position.y = 0.04;
+  group.add(base);
+
+  // 2. Ornate twisted stem
+  const stemGeo = new THREE.CylinderGeometry(0.045, 0.06, 0.22, 8);
+  const stem = new THREE.Mesh(stemGeo, goldMat);
+  stem.position.y = 0.18;
+  group.add(stem);
+
+  // 3. Cup bowl
+  const cupGeo = new THREE.CylinderGeometry(0.22, 0.07, 0.28, 12);
+  const cup = new THREE.Mesh(cupGeo, goldMat);
+  cup.position.y = 0.38;
+  group.add(cup);
+
+  // 4. Glowing magical nectar
+  const nectarGeo = new THREE.CircleGeometry(0.19, 12);
+  const nectarMat = new THREE.MeshBasicMaterial({ color: 0xfff3a0 });
+  const nectar = new THREE.Mesh(nectarGeo, nectarMat);
+  nectar.rotation.x = -Math.PI / 2;
+  nectar.position.y = 0.50;
+  group.add(nectar);
+
+  // Nametag
+  const nametag = createNameTag(`🏆 ${label}`, '#ffd700');
+  nametag.position.y = 0.85;
+  group.add(nametag);
+
+  // Light
+  const pLight = new THREE.PointLight(0xffb86c, 2.2, 7);
+  pLight.position.y = 0.5;
+  group.add(pLight);
+
+  group.userData = {
+    isMovable: true,
+    label,
+    propId: 'chalice_maze_relic',
+    light: pLight,
+    baseIntensity: 2.2,
+    timeOffset: Math.random() * 10
+  };
+  return group;
+}

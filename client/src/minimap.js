@@ -1,4 +1,10 @@
-const ROOMS = [{ name: 'ЦЕНТРАЛЬНЫЙ ХОЛЛ', code: '00', x: 0, z: 0, color: '#ddbd81' }, { name: 'ЦИФРОВАЯ ЛАБОРАТОРИЯ', code: '01', x: -24, z: 0, color: '#8bc9d5' }, { name: 'МАТЕМАТИЧЕСКАЯ ГОСТИНАЯ', code: '02', x: 0, z: -24, color: '#b3a5ce' }, { name: 'ЛАБОРАТОРИЯ СВЕТА', code: '03', x: 24, z: 0, color: '#a4cbb5' }];
+const ROOMS = [
+  { name: 'ЦЕНТРАЛЬНЫЙ ХОЛЛ', code: '00', x: 0, z: 0, color: '#ddbd81' },
+  { name: 'ЦИФРОВАЯ ЛАБОРАТОРИЯ', code: '01', x: -24, z: 0, color: '#8bc9d5' },
+  { name: 'МАТЕМАТИЧЕСКАЯ ГОСТИНАЯ', code: '02', x: 0, z: -24, color: '#b3a5ce' },
+  { name: 'ЛАБОРАТОРИЯ СВЕТА', code: '03', x: 24, z: 0, color: '#a4cbb5' },
+  { name: 'ТРАПЕЗНАЯ И ЛАБИРИНТ', code: '04', x: 0, z: 24, color: '#f39c12' }
+];
 export const BUILDING_ROOMS = ROOMS;
 export class MinimapManager {
     constructor() {
@@ -112,6 +118,8 @@ export class MinimapManager {
             ctx.font = '12px Segoe UI';
             ctx.textAlign = 'center';
             ctx.fillText('СЕЙФ', X(7), Z(9));
+            ctx.fillStyle = '#ffd700';
+            ctx.fillText('🏆 КУБОК', X(0), Z(29.5));
         }
     }
 }
