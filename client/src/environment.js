@@ -1,62 +1,69 @@
 import * as THREE from 'three';
 
-// Shared materials and geometries for performance
-const stoneMaterial = new THREE.MeshStandardMaterial({
-  color: 0x2b2836,
-  roughness: 0.85,
-  metalness: 0.15
-});
-
-const darkWoodMaterial = new THREE.MeshStandardMaterial({
-  color: 0x3d2719,
-  roughness: 0.8
-});
-
-const brassMaterial = new THREE.MeshStandardMaterial({
-  color: 0xd4af37,
+// Shared Bauman GZ Classical Materials
+const baumanMarbleColumnMat = new THREE.MeshStandardMaterial({
+  color: 0xf5efe6,
   roughness: 0.35,
+  metalness: 0.05
+});
+
+const baumanGoldCapitalMat = new THREE.MeshStandardMaterial({
+  color: 0xd4af37,
+  roughness: 0.3,
+  metalness: 0.7
+});
+
+const darkWoodDoorMat = new THREE.MeshStandardMaterial({
+  color: 0x422a1d,
+  roughness: 0.6
+});
+
+const brassMetalMat = new THREE.MeshStandardMaterial({
+  color: 0xd4af37,
+  roughness: 0.3,
   metalness: 0.8
+});
+
+const blackboardMat = new THREE.MeshStandardMaterial({
+  color: 0x1e2820,
+  roughness: 0.9
 });
 
 const pumpkinSkinMaterial = new THREE.MeshStandardMaterial({
   color: 0xd95b00,
-  roughness: 0.6
+  roughness: 0.5
 });
 
 const stemMaterial = new THREE.MeshStandardMaterial({
   color: 0x3d4a26,
-  roughness: 0.9
+  roughness: 0.8
 });
 
-const glowingMaterial = new THREE.MeshBasicMaterial({
-  color: 0xffaa00
-});
-
-// Create text sprite for nametags
-export function createNameTag(text, colorHex = '#ffffff') {
+// Create text sprite for nametags and classroom signs
+export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(15, 12, 28, 0.85)') {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 64;
+  canvas.width = 384;
+  canvas.height = 72;
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = 'rgba(10, 8, 20, 0.75)';
-  ctx.roundRect(10, 10, 236, 44, 8);
+  ctx.fillStyle = bgColor;
+  ctx.roundRect(8, 8, 368, 56, 10);
   ctx.fill();
 
   ctx.strokeStyle = colorHex;
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.font = 'bold 24px monospace';
+  ctx.font = 'bold 22px monospace';
   ctx.fillStyle = colorHex;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, 128, 32);
+  ctx.fillText(text, 192, 36);
 
   const texture = new THREE.CanvasTexture(canvas);
   const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
   const sprite = new THREE.Sprite(spriteMaterial);
-  sprite.scale.set(2.2, 0.55, 1);
+  sprite.scale.set(3.0, 0.56, 1);
   return sprite;
 }
 
@@ -65,14 +72,12 @@ export function createPumpkin(x, y, z, glowing = true) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  // Pumpkin body (squashed ribbed sphere)
   const bodyGeo = new THREE.SphereGeometry(0.5, 12, 10);
   bodyGeo.scale(1.2, 0.9, 1.2);
   const body = new THREE.Mesh(bodyGeo, pumpkinSkinMaterial);
   body.castShadow = true;
   group.add(body);
 
-  // Stem
   const stemGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.25, 6);
   const stem = new THREE.Mesh(stemGeo, stemMaterial);
   stem.position.set(0, 0.45, 0);
@@ -80,92 +85,95 @@ export function createPumpkin(x, y, z, glowing = true) {
   group.add(stem);
 
   if (glowing) {
-    // Carved eye slits
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
     const eyeGeo = new THREE.BoxGeometry(0.12, 0.12, 0.05);
-    const eyeLeft = new THREE.Mesh(eyeGeo, glowingMaterial);
+    const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
     eyeLeft.position.set(-0.2, 0.1, 0.55);
     eyeLeft.rotation.z = 0.3;
     group.add(eyeLeft);
 
-    const eyeRight = new THREE.Mesh(eyeGeo, glowingMaterial);
+    const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
     eyeRight.position.set(0.2, 0.1, 0.55);
     eyeRight.rotation.z = -0.3;
     group.add(eyeRight);
 
-    // Light inside pumpkin
-    const pLight = new THREE.PointLight(0xff7700, 1.2, 6, 2);
-    pLight.position.set(0, 0.2, 0.3);
+    const pLight = new THREE.PointLight(0xff8800, 1.4, 7, 1.8);
+    pLight.position.set(0, 0.25, 0.3);
     group.add(pLight);
   }
 
   return group;
 }
 
-// 2. Gothic Wall Torch
+// 2. Brass Wall Sconce Lantern (Bauman Classic Chandelier/Sconce)
 export function createTorch(x, y, z) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  // Wooden stick
-  const stickGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.8, 6);
-  const stick = new THREE.Mesh(stickGeo, darkWoodMaterial);
-  stick.rotation.x = Math.PI / 6;
-  group.add(stick);
+  // Brass bracket
+  const bracketGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.6, 6);
+  const bracket = new THREE.Mesh(bracketGeo, brassMetalMat);
+  bracket.rotation.x = Math.PI / 4;
+  group.add(bracket);
 
-  // Flame
-  const flameGeo = new THREE.ConeGeometry(0.12, 0.3, 8);
-  const flameMat = new THREE.MeshBasicMaterial({ color: 0xffaa33 });
-  const flame = new THREE.Mesh(flameGeo, flameMat);
-  flame.position.set(0, 0.4, 0.15);
-  group.add(flame);
+  // Glass lantern lantern
+  const glassGeo = new THREE.OctahedronGeometry(0.22, 0);
+  const glassMat = new THREE.MeshBasicMaterial({ color: 0xffe082 });
+  const glass = new THREE.Mesh(glassGeo, glassMat);
+  glass.position.set(0, 0.35, 0.2);
+  group.add(glass);
 
-  // Flickering point light
-  const light = new THREE.PointLight(0xff8822, 1.8, 12, 1.5);
-  light.position.set(0, 0.45, 0.2);
+  // Bright warm white/amber sconce light
+  const light = new THREE.PointLight(0xffdf99, 2.0, 16, 1.2);
+  light.position.set(0, 0.4, 0.25);
   group.add(light);
 
-  group.userData = { light, baseIntensity: 1.8, timeOffset: Math.random() * 10 };
+  group.userData = { light, baseIntensity: 2.0, timeOffset: Math.random() * 10 };
   return group;
 }
 
-// 3. Gothic Stone Pillar
+// 3. Monumental Bauman White Marble Column
 export function createPillar(x, y, z, height = 6) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  const colGeo = new THREE.CylinderGeometry(0.55, 0.65, height, 8);
-  const col = new THREE.Mesh(colGeo, stoneMaterial);
+  // Column shaft with subtle fluting
+  const colGeo = new THREE.CylinderGeometry(0.55, 0.65, height, 16);
+  const col = new THREE.Mesh(colGeo, baumanMarbleColumnMat);
   col.castShadow = true;
   col.receiveShadow = true;
   group.add(col);
 
-  // Base capital
-  const capGeo = new THREE.BoxGeometry(1.6, 0.4, 1.6);
-  const topCap = new THREE.Mesh(capGeo, stoneMaterial);
+  // Classical Capital (Top)
+  const capGeo = new THREE.BoxGeometry(1.6, 0.45, 1.6);
+  const topCap = new THREE.Mesh(capGeo, baumanGoldCapitalMat);
   topCap.position.y = height / 2;
   group.add(topCap);
 
-  const btmCap = new THREE.Mesh(capGeo, stoneMaterial);
+  // Base (Bottom)
+  const btmCap = new THREE.Mesh(capGeo, baumanMarbleColumnMat);
   btmCap.position.y = -height / 2;
   group.add(btmCap);
 
   return group;
 }
 
-// 4. Tombstone
-export function createTombstone(x, y, z, label = 'RIP') {
+// 4. Bauman Memorial Plaque / Door with Sign
+export function createTombstone(x, y, z, label = 'Кафедра') {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  const stoneGeo = new THREE.BoxGeometry(1.0, 1.5, 0.3);
-  const stone = new THREE.Mesh(stoneGeo, stoneMaterial);
-  stone.castShadow = true;
-  group.add(stone);
+  // Wooden door frame
+  const doorGeo = new THREE.BoxGeometry(1.4, 2.6, 0.15);
+  const door = new THREE.Mesh(doorGeo, darkWoodDoorMat);
+  door.castShadow = true;
+  group.add(door);
 
-  const tag = createNameTag(label, '#a09cb0');
-  tag.position.set(0, 1.1, 0);
-  tag.scale.set(1.5, 0.4, 1);
-  group.add(tag);
+  // Brass Door plaque
+  const plaque = createNameTag(label, '#ffd700', 'rgba(20, 15, 10, 0.9)');
+  plaque.position.set(0, 0.5, 0.12);
+  plaque.scale.set(1.5, 0.35, 1);
+  group.add(plaque);
 
   return group;
 }
@@ -175,20 +183,18 @@ export function createTelescope(x, y, z) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  // Tripod legs
   for (let i = 0; i < 3; i++) {
     const angle = (i * Math.PI * 2) / 3;
     const legGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.0);
-    const leg = new THREE.Mesh(legGeo, darkWoodMaterial);
+    const leg = new THREE.Mesh(legGeo, darkWoodDoorMat);
     leg.position.set(Math.sin(angle) * 0.5, 0.9, Math.cos(angle) * 0.5);
     leg.rotation.z = Math.sin(angle) * 0.25;
     leg.rotation.x = Math.cos(angle) * 0.25;
     group.add(leg);
   }
 
-  // Brass Tube
   const tubeGeo = new THREE.CylinderGeometry(0.18, 0.24, 2.4, 12);
-  const tube = new THREE.Mesh(tubeGeo, brassMaterial);
+  const tube = new THREE.Mesh(tubeGeo, brassMetalMat);
   tube.position.set(0, 1.9, 0);
   tube.rotation.x = -Math.PI / 4;
   group.add(tube);
@@ -196,13 +202,13 @@ export function createTelescope(x, y, z) {
   return group;
 }
 
-// 6. Ancient Obelisk (Herodotus Crypt)
-export function createObelisk(x, y, z, label = 'Скрижаль') {
+// 6. Ancient Obelisk (History Museum)
+export function createObelisk(x, y, z, label = 'Летопись') {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
   const obeliskGeo = new THREE.CylinderGeometry(0.3, 0.6, 3.5, 4);
-  const obeliskMat = new THREE.MeshStandardMaterial({ color: 0x3d352e, roughness: 0.9 });
+  const obeliskMat = new THREE.MeshStandardMaterial({ color: 0x4a433a, roughness: 0.85 });
   const obelisk = new THREE.Mesh(obeliskGeo, obeliskMat);
   obelisk.position.y = 1.75;
   obelisk.rotation.y = Math.PI / 4;
@@ -210,24 +216,23 @@ export function createObelisk(x, y, z, label = 'Скрижаль') {
 
   const tag = createNameTag(label, '#f1fa8c');
   tag.position.set(0, 3.6, 0);
-  tag.scale.set(1.6, 0.45, 1);
+  tag.scale.set(1.8, 0.45, 1);
   group.add(tag);
 
   return group;
 }
 
-// 7. Bookshelf (Ancient Library)
+// 7. Bookshelf / Library Stack
 export function createBookshelf(x, y, z) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
   const shelfGeo = new THREE.BoxGeometry(2.4, 3.2, 0.6);
-  const shelf = new THREE.Mesh(shelfGeo, darkWoodMaterial);
+  const shelf = new THREE.Mesh(shelfGeo, darkWoodDoorMat);
   shelf.position.y = 1.6;
   group.add(shelf);
 
-  // Colorful ancient books
-  const bookColors = [0x992d2d, 0x2d6899, 0x2d994e, 0x822d99];
+  const bookColors = [0x8b2500, 0x1c4587, 0x274e13, 0x4c1130];
   for (let r = 0; r < 3; r++) {
     for (let b = 0; b < 6; b++) {
       const bookGeo = new THREE.BoxGeometry(0.12, 0.45, 0.4);
@@ -243,47 +248,50 @@ export function createBookshelf(x, y, z) {
   return group;
 }
 
-// 8. Alchemical Cauldron (Curie Lab)
+// 8. Server Rack / Network Router (Kanev IU-5 Lab)
 export function createCauldron(x, y, z) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  // Cast iron bowl
-  const bowlGeo = new THREE.SphereGeometry(0.8, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.7);
-  const bowlMat = new THREE.MeshStandardMaterial({ color: 0x1f1f24, roughness: 0.7, metalness: 0.6 });
-  const bowl = new THREE.Mesh(bowlGeo, bowlMat);
-  bowl.position.y = 0.8;
-  bowl.rotation.x = Math.PI;
-  group.add(bowl);
+  // 19" Server rack cabinet
+  const rackGeo = new THREE.BoxGeometry(1.2, 2.2, 1.0);
+  const rackMat = new THREE.MeshStandardMaterial({ color: 0x22242b, roughness: 0.4, metalness: 0.8 });
+  const rack = new THREE.Mesh(rackGeo, rackMat);
+  rack.position.y = 1.1;
+  group.add(rack);
 
-  // Glowing green brew
-  const brewGeo = new THREE.CircleGeometry(0.7, 12);
-  const brewMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b, transparent: true, opacity: 0.9 });
-  const brew = new THREE.Mesh(brewGeo, brewMat);
-  brew.rotation.x = -Math.PI / 2;
-  brew.position.y = 0.75;
-  group.add(brew);
+  // Blinking green/cyan switch LEDs
+  for (let i = 0; i < 4; i++) {
+    const ledGeo = new THREE.BoxGeometry(0.9, 0.1, 0.05);
+    const ledMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b });
+    const led = new THREE.Mesh(ledGeo, ledMat);
+    led.position.set(0, 0.5 + i * 0.35, 0.52);
+    group.add(led);
+  }
 
-  // Green radioactive light
-  const cLight = new THREE.PointLight(0x50fa7b, 1.6, 8);
-  cLight.position.set(0, 1.2, 0);
+  // Cyan server glow light
+  const cLight = new THREE.PointLight(0x8be9fd, 1.8, 8);
+  cLight.position.set(0, 1.2, 0.8);
   group.add(cLight);
 
   return group;
 }
 
-// 9. Floor Tile
+// 9. Bauman Marble & Granite Floor Tiles (High visibility!)
 export function createFloorTile(x, y, z, width, depth, zoneType) {
-  let floorColor = 0x161324;
-  if (zoneType === 'observatory') floorColor = 0x121c2b;
-  if (zoneType === 'crypt') floorColor = 0x241d13;
-  if (zoneType === 'lab') floorColor = 0x12241b;
+  // Noble classical Bauman GZ palette: light cream, sand and granite
+  let floorColor = 0xd5cfc5;
+  if (zoneType === 'circus') floorColor = 0xe8e2d8;     // Polished marble in Circus
+  if (zoneType === 'math_hall') floorColor = 0xe0d7cc;  // FN math auditorium
+  if (zoneType === 'dev_lab') floorColor = 0xd2dbe3;    // IU5 computer lab
+  if (zoneType === 'algo_class') floorColor = 0xd6e2d5; // Physics / photonics lab
+  if (zoneType === 'crypt') floorColor = 0xdcd5c9;
 
   const geo = new THREE.PlaneGeometry(width, depth);
   const mat = new THREE.MeshStandardMaterial({
     color: floorColor,
-    roughness: 0.9,
-    metalness: 0.1
+    roughness: 0.4,  // Polished stone reflection
+    metalness: 0.08
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.rotation.x = -Math.PI / 2;
@@ -292,7 +300,7 @@ export function createFloorTile(x, y, z, width, depth, zoneType) {
   return mesh;
 }
 
-// 10. Player Avatar with spectral breathing glow
+// 10. Student Avatar with Nametag
 export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   const group = new THREE.Group();
   const color = new THREE.Color(colorHex);
@@ -300,19 +308,17 @@ export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   const ghostMat = new THREE.MeshStandardMaterial({
     color: color,
     emissive: color,
-    emissiveIntensity: 0.45,
+    emissiveIntensity: 0.55,
     transparent: true,
-    opacity: 0.78,
-    roughness: 0.3
+    opacity: 0.82,
+    roughness: 0.2
   });
 
-  // Ghost Head
   const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
   const head = new THREE.Mesh(headGeo, ghostMat);
   head.position.y = 0.9;
   group.add(head);
 
-  // Glowing eyes
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const eyeGeo = new THREE.SphereGeometry(0.06, 8, 8);
   const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
@@ -322,20 +328,17 @@ export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   group.add(eyeL);
   group.add(eyeR);
 
-  // Ghost Body / Tail
   const bodyGeo = new THREE.ConeGeometry(0.45, 1.1, 16);
   const body = new THREE.Mesh(bodyGeo, ghostMat);
   body.position.y = 0.3;
   body.rotation.x = Math.PI;
   group.add(body);
 
-  // Floating nametag
   const nametag = createNameTag(username, colorHex);
   nametag.position.y = 1.6;
   group.add(nametag);
 
-  // Ghostly aura point light
-  const aura = new THREE.PointLight(color, 0.8, 5);
+  const aura = new THREE.PointLight(color, 1.0, 6);
   aura.position.y = 0.8;
   group.add(aura);
 
@@ -354,7 +357,7 @@ export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   return group;
 }
 
-// 11. Ghost NPC (Einstein, Herodotus, Curie) with distinctive historical props
+// 11. Ghost NPC with specific BMSTU academic props
 export function createGhostNPC(npcData) {
   const group = new THREE.Group();
   group.position.set(npcData.x, npcData.y, npcData.z);
@@ -364,9 +367,9 @@ export function createGhostNPC(npcData) {
   const npcMat = new THREE.MeshStandardMaterial({
     color: auraColor,
     emissive: auraColor,
-    emissiveIntensity: 0.6,
+    emissiveIntensity: 0.65,
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.85,
     roughness: 0.2
   });
 
@@ -376,7 +379,7 @@ export function createGhostNPC(npcData) {
   head.position.y = 1.0;
   group.add(head);
 
-  // Glowing eyes
+  // Eyes
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const eyeGeo = new THREE.SphereGeometry(0.06, 8, 8);
   const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
@@ -392,61 +395,57 @@ export function createGhostNPC(npcData) {
   body.position.y = 0.4;
   group.add(body);
 
-  // Distinct Bauman professor items
-  if (npcData.id === 'akhmetova') {
-    // Floating golden math analysis scroll & integral symbol
-    const bookGeo = new THREE.BoxGeometry(0.3, 0.45, 0.08);
-    const bookMat = new THREE.MeshStandardMaterial({ color: 0xff79c6, roughness: 0.3 });
-    const book = new THREE.Mesh(bookGeo, bookMat);
-    book.position.set(0.42, 0.65, 0.3);
-    book.rotation.set(0.3, 0.4, -0.2);
-    group.add(book);
-
-    // Golden halo torus (integral loop)
-    const ringGeo = new THREE.TorusGeometry(0.28, 0.03, 8, 24);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.position.set(0, 1.45, 0);
-    ring.rotation.x = Math.PI / 2;
-    group.add(ring);
-  } else if (npcData.id === 'kanev') {
-    // Holographic server rack / database cube
-    const dbGeo = new THREE.BoxGeometry(0.35, 0.45, 0.35);
+  // Specific BMSTU Professor Attributes
+  if (npcData.id === 'kanev') {
+    // Anton Igorevich Kanev: Network Switch / Database Box
+    const dbGeo = new THREE.BoxGeometry(0.4, 0.45, 0.3);
     const dbMat = new THREE.MeshStandardMaterial({
       color: 0x8be9fd,
       wireframe: true,
       emissive: 0x8be9fd,
-      emissiveIntensity: 0.8
+      emissiveIntensity: 0.9
     });
-    const dbCube = new THREE.Mesh(dbGeo, dbMat);
-    dbCube.position.set(0.42, 0.6, 0.3);
-    group.add(dbCube);
+    const dbBox = new THREE.Mesh(dbGeo, dbMat);
+    dbBox.position.set(0.45, 0.65, 0.2);
+    group.add(dbBox);
+  } else if (npcData.id === 'akhmetova') {
+    // Faniya Kharisovna Akhmetova: Math Analysis Blackboard with Integral loop
+    const boardGeo = new THREE.BoxGeometry(0.6, 0.4, 0.05);
+    const board = new THREE.Mesh(boardGeo, blackboardMat);
+    board.position.set(0.45, 0.7, 0.2);
+    group.add(board);
+
+    const ringGeo = new THREE.TorusGeometry(0.25, 0.03, 8, 24);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.set(0, 1.48, 0);
+    ring.rotation.x = Math.PI / 2;
+    group.add(ring);
   } else if (npcData.id === 'korshunov') {
-    // Binary search tree / octahedron graph node
-    const nodeGeo = new THREE.OctahedronGeometry(0.25, 0);
-    const nodeMat = new THREE.MeshStandardMaterial({
-      color: 0x50fa7b,
-      emissive: 0x50fa7b,
-      emissiveIntensity: 0.7,
-      wireframe: true
-    });
-    const node = new THREE.Mesh(nodeGeo, nodeMat);
-    node.position.set(0.42, 0.65, 0.3);
-    group.add(node);
+    // Vladislav Mikhailovich Korshunov: Optical laser / luminescent prism
+    const prismGeo = new THREE.OctahedronGeometry(0.24, 0);
+    const prismMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b, wireframe: true });
+    const prism = new THREE.Mesh(prismGeo, prismMat);
+    prism.position.set(0.45, 0.65, 0.2);
+    group.add(prism);
+
+    const beamLight = new THREE.PointLight(0x50fa7b, 2.0, 6);
+    beamLight.position.set(0.45, 0.65, 0.2);
+    group.add(beamLight);
   } else if (npcData.id === 'einstein') {
-    // Wild hair aura
+    // Einstein wild hair
     const hairGeo = new THREE.DodecahedronGeometry(0.55, 1);
     const hairMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.6,
       wireframe: true
     });
     const hair = new THREE.Mesh(hairGeo, hairMat);
     hair.position.y = 1.15;
     group.add(hair);
   } else if (npcData.id === 'herodotus') {
-    // Ancient scroll in hand
+    // Ancient papyrus scroll
     const scrollGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.6, 8);
     const scrollMat = new THREE.MeshStandardMaterial({ color: 0xeedda2 });
     const scroll = new THREE.Mesh(scrollGeo, scrollMat);
@@ -454,13 +453,14 @@ export function createGhostNPC(npcData) {
     scroll.rotation.z = Math.PI / 4;
     group.add(scroll);
   }
+
   // Floating Name / Role badge
   const nametag = createNameTag(npcData.name, npcData.color);
-  nametag.position.y = 1.85;
+  nametag.position.y = 1.88;
   group.add(nametag);
 
   // Point light
-  const light = new THREE.PointLight(auraColor, 1.6, 9);
+  const light = new THREE.PointLight(auraColor, 1.8, 10);
   light.position.y = 1.0;
   group.add(light);
 
