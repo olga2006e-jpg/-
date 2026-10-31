@@ -168,54 +168,9 @@ export class PlayerControls {
     const deltaZ = (forwardZ * (-this.velocity.z) + rightZ * this.velocity.x) * delta;
 
     // Campus perimeter clamping: player can NEVER fall into the void!
-    const bound = 82;
-    const nextX = THREE.MathUtils.clamp(this.camera.position.x + deltaX, -bound, bound);
-    const nextZ = THREE.MathUtils.clamp(this.camera.position.z + deltaZ, -bound, bound);
-
-    // Solid static wall collision sliding system
-    if (this.chunkManager) {
-      const playerRadius = 0.45;
-      const nearbyWalls = this.chunkManager.getNearbyWalls(this.camera.position.x, this.camera.position.z, 14);
-
-      // Test X movement
-      let allowX = true;
-      for (const wall of nearbyWalls) {
-        const isRotated = Math.abs(Math.sin(wall.rotY || 0)) > 0.5;
-        const wHalf = (isRotated ? (wall.depth || 0.4) : (wall.width || 24)) / 2 + playerRadius;
-        const dHalf = (isRotated ? (wall.width || 24) : (wall.depth || 0.4)) / 2 + playerRadius;
-        if (
-          nextX > wall.x - wHalf &&
-          nextX < wall.x + wHalf &&
-          this.camera.position.z > wall.z - dHalf &&
-          this.camera.position.z < wall.z + dHalf
-        ) {
-          allowX = false;
-          break;
-        }
-      }
-      if (allowX) this.camera.position.x = nextX;
-
-      // Test Z movement
-      let allowZ = true;
-      for (const wall of nearbyWalls) {
-        const isRotated = Math.abs(Math.sin(wall.rotY || 0)) > 0.5;
-        const wHalf = (isRotated ? (wall.depth || 0.4) : (wall.width || 24)) / 2 + playerRadius;
-        const dHalf = (isRotated ? (wall.width || 24) : (wall.depth || 0.4)) / 2 + playerRadius;
-        if (
-          this.camera.position.x > wall.x - wHalf &&
-          this.camera.position.x < wall.x + wHalf &&
-          nextZ > wall.z - dHalf &&
-          nextZ < wall.z + dHalf
-        ) {
-          allowZ = false;
-          break;
-        }
-      }
-      if (allowZ) this.camera.position.z = nextZ;
-    } else {
-      this.camera.position.x = nextX;
-      this.camera.position.z = nextZ;
-    }
+    const bound = 78;
+    this.camera.position.x = THREE.MathUtils.clamp(this.camera.position.x + deltaX, -bound, bound);
+    this.camera.position.z = THREE.MathUtils.clamp(this.camera.position.z + deltaZ, -bound, bound);
 
     this.camera.position.y = 1.6; // Fixed eye-height
   }

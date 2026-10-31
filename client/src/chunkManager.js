@@ -77,11 +77,24 @@ export class ChunkManager {
     const cx = Math.round(x / CHUNK_SIZE);
     const cz = Math.round(z / CHUNK_SIZE);
 
-    const shouldLoad = cx !== this.currentChunkX || cz !== this.currentChunkZ || (this.loadedChunks.size === 0 && this.network.isConnected());
-    if (shouldLoad) {
+    const isFirstTime = this.currentChunkX === null || this.currentChunkZ === null || (this.loadedChunks.size === 0 && this.network.isConnected());
+    if (isFirstTime) {
       this.currentChunkX = cx;
       this.currentChunkZ = cz;
       this.onPlayerEnterChunk(cx, cz);
+      return;
+    }
+
+    // Hysteresis deadband: require player to cross at least 2.5m into the new chunk to avoid boundary flapping
+    if (cx !== this.currentChunkX || cz !== this.currentChunkZ) {
+      const oldOriginX = this.currentChunkX * CHUNK_SIZE;
+      const oldOriginZ = this.currentChunkZ * CHUNK_SIZE;
+      const distFromOldCenter = Math.hypot(x - oldOriginX, z - oldOriginZ);
+      if (distFromOldCenter >= (CHUNK_SIZE / 2 + 2.5)) {
+        this.currentChunkX = cx;
+        this.currentChunkZ = cz;
+        this.onPlayerEnterChunk(cx, cz);
+      }
     }
   }
 
@@ -114,23 +127,17 @@ export class ChunkManager {
       return distA - distB;
     });
 
-    // Request missing chunks up to cache capacity
+    // Request missing chunks without premature eviction (only evict upon chunk arrival!)
     for (const coord of neededCoords) {
       const key = `${coord.cx},${coord.cz}`;
       if (!this.loadedChunks.has(key) && !this.pendingRequests.has(key)) {
-        // Enforce cache limit BEFORE adding new chunk
-        this.enforceCacheLimit(cx, cz);
-
-        if (this.loadedChunks.size < this.maxCacheLimit) {
-          this.pendingRequests.add(key);
-          this.network.send({
-            type: 'REQUEST_CHUNK',
-            cx: coord.cx,
-            cz: coord.cz
-          });
-        }
+        this.pendingRequests.add(key);
+        this.network.send({
+          type: 'REQUEST_CHUNK',
+          cx: coord.cx,
+          cz: coord.cz
+        });
       } else if (this.loadedChunks.has(key)) {
-        // Touch chunk access time
         this.loadedChunks.get(key).lastAccessed = Date.now();
       }
     }
