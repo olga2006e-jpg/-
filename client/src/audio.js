@@ -116,6 +116,32 @@ class SoundEngine {
     } catch (e) {}
   }
 
+  // 2b. Player jump whoosh
+  playJump() {
+    if (this.isMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(110, t);
+      osc.frequency.exponentialRampToValueAtTime(280, t + 0.16);
+
+      gain.gain.setValueAtTime(0.08, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.18);
+    } catch (e) {}
+  }
+
   // 3. Ethereal Spectral Chime (when talking to a Ghost)
   playGhostChime() {
     if (this.isMuted) return;

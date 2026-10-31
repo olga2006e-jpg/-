@@ -18,11 +18,15 @@ export class PlayerControls {
     this.moveRight = false;
     this.isSprinting = false;
 
-    // Speeds
+    // Speeds & Physics
     this.walkSpeed = 10.0;
     this.sprintSpeed = 16.0;
-
-    // Euler rotation angles
+    this.baseY = 1.6;
+    this.velocityY = 0;
+    this.gravity = 22.0;
+    this.jumpSpeed = 7.5;
+    this.isGrounded = true;
+    this.jumpRequested = false;
     this.pitch = 0; // vertical
     this.yaw = 0;   // horizontal
     this.mouseSensitivity = 0.0022;
@@ -97,10 +101,13 @@ export class PlayerControls {
         case 'ShiftRight':
           this.isSprinting = true;
           break;
-
+        case 'Space':
+          if (this.isGrounded) {
+            this.jumpRequested = true;
+          }
+          break;
       }
     };
-
     const onKeyUp = (event) => {
       switch (event.code) {
         case 'KeyW':
@@ -123,6 +130,9 @@ export class PlayerControls {
         case 'ShiftRight':
           this.isSprinting = false;
           break;
+        case 'Space':
+          this.jumpRequested = false;
+          break;
       }
     };
 
@@ -131,7 +141,7 @@ export class PlayerControls {
   }
 
   resetMovement() {
-    this.moveForward=this.moveBackward=this.moveLeft=this.moveRight=this.isSprinting=false;
+    this.moveForward=this.moveBackward=this.moveLeft=this.moveRight=this.isSprinting=this.jumpRequested=false;
     this.velocity.set(0,0,0);
   }
 
@@ -159,10 +169,9 @@ export class PlayerControls {
     this.direction.normalize();
 
     const isMoving = this.moveForward || this.moveBackward || this.moveLeft || this.moveRight;
-    if (isMoving) {
+    if (isMoving && this.isGrounded) {
       soundEngine.playFootstep();
     }
-
     if (this.moveForward || this.moveBackward) {
       this.velocity.z -= this.direction.z * speed * delta * 12.0;
     }
@@ -231,9 +240,30 @@ export class PlayerControls {
     const bound = 35.3;
     this.camera.position.x = THREE.MathUtils.clamp(nextX, -bound, bound);
     this.camera.position.z = THREE.MathUtils.clamp(nextZ, -bound, bound);
+    // Handle Jumping & Vertical Gravity
+    if (this.jumpRequested && this.isGrounded) {
+      this.velocityY = this.jumpSpeed;
+      this.isGrounded = false;
+      this.jumpRequested = false;
+      soundEngine.playJump?.();
+    }
 
-    this.camera.position.y = 1.6;
-
+    if (!this.isGrounded) {
+      this.velocityY -= this.gravity * delta;
+      let nextY = this.camera.position.y + this.velocityY * delta;
+      if (nextY <= this.baseY) {
+        nextY = this.baseY;
+        this.velocityY = 0;
+        this.isGrounded = true;
+        soundEngine.playFootstep(); // Landing step impact
+      } else if (nextY > 4.2) {
+        nextY = 4.2;
+        this.velocityY = 0;
+      }
+      this.camera.position.y = nextY;
+    } else {
+      this.camera.position.y = this.baseY;
+    }
     // Update player first-person body viewmodel & lantern sway
     if (this.playerBody) {
       this.playerBody.update(delta, isMoving, this.pitch);
@@ -249,7 +279,11 @@ export class PlayerControls {
   }
 
   setPosition(x, y, z, rotY = 0) {
-    this.camera.position.set(x, y || 1.6, z);
+    const posY = Number.isFinite(y) ? y : 1.6;
+    this.baseY = posY;
+    this.velocityY = 0;
+    this.isGrounded = true;
+    this.camera.position.set(x, posY, z);
     this.yaw = rotY;
     this.camera.rotation.y = rotY;
   }
