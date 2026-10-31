@@ -4,11 +4,20 @@ import {
   createPillar,
   createPumpkin,
   createTorch,
-  createTombstone,
   createTelescope,
   createObelisk,
   createBookshelf,
-  createCauldron,
+  createWall,
+  createDoor,
+  createArch,
+  createDeskRow,
+  createBlackboard,
+  createServerRack,
+  createLaserBench,
+  createCouncilTable,
+  createTurnstile,
+  createSignpost,
+  createCeilingLamp,
   createGhostNPC
 } from './environment.js';
 
@@ -163,6 +172,28 @@ export class ChunkManager {
       if (obj.type === 'floor') {
         const floor = createFloorTile(obj.x, obj.y, obj.z, obj.width, obj.depth, obj.zoneType);
         chunkGroup.add(floor);
+      } else if (obj.type === 'wall') {
+        chunkGroup.add(createWall(obj.x, obj.y, obj.z, obj.width, obj.height, obj.depth, obj.rotY));
+      } else if (obj.type === 'door') {
+        chunkGroup.add(createDoor(obj.x, obj.y, obj.z, obj.rotY, obj.roomNumber, obj.label));
+      } else if (obj.type === 'arch') {
+        chunkGroup.add(createArch(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'desk_row') {
+        chunkGroup.add(createDeskRow(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'blackboard') {
+        chunkGroup.add(createBlackboard(obj.x, obj.y, obj.z, obj.rotY, obj.formulaType));
+      } else if (obj.type === 'server_rack') {
+        chunkGroup.add(createServerRack(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'laser_bench') {
+        chunkGroup.add(createLaserBench(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'council_table') {
+        chunkGroup.add(createCouncilTable(obj.x, obj.y, obj.z));
+      } else if (obj.type === 'turnstile') {
+        chunkGroup.add(createTurnstile(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'signpost') {
+        chunkGroup.add(createSignpost(obj.x, obj.y, obj.z, obj.rotY, obj.text));
+      } else if (obj.type === 'ceiling_lamp') {
+        chunkGroup.add(createCeilingLamp(obj.x, obj.y, obj.z));
       } else if (obj.type === 'pillar') {
         const pillar = createPillar(obj.x, obj.y, obj.z, obj.height);
         chunkGroup.add(pillar);
@@ -174,9 +205,6 @@ export class ChunkManager {
         const torch = createTorch(obj.x, obj.y, obj.z);
         chunkGroup.add(torch);
         this.animatedObjects.push(torch);
-      } else if (obj.type === 'tombstone') {
-        const tomb = createTombstone(obj.x, obj.y, obj.z, obj.label);
-        chunkGroup.add(tomb);
       } else if (obj.type === 'telescope') {
         chunkGroup.add(createTelescope(obj.x, obj.y, obj.z));
       } else if (obj.type === 'obelisk') {
@@ -184,7 +212,7 @@ export class ChunkManager {
       } else if (obj.type === 'bookshelf') {
         chunkGroup.add(createBookshelf(obj.x, obj.y, obj.z));
       } else if (obj.type === 'cauldron') {
-        chunkGroup.add(createCauldron(obj.x, obj.y, obj.z));
+        chunkGroup.add(createServerRack(obj.x, obj.y, obj.z, 0));
       }
     }
 

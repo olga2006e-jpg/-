@@ -4,6 +4,7 @@ import { PlayerControls } from './controls.js';
 import { ChunkManager } from './chunkManager.js';
 import { NetworkClient } from './network.js';
 import { UIManager } from './ui.js';
+import { MinimapManager } from './minimap.js';
 
 class GameApp {
   constructor() {
@@ -27,6 +28,9 @@ class GameApp {
       this.network,
       (cacheStats) => this.ui.updateCacheMonitor(cacheStats)
     );
+
+    // 6. Interactive Minimap & Campus Blueprint
+    this.minimap = new MinimapManager();
 
     // Clock
     this.clock = new THREE.Clock();
@@ -171,6 +175,15 @@ class GameApp {
 
     // 6. Update scene atmosphere (floating particles, breathing glow)
     this.gameScene.update(delta, elapsed);
+
+    // 7. Update Minimap Radar & Location Badge
+    const remoteList = Array.from(this.network.remotePlayers.values()).map(p => ({
+      username: p.username,
+      color: p.color,
+      x: p.mesh.position.x,
+      z: p.mesh.position.z
+    }));
+    this.minimap.update(playerPos, remoteList, Array.from(this.chunkManager.activeNpcs.values()), this.chunkManager.loadedChunks);
 
     // 7. Render 3D Scene
     this.gameScene.render();

@@ -36,6 +36,23 @@
     </div>
     <div class="metric-sub" id="metric-zone">Зона: Загрузка...</div>
   </div>
+  <!-- HUD: Minimap (Radar of the Campus Building) -->
+  <div id="minimap-panel" class="hud-panel">
+    <div class="minimap-header">
+      <div class="hud-title" style="margin: 0; border: none; padding: 0;">🗺️ ПЛАН ГУК МГТУ</div>
+      <div class="minimap-controls">
+        <button id="minimap-zoom-in" class="minimap-btn" title="Приблизить">+</button>
+        <button id="minimap-zoom-out" class="minimap-btn" title="Отдалить">-</button>
+        <button id="minimap-expand-btn" class="minimap-btn" title="Развернуть план здания (Клавиша M)">⛶</button>
+      </div>
+    </div>
+    <div class="minimap-canvas-wrapper">
+      <canvas id="minimap-canvas" width="228" height="200"></canvas>
+    </div>
+    <div id="minimap-location-badge">📍 ГУК: Загрузка...</div>
+    <div class="minimap-subhint">Клавиша [M] — план этажей</div>
+  </div>
+
 
   <!-- HUD: Online Players -->
   <div id="players-hud" class="hud-panel">
@@ -84,6 +101,31 @@
       </div>
     </div>
   </div>
+  <!-- Full Interactive Map Modal (5 Floors, like map.mf.bmstu.ru) -->
+  <div id="map-modal" class="modal-overlay hidden">
+    <div class="map-card">
+      <div class="map-card-header">
+        <div>
+          <h2>ИНТЕРАКТИВНАЯ КАРТА ГУК МГТУ ИМ. Н.Э. БАУМАНА</h2>
+          <div class="map-card-subtitle">Архитектурный план Главного Учебного Корпуса • map.mf.bmstu.ru</div>
+        </div>
+        <button id="map-modal-close" class="close-btn">&times;</button>
+      </div>
+
+      <div class="floor-tabs">
+        <button class="floor-tab-btn" data-floor="1">1 ЭТАЖ • Вестибюль & Турникеты</button>
+        <button class="floor-tab-btn active" data-floor="2">2 ЭТАЖ • К5 (ИУ5) & Учёный Совет</button>
+        <button class="floor-tab-btn" data-floor="3">3 ЭТАЖ • Деканаты & ООТ</button>
+        <button class="floor-tab-btn" data-floor="4">4 ЭТАЖ • Поточные аудитории ФН</button>
+        <button class="floor-tab-btn" data-floor="5">5 ЭТАЖ • Обсерватория & Кафедры</button>
+      </div>
+
+      <div class="map-card-body">
+        <canvas id="full-map-canvas" width="940" height="520"></canvas>
+      </div>
+    </div>
+  </div>
+
 
   <!-- Login Modal -->
   <div id="login-modal" class="modal-overlay">

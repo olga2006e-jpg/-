@@ -33,6 +33,8 @@ export class UIManager {
     this.dialogueForm = document.getElementById('dialogue-form');
     this.dialogueInput = document.getElementById('dialogue-input');
 
+    // Map modal
+    this.mapModal = document.getElementById('map-modal');
     // Login modal
     this.loginModal = document.getElementById('login-modal');
     this.loginForm = document.getElementById('login-form');
@@ -110,8 +112,10 @@ export class UIManager {
   }
 
   isModalOpen() {
+    const isMapOpen = this.mapModal && !this.mapModal.classList.contains('hidden');
     return !this.loginModal.classList.contains('hidden') ||
-           !this.dialogueModal.classList.contains('hidden');
+           !this.dialogueModal.classList.contains('hidden') ||
+           Boolean(isMapOpen);
   }
 
   // Update Cache Monitor HUD

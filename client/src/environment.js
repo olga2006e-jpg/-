@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 
-// Shared Bauman GZ Classical Materials
+// Shared Bauman Collegiate Materials (Reused across instances for high performance)
 const baumanMarbleColumnMat = new THREE.MeshStandardMaterial({
-  color: 0xf5efe6,
-  roughness: 0.35,
+  color: 0xfbf8f3,
+  roughness: 0.3,
   metalness: 0.05
 });
 
@@ -13,20 +13,50 @@ const baumanGoldCapitalMat = new THREE.MeshStandardMaterial({
   metalness: 0.7
 });
 
-const darkWoodDoorMat = new THREE.MeshStandardMaterial({
-  color: 0x422a1d,
+const wallPlasterMat = new THREE.MeshStandardMaterial({
+  color: 0xf2ece4, // Warm classical Bauman cream plaster
+  roughness: 0.75,
+  metalness: 0.02
+});
+
+const baseboardMat = new THREE.MeshStandardMaterial({
+  color: 0x422a1d, // Dark oak baseboard
   roughness: 0.6
+});
+
+const darkWoodDoorMat = new THREE.MeshStandardMaterial({
+  color: 0x3d2719,
+  roughness: 0.55
+});
+
+const deskWoodMat = new THREE.MeshStandardMaterial({
+  color: 0xb5824c, // Classical school oak desk
+  roughness: 0.6
+});
+
+const deskMetalMat = new THREE.MeshStandardMaterial({
+  color: 0x33353b, // Metal desk legs
+  roughness: 0.4,
+  metalness: 0.6
 });
 
 const brassMetalMat = new THREE.MeshStandardMaterial({
   color: 0xd4af37,
-  roughness: 0.3,
-  metalness: 0.8
+  roughness: 0.25,
+  metalness: 0.85
 });
 
-const blackboardMat = new THREE.MeshStandardMaterial({
-  color: 0x1e2820,
-  roughness: 0.9
+const chromeMetalMat = new THREE.MeshStandardMaterial({
+  color: 0xdddddd,
+  roughness: 0.2,
+  metalness: 0.95
+});
+
+const glassMat = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  transparent: true,
+  opacity: 0.35,
+  roughness: 0.1
 });
 
 const pumpkinSkinMaterial = new THREE.MeshStandardMaterial({
@@ -67,20 +97,395 @@ export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(15, 12
   return sprite;
 }
 
-// 1. Halloween Jack-o-Lantern Pumpkin
+// 1. Classical University Wall with Baseboard
+export function createWall(x, y, z, width, height, depth, rotY = 0) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // Plaster wall
+  const wallGeo = new THREE.BoxGeometry(width, height, depth);
+  const wall = new THREE.Mesh(wallGeo, wallPlasterMat);
+  wall.castShadow = true;
+  wall.receiveShadow = true;
+  group.add(wall);
+
+  // Oak baseboard at floor level
+  const baseGeo = new THREE.BoxGeometry(width, 0.35, depth + 0.08);
+  const baseboard = new THREE.Mesh(baseGeo, baseboardMat);
+  baseboard.position.y = -height / 2 + 0.175;
+  group.add(baseboard);
+
+  return group;
+}
+
+// 2. Door with Brass Number Plaque (e.g. Ауд. 227)
+export function createDoor(x, y, z, rotY = 0, roomNumber = '227', label = '') {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // Door Frame
+  const frameGeo = new THREE.BoxGeometry(1.6, 2.7, 0.25);
+  const frame = new THREE.Mesh(frameGeo, baseboardMat);
+  group.add(frame);
+
+  // Door Leaf
+  const leafGeo = new THREE.BoxGeometry(1.3, 2.5, 0.12);
+  const leaf = new THREE.Mesh(leafGeo, darkWoodDoorMat);
+  leaf.position.z = 0.02;
+  group.add(leaf);
+
+  // Brass Handle
+  const handleGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.18);
+  const handle = new THREE.Mesh(handleGeo, brassMetalMat);
+  handle.rotation.z = Math.PI / 2;
+  handle.position.set(0.48, 0.0, 0.12);
+  group.add(handle);
+
+  // Brass Plaque with Room Number
+  const tagText = `${roomNumber} ${label ? '• ' + label.slice(0, 16) : ''}`;
+  const plaque = createNameTag(tagText, '#ffd700', 'rgba(25, 20, 12, 0.95)');
+  plaque.position.set(0, 0.75, 0.16);
+  plaque.scale.set(1.4, 0.32, 1);
+  group.add(plaque);
+
+  return group;
+}
+
+// 3. Classical Arch Portal
+export function createArch(x, y, z, rotY = 0) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // Left & right marble pillars
+  const colGeo = new THREE.CylinderGeometry(0.4, 0.45, 5.0, 16);
+  const leftCol = new THREE.Mesh(colGeo, baumanMarbleColumnMat);
+  leftCol.position.set(-4.5, 0, 0);
+  group.add(leftCol);
+
+  const rightCol = new THREE.Mesh(colGeo, baumanMarbleColumnMat);
+  rightCol.position.set(4.5, 0, 0);
+  group.add(rightCol);
+
+  // Arch Header Beam
+  const beamGeo = new THREE.BoxGeometry(10.0, 0.7, 1.2);
+  const beam = new THREE.Mesh(beamGeo, baumanGoldCapitalMat);
+  beam.position.set(0, 2.5, 0);
+  group.add(beam);
+
+  return group;
+}
+
+// 4. University Lecture Desks & Benches
+export function createDeskRow(x, y, z, rotY = 0) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // Tabletop
+  const topGeo = new THREE.BoxGeometry(8.0, 0.1, 1.0);
+  const top = new THREE.Mesh(topGeo, deskWoodMat);
+  top.position.y = 0.8;
+  top.castShadow = true;
+  group.add(top);
+
+  // Metal legs
+  for (let i = -3.6; i <= 3.6; i += 2.4) {
+    const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.8);
+    const leg = new THREE.Mesh(legGeo, deskMetalMat);
+    leg.position.set(i, 0.4, 0);
+    group.add(leg);
+  }
+
+  // Student Bench
+  const benchGeo = new THREE.BoxGeometry(8.0, 0.08, 0.5);
+  const bench = new THREE.Mesh(benchGeo, deskWoodMat);
+  bench.position.set(0, 0.5, 0.9);
+  group.add(bench);
+
+  return group;
+}
+
+// 5. Lecture Chalkboard with Formulas
+export function createBlackboard(x, y, z, rotY = 0, formulaType = 'math_analysis') {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // Board wooden frame
+  const frameGeo = new THREE.BoxGeometry(7.2, 2.6, 0.12);
+  const frame = new THREE.Mesh(frameGeo, darkWoodDoorMat);
+  group.add(frame);
+
+  // Blackboard canvas texture with authentic formulas
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 384;
+  const ctx = canvas.getContext('2d');
+
+  // Dark green board surface
+  ctx.fillStyle = '#1c2921';
+  ctx.fillRect(0, 0, 1024, 384);
+
+  // Subtle chalk dust
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  for (let i = 0; i < 40; i++) {
+    ctx.fillRect(Math.random() * 1024, Math.random() * 384, Math.random() * 200, Math.random() * 40);
+  }
+
+  ctx.fillStyle = '#f0f0d8';
+  ctx.font = 'bold 26px "Courier New", monospace';
+
+  if (formulaType === 'rip_network') {
+    ctx.fillText('МГТУ им. Н.Э. Баумана • Кафедра К5 (ИУ5)', 40, 50);
+    ctx.font = '22px "Courier New", monospace';
+    ctx.fillText('СЕТИ: [Client: Three.js] <== WS / 20 Hz ==> [Server: Node.js]', 40, 110);
+    ctx.fillText('TCP HANDSHAKE:  SYN (Seq=x) -> SYN-ACK -> ACK (Seq=x+1)', 40, 160);
+    ctx.fillText('РИП: REST (CRUD, Idempotent) vs WebSocket (Streaming)', 40, 210);
+    ctx.fillText('CACHE LIMIT: maxChunks = floor(totalChunks * 0.10) = 10', 40, 260);
+    ctx.fillStyle = '#50fa7b';
+    ctx.fillText('Статус проверки: OK <= 10% [ЗАЧЁТ ПОЛУЧЕН]', 40, 310);
+  } else if (formulaType === 'photonics_stokes') {
+    ctx.fillText('МГТУ им. Н.Э. Баумана • Лаборатория Фотоники ФН', 40, 50);
+    ctx.font = '22px "Courier New", monospace';
+    ctx.fillText('ЗАКОН СТОКСА-ЛОММЕЛЯ:  λ_em > λ_abs  (E_em < E_abs)', 40, 110);
+    ctx.fillText('ЛАНТАНОИДЫ:  Eu³⁺ (λ = 612 nm, КРАСНЫЙ),  Tb³⁺ (λ = 545 nm, ЗЕЛЕНЫЙ)', 40, 160);
+    ctx.fillText('АНТЕННЫЙ ЭФФЕКТ: Лиганд (S₀ -> S₁) -> T₁ -> Редкоземельный ион', 40, 210);
+    ctx.fillText('OLED: Рекомбинация экситонов в тонких пленках полимеров', 40, 260);
+    ctx.fillStyle = '#8be9fd';
+    ctx.fillText('Лазерная накачка: активна | Квантовый выход: 84%', 40, 310);
+  } else {
+    // Math Analysis
+    ctx.fillText('МГТУ им. Н.Э. Баумана • Кафедра Высшей Математики ФН', 40, 50);
+    ctx.font = '22px "Courier New", monospace';
+    ctx.fillText('ПРЕДЕЛ ПО КОШИ: ∀ε > 0 ∃δ > 0 : 0 < |x - x₀| < δ ⇒ |f(x) - A| < ε', 40, 110);
+    ctx.fillText('1-Й ЗАМЕЧАТЕЛЬНЫЙ ПРЕДЕЛ:  lim(x→0) [sin(x) / x] = 1', 40, 160);
+    ctx.fillText('ФОРМУЛА ТЕЙЛОРА: f(x) = ∑ [f^(k)(x₀)/k!] * (x - x₀)^k + o((x - x₀)^n)', 40, 210);
+    ctx.fillText('ТЕОРЕМА НЬЮТОНА-ЛЕЙБНИЦА:  ∫[a, b] f(x) dx = F(b) - F(a)', 40, 260);
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText('Рубежный контроль: Допуск к зачёту открыт!', 40, 310);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const boardMat = new THREE.MeshBasicMaterial({ map: texture });
+  const boardGeo = new THREE.PlaneGeometry(6.9, 2.3);
+  const board = new THREE.Mesh(boardGeo, boardMat);
+  board.position.z = 0.07;
+  group.add(board);
+
+  return group;
+}
+
+// 6. Server Rack with Blinking Activity LEDs
+export function createServerRack(x, y, z, rotY = 0) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // 19" Server rack cabinet
+  const rackGeo = new THREE.BoxGeometry(1.4, 2.5, 1.1);
+  const rackMat = new THREE.MeshStandardMaterial({ color: 0x1f2129, roughness: 0.35, metalness: 0.85 });
+  const rack = new THREE.Mesh(rackGeo, rackMat);
+  rack.position.y = 1.25;
+  rack.castShadow = true;
+  group.add(rack);
+
+  // Glass door
+  const doorGeo = new THREE.BoxGeometry(1.2, 2.3, 0.05);
+  const gDoor = new THREE.Mesh(doorGeo, glassMat);
+  gDoor.position.set(0, 1.25, 0.56);
+  group.add(gDoor);
+
+  // Blinking Switch LEDs
+  for (let i = 0; i < 5; i++) {
+    const ledGeo = new THREE.BoxGeometry(1.0, 0.1, 0.05);
+    const ledColor = i % 2 === 0 ? 0x50fa7b : 0x8be9fd;
+    const ledMat = new THREE.MeshBasicMaterial({ color: ledColor });
+    const led = new THREE.Mesh(ledGeo, ledMat);
+    led.position.set(0, 0.5 + i * 0.4, 0.54);
+    group.add(led);
+  }
+
+  // Cyan network light
+  const cLight = new THREE.PointLight(0x8be9fd, 1.8, 8);
+  cLight.position.set(0, 1.3, 0.8);
+  group.add(cLight);
+
+  return group;
+}
+
+// 7. Optics Laser Bench (Photonics Lab)
+export function createLaserBench(x, y, z, rotY = 0) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // Optical breadboard table
+  const tableGeo = new THREE.BoxGeometry(4.0, 0.25, 1.6);
+  const tableMat = new THREE.MeshStandardMaterial({ color: 0x555866, roughness: 0.2, metalness: 0.9 });
+  const table = new THREE.Mesh(tableGeo, tableMat);
+  table.position.y = 0.9;
+  group.add(table);
+
+  // Heavy steel legs
+  for (const dx of [-1.7, 1.7]) {
+    for (const dz of [-0.6, 0.6]) {
+      const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.9);
+      const leg = new THREE.Mesh(legGeo, tableMat);
+      leg.position.set(dx, 0.45, dz);
+      group.add(leg);
+    }
+  }
+
+  // Laser emitter box
+  const laserBoxGeo = new THREE.BoxGeometry(0.6, 0.3, 0.3);
+  const laserBoxMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8 });
+  const laserBox = new THREE.Mesh(laserBoxGeo, laserBoxMat);
+  laserBox.position.set(-1.4, 1.15, 0);
+  group.add(laserBox);
+
+  // Green Laser Beam
+  const beamGeo = new THREE.CylinderGeometry(0.015, 0.015, 2.5);
+  const beamMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b });
+  const beam = new THREE.Mesh(beamGeo, beamMat);
+  beam.rotation.z = Math.PI / 2;
+  beam.position.set(0, 1.15, 0);
+  group.add(beam);
+
+  // Optical Prism
+  const prismGeo = new THREE.OctahedronGeometry(0.18, 0);
+  const prismMat = new THREE.MeshBasicMaterial({ color: 0x8be9fd, wireframe: true });
+  const prism = new THREE.Mesh(prismGeo, prismMat);
+  prism.position.set(1.3, 1.15, 0);
+  group.add(prism);
+
+  // Laser point light
+  const pLight = new THREE.PointLight(0x50fa7b, 2.2, 6);
+  pLight.position.set(1.3, 1.25, 0);
+  group.add(pLight);
+
+  return group;
+}
+
+// 8. Scientific Council Table & Chairs
+export function createCouncilTable(x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  // Large oval mahogany table
+  const tableGeo = new THREE.CylinderGeometry(4.0, 4.0, 0.15, 32);
+  tableGeo.scale(1.4, 1.0, 0.8);
+  const mahoganyMat = new THREE.MeshStandardMaterial({ color: 0x3d1a11, roughness: 0.3, metalness: 0.1 });
+  const table = new THREE.Mesh(tableGeo, mahoganyMat);
+  table.position.y = 0.8;
+  table.castShadow = true;
+  group.add(table);
+
+  // Table central base
+  const baseGeo = new THREE.CylinderGeometry(1.6, 2.0, 0.8, 16);
+  const base = new THREE.Mesh(baseGeo, mahoganyMat);
+  base.position.y = 0.4;
+  group.add(base);
+
+  // Emblem of BMSTU in center of table
+  const emblemTag = createNameTag('МГТУ ИМ. Н.Э. БАУМАНА • УЧЁНЫЙ СОВЕТ', '#ffd700', 'rgba(40, 15, 10, 0.95)');
+  emblemTag.position.set(0, 0.95, 0);
+  emblemTag.scale.set(3.2, 0.65, 1);
+  group.add(emblemTag);
+
+  return group;
+}
+
+// 9. University Entrance Turnstile (ГУК 1 этаж)
+export function createTurnstile(x, y, z, rotY = 0) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // Steel body pedestal
+  const bodyGeo = new THREE.BoxGeometry(0.35, 1.0, 0.9);
+  const body = new THREE.Mesh(bodyGeo, chromeMetalMat);
+  body.position.y = 0.5;
+  group.add(body);
+
+  // Card reader with green LED indicator
+  const readerGeo = new THREE.BoxGeometry(0.18, 0.04, 0.18);
+  const readerMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b });
+  const reader = new THREE.Mesh(readerGeo, readerMat);
+  reader.position.set(0, 1.03, 0.2);
+  group.add(reader);
+
+  // Chrome Tripod barrier arms
+  for (let i = 0; i < 3; i++) {
+    const angle = (i * Math.PI * 2) / 3;
+    const armGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.65);
+    const arm = new THREE.Mesh(armGeo, chromeMetalMat);
+    arm.position.set(0, 0.75, -0.2);
+    arm.rotation.x = Math.PI / 4;
+    arm.rotation.z = angle;
+    group.add(arm);
+  }
+
+  return group;
+}
+
+// 10. Wall Direction Signpost
+export function createSignpost(x, y, z, rotY = 0, text = 'Кафедра') {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  const tag = createNameTag(text, '#f1fa8c', 'rgba(10, 12, 24, 0.95)');
+  tag.position.y = 0;
+  tag.scale.set(4.5, 0.75, 1);
+  group.add(tag);
+
+  return group;
+}
+
+// 11. Overhead Collegiate Ceiling Chandelier / Panel Lamp
+export function createCeilingLamp(x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  // Frosted brass lamp fixture
+  const fixtureGeo = new THREE.CylinderGeometry(0.8, 1.2, 0.3, 16);
+  const fixtureMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.8 });
+  const fixture = new THREE.Mesh(fixtureGeo, fixtureMat);
+  group.add(fixture);
+
+  // Frosted glass dome
+  const glassDomeGeo = new THREE.SphereGeometry(0.7, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+  const domeMat = new THREE.MeshBasicMaterial({ color: 0xfff4db });
+  const dome = new THREE.Mesh(glassDomeGeo, domeMat);
+  dome.rotation.x = Math.PI;
+  dome.position.y = -0.15;
+  group.add(dome);
+
+  // Warm overhead interior room light
+  const lampLight = new THREE.PointLight(0xfff1dc, 2.0, 18, 1.4);
+  lampLight.position.set(0, -0.4, 0);
+  group.add(lampLight);
+
+  return group;
+}
+
+// 12. Halloween Jack-o-Lantern Pumpkin
 export function createPumpkin(x, y, z, glowing = true) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  const bodyGeo = new THREE.SphereGeometry(0.5, 12, 10);
+  const bodyGeo = new THREE.SphereGeometry(0.45, 12, 10);
   bodyGeo.scale(1.2, 0.9, 1.2);
   const body = new THREE.Mesh(bodyGeo, pumpkinSkinMaterial);
   body.castShadow = true;
   group.add(body);
 
-  const stemGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.25, 6);
+  const stemGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.22, 6);
   const stem = new THREE.Mesh(stemGeo, stemMaterial);
-  stem.position.set(0, 0.45, 0);
+  stem.position.set(0, 0.42, 0);
   stem.rotation.z = 0.2;
   group.add(stem);
 
@@ -88,12 +493,12 @@ export function createPumpkin(x, y, z, glowing = true) {
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
     const eyeGeo = new THREE.BoxGeometry(0.12, 0.12, 0.05);
     const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
-    eyeLeft.position.set(-0.2, 0.1, 0.55);
+    eyeLeft.position.set(-0.18, 0.1, 0.5);
     eyeLeft.rotation.z = 0.3;
     group.add(eyeLeft);
 
     const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
-    eyeRight.position.set(0.2, 0.1, 0.55);
+    eyeRight.position.set(0.18, 0.1, 0.5);
     eyeRight.rotation.z = -0.3;
     group.add(eyeRight);
 
@@ -105,52 +510,46 @@ export function createPumpkin(x, y, z, glowing = true) {
   return group;
 }
 
-// 2. Brass Wall Sconce Lantern (Bauman Classic Chandelier/Sconce)
+// 13. Brass Wall Sconce Lantern
 export function createTorch(x, y, z) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  // Brass bracket
-  const bracketGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.6, 6);
+  const bracketGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.55, 6);
   const bracket = new THREE.Mesh(bracketGeo, brassMetalMat);
   bracket.rotation.x = Math.PI / 4;
   group.add(bracket);
 
-  // Glass lantern lantern
-  const glassGeo = new THREE.OctahedronGeometry(0.22, 0);
-  const glassMat = new THREE.MeshBasicMaterial({ color: 0xffe082 });
-  const glass = new THREE.Mesh(glassGeo, glassMat);
-  glass.position.set(0, 0.35, 0.2);
+  const glassGeo = new THREE.OctahedronGeometry(0.2, 0);
+  const gMat = new THREE.MeshBasicMaterial({ color: 0xffe082 });
+  const glass = new THREE.Mesh(glassGeo, gMat);
+  glass.position.set(0, 0.32, 0.2);
   group.add(glass);
 
-  // Bright warm white/amber sconce light
-  const light = new THREE.PointLight(0xffdf99, 2.0, 16, 1.2);
-  light.position.set(0, 0.4, 0.25);
+  const light = new THREE.PointLight(0xffdf99, 1.8, 14, 1.2);
+  light.position.set(0, 0.35, 0.25);
   group.add(light);
 
-  group.userData = { light, baseIntensity: 2.0, timeOffset: Math.random() * 10 };
+  group.userData = { light, baseIntensity: 1.8, timeOffset: Math.random() * 10 };
   return group;
 }
 
-// 3. Monumental Bauman White Marble Column
+// 14. Monumental Bauman White Marble Column
 export function createPillar(x, y, z, height = 6) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  // Column shaft with subtle fluting
   const colGeo = new THREE.CylinderGeometry(0.55, 0.65, height, 16);
   const col = new THREE.Mesh(colGeo, baumanMarbleColumnMat);
   col.castShadow = true;
   col.receiveShadow = true;
   group.add(col);
 
-  // Classical Capital (Top)
   const capGeo = new THREE.BoxGeometry(1.6, 0.45, 1.6);
   const topCap = new THREE.Mesh(capGeo, baumanGoldCapitalMat);
   topCap.position.y = height / 2;
   group.add(topCap);
 
-  // Base (Bottom)
   const btmCap = new THREE.Mesh(capGeo, baumanMarbleColumnMat);
   btmCap.position.y = -height / 2;
   group.add(btmCap);
@@ -158,71 +557,7 @@ export function createPillar(x, y, z, height = 6) {
   return group;
 }
 
-// 4. Bauman Memorial Plaque / Door with Sign
-export function createTombstone(x, y, z, label = 'Кафедра') {
-  const group = new THREE.Group();
-  group.position.set(x, y, z);
-
-  // Wooden door frame
-  const doorGeo = new THREE.BoxGeometry(1.4, 2.6, 0.15);
-  const door = new THREE.Mesh(doorGeo, darkWoodDoorMat);
-  door.castShadow = true;
-  group.add(door);
-
-  // Brass Door plaque
-  const plaque = createNameTag(label, '#ffd700', 'rgba(20, 15, 10, 0.9)');
-  plaque.position.set(0, 0.5, 0.12);
-  plaque.scale.set(1.5, 0.35, 1);
-  group.add(plaque);
-
-  return group;
-}
-
-// 5. Astronomical Telescope (Einstein Observatory)
-export function createTelescope(x, y, z) {
-  const group = new THREE.Group();
-  group.position.set(x, y, z);
-
-  for (let i = 0; i < 3; i++) {
-    const angle = (i * Math.PI * 2) / 3;
-    const legGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.0);
-    const leg = new THREE.Mesh(legGeo, darkWoodDoorMat);
-    leg.position.set(Math.sin(angle) * 0.5, 0.9, Math.cos(angle) * 0.5);
-    leg.rotation.z = Math.sin(angle) * 0.25;
-    leg.rotation.x = Math.cos(angle) * 0.25;
-    group.add(leg);
-  }
-
-  const tubeGeo = new THREE.CylinderGeometry(0.18, 0.24, 2.4, 12);
-  const tube = new THREE.Mesh(tubeGeo, brassMetalMat);
-  tube.position.set(0, 1.9, 0);
-  tube.rotation.x = -Math.PI / 4;
-  group.add(tube);
-
-  return group;
-}
-
-// 6. Ancient Obelisk (History Museum)
-export function createObelisk(x, y, z, label = 'Летопись') {
-  const group = new THREE.Group();
-  group.position.set(x, y, z);
-
-  const obeliskGeo = new THREE.CylinderGeometry(0.3, 0.6, 3.5, 4);
-  const obeliskMat = new THREE.MeshStandardMaterial({ color: 0x4a433a, roughness: 0.85 });
-  const obelisk = new THREE.Mesh(obeliskGeo, obeliskMat);
-  obelisk.position.y = 1.75;
-  obelisk.rotation.y = Math.PI / 4;
-  group.add(obelisk);
-
-  const tag = createNameTag(label, '#f1fa8c');
-  tag.position.set(0, 3.6, 0);
-  tag.scale.set(1.8, 0.45, 1);
-  group.add(tag);
-
-  return group;
-}
-
-// 7. Bookshelf / Library Stack
+// 15. Bookshelf
 export function createBookshelf(x, y, z) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
@@ -248,50 +583,82 @@ export function createBookshelf(x, y, z) {
   return group;
 }
 
-// 8. Server Rack / Network Router (Kanev IU-5 Lab)
-export function createCauldron(x, y, z) {
+// 16. Telescope
+export function createTelescope(x, y, z) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
 
-  // 19" Server rack cabinet
-  const rackGeo = new THREE.BoxGeometry(1.2, 2.2, 1.0);
-  const rackMat = new THREE.MeshStandardMaterial({ color: 0x22242b, roughness: 0.4, metalness: 0.8 });
-  const rack = new THREE.Mesh(rackGeo, rackMat);
-  rack.position.y = 1.1;
-  group.add(rack);
-
-  // Blinking green/cyan switch LEDs
-  for (let i = 0; i < 4; i++) {
-    const ledGeo = new THREE.BoxGeometry(0.9, 0.1, 0.05);
-    const ledMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b });
-    const led = new THREE.Mesh(ledGeo, ledMat);
-    led.position.set(0, 0.5 + i * 0.35, 0.52);
-    group.add(led);
+  for (let i = 0; i < 3; i++) {
+    const angle = (i * Math.PI * 2) / 3;
+    const legGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.0);
+    const leg = new THREE.Mesh(legGeo, darkWoodDoorMat);
+    leg.position.set(Math.sin(angle) * 0.5, 0.9, Math.cos(angle) * 0.5);
+    leg.rotation.z = Math.sin(angle) * 0.25;
+    leg.rotation.x = Math.cos(angle) * 0.25;
+    group.add(leg);
   }
 
-  // Cyan server glow light
-  const cLight = new THREE.PointLight(0x8be9fd, 1.8, 8);
-  cLight.position.set(0, 1.2, 0.8);
-  group.add(cLight);
+  const tubeGeo = new THREE.CylinderGeometry(0.18, 0.24, 2.4, 12);
+  const tube = new THREE.Mesh(tubeGeo, brassMetalMat);
+  tube.position.set(0, 1.9, 0);
+  tube.rotation.x = -Math.PI / 4;
+  group.add(tube);
 
   return group;
 }
 
-// 9. Bauman Marble & Granite Floor Tiles (High visibility!)
+// 17. Ancient Obelisk
+export function createObelisk(x, y, z, label = 'Летопись') {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  const obeliskGeo = new THREE.CylinderGeometry(0.3, 0.6, 3.5, 4);
+  const obeliskMat = new THREE.MeshStandardMaterial({ color: 0x4a433a, roughness: 0.85 });
+  const obelisk = new THREE.Mesh(obeliskGeo, obeliskMat);
+  obelisk.position.y = 1.75;
+  obelisk.rotation.y = Math.PI / 4;
+  group.add(obelisk);
+
+  const tag = createNameTag(label, '#f1fa8c');
+  tag.position.set(0, 3.6, 0);
+  tag.scale.set(1.8, 0.45, 1);
+  group.add(tag);
+
+  return group;
+}
+
+// 18. Bauman Architectural Floor Tiles (Granite, Parquet, Linoleum, Lab Tile)
 export function createFloorTile(x, y, z, width, depth, zoneType) {
-  // Noble classical Bauman GZ palette: light cream, sand and granite
   let floorColor = 0xd5cfc5;
-  if (zoneType === 'circus') floorColor = 0xe8e2d8;     // Polished marble in Circus
-  if (zoneType === 'math_hall') floorColor = 0xe0d7cc;  // FN math auditorium
-  if (zoneType === 'dev_lab') floorColor = 0xd2dbe3;    // IU5 computer lab
-  if (zoneType === 'algo_class') floorColor = 0xd6e2d5; // Physics / photonics lab
-  if (zoneType === 'crypt') floorColor = 0xdcd5c9;
+  let roughness = 0.4;
+  let metalness = 0.08;
+
+  if (zoneType === 'foyer') {
+    floorColor = 0xe8e2d8; // Polished marble foyer
+    roughness = 0.25;
+    metalness = 0.12;
+  } else if (zoneType === 'council_hall' || zoneType === 'director_office') {
+    floorColor = 0x5a3424; // Parquet
+    roughness = 0.45;
+  } else if (zoneType === 'math_lecture' || zoneType === 'lecture_hall') {
+    floorColor = 0xba9b72; // Oak classroom parquet
+    roughness = 0.5;
+  } else if (zoneType === 'k5_office' || zoneType === 'k5_lab' || zoneType === 'computer_class') {
+    floorColor = 0xcdd6df; // Tech lab linoleum
+    roughness = 0.35;
+  } else if (zoneType === 'photonics_lab' || zoneType === 'laser_lab') {
+    floorColor = 0xcfe0d8; // Anti-static lab tiles
+    roughness = 0.3;
+  } else if (zoneType === 'courtyard' || zoneType === 'campus_grounds') {
+    floorColor = 0x6e7069; // Pavement
+    roughness = 0.85;
+  }
 
   const geo = new THREE.PlaneGeometry(width, depth);
   const mat = new THREE.MeshStandardMaterial({
     color: floorColor,
-    roughness: 0.4,  // Polished stone reflection
-    metalness: 0.08
+    roughness,
+    metalness
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.rotation.x = -Math.PI / 2;
@@ -300,7 +667,7 @@ export function createFloorTile(x, y, z, width, depth, zoneType) {
   return mesh;
 }
 
-// 10. Student Avatar with Nametag
+// 19. Student Avatar with Nametag
 export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   const group = new THREE.Group();
   const color = new THREE.Color(colorHex);
@@ -357,7 +724,7 @@ export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   return group;
 }
 
-// 11. Ghost NPC with specific BMSTU academic props
+// 20. Ghost NPC with specific BMSTU academic props
 export function createGhostNPC(npcData) {
   const group = new THREE.Group();
   group.position.set(npcData.x, npcData.y, npcData.z);
@@ -410,12 +777,7 @@ export function createGhostNPC(npcData) {
     group.add(dbBox);
   } else if (npcData.id === 'akhmetova') {
     // Faniya Kharisovna Akhmetova: Math Analysis Blackboard with Integral loop
-    const boardGeo = new THREE.BoxGeometry(0.6, 0.4, 0.05);
-    const board = new THREE.Mesh(boardGeo, blackboardMat);
-    board.position.set(0.45, 0.7, 0.2);
-    group.add(board);
-
-    const ringGeo = new THREE.TorusGeometry(0.25, 0.03, 8, 24);
+    const ringGeo = new THREE.TorusGeometry(0.28, 0.03, 8, 24);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.position.set(0, 1.48, 0);
