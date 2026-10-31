@@ -119,38 +119,91 @@ export function createWall(x, y, z, width, height, depth, rotY = 0) {
   return group;
 }
 
-// 2. Door with Brass Number Plaque (e.g. Ауд. 227)
+// 2. Animated Collegiate Door with Frame and Swinging Hinge Leaf
 export function createDoor(x, y, z, rotY = 0, roomNumber = '227', label = '') {
   const group = new THREE.Group();
   group.position.set(x, y, z);
   group.rotation.y = rotY;
 
-  // Door Frame
-  const frameGeo = new THREE.BoxGeometry(1.6, 2.7, 0.25);
-  const frame = new THREE.Mesh(frameGeo, baseboardMat);
-  group.add(frame);
+  // Frame Left Post
+  const postGeo = new THREE.BoxGeometry(0.18, 2.7, 0.4);
+  const leftPost = new THREE.Mesh(postGeo, baseboardMat);
+  leftPost.position.set(-0.95, 0, 0);
+  leftPost.castShadow = true;
+  group.add(leftPost);
+
+  // Frame Right Post
+  const rightPost = new THREE.Mesh(postGeo, baseboardMat);
+  rightPost.position.set(0.95, 0, 0);
+  rightPost.castShadow = true;
+  group.add(rightPost);
+
+  // Frame Header Top Beam
+  const headerGeo = new THREE.BoxGeometry(2.08, 0.22, 0.4);
+  const header = new THREE.Mesh(headerGeo, baseboardMat);
+  header.position.set(0, 1.35, 0);
+  group.add(header);
+
+  // Rotating Hinge Group (pivot at left frame post edge)
+  const hinge = new THREE.Group();
+  hinge.position.set(-0.86, 0, 0);
+  group.add(hinge);
 
   // Door Leaf
-  const leafGeo = new THREE.BoxGeometry(1.3, 2.5, 0.12);
+  const leafWidth = 1.72;
+  const leafHeight = 2.48;
+  const leafDepth = 0.08;
+  const leafGeo = new THREE.BoxGeometry(leafWidth, leafHeight, leafDepth);
   const leaf = new THREE.Mesh(leafGeo, darkWoodDoorMat);
-  leaf.position.z = 0.02;
-  group.add(leaf);
+  leaf.position.set(leafWidth / 2, 0, 0);
+  leaf.castShadow = true;
+  hinge.add(leaf);
 
-  // Brass Handle
-  const handleGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.18);
-  const handle = new THREE.Mesh(handleGeo, brassMetalMat);
-  handle.rotation.z = Math.PI / 2;
-  handle.position.set(0.48, 0.0, 0.12);
-  group.add(handle);
+  // Brass Handles (front and back)
+  const handleGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.16);
+  const handleFront = new THREE.Mesh(handleGeo, brassMetalMat);
+  handleFront.rotation.z = Math.PI / 2;
+  handleFront.position.set(leafWidth - 0.18, 0.0, 0.06);
+  hinge.add(handleFront);
 
-  // Brass Plaque with Room Number
-  const tagText = `${roomNumber} ${label ? '• ' + label.slice(0, 16) : ''}`;
+  const handleBack = handleFront.clone();
+  handleBack.position.z = -0.06;
+  hinge.add(handleBack);
+
+  // Brass Plaque with Room Number & Title
+  const tagText = `${roomNumber} ${label ? '• ' + label.slice(0, 14) : ''}`;
   const plaque = createNameTag(tagText, '#ffd700', 'rgba(25, 20, 12, 0.95)');
-  plaque.position.set(0, 0.75, 0.16);
+  plaque.position.set(leafWidth / 2, 0.65, 0.05);
   plaque.scale.set(1.4, 0.32, 1);
-  group.add(plaque);
+  hinge.add(plaque);
+
+  group.userData = {
+    isDoor: true,
+    hinge,
+    isOpen: false,
+    currentAngle: 0,
+    targetAngle: 0,
+    roomNumber,
+    label
+  };
 
   return group;
+}
+
+// 2b. Collegiate Acoustic Ceiling
+const ceilingMat = new THREE.MeshStandardMaterial({
+  color: 0xf5efe6,
+  roughness: 0.85,
+  metalness: 0.02
+});
+
+export function createCeiling(x, y, z, width, depth) {
+  const geo = new THREE.PlaneGeometry(width, depth);
+  const mesh = new THREE.Mesh(geo, ceilingMat);
+  mesh.rotation.x = Math.PI / 2; // Facing downward into room
+  mesh.position.set(x, y, z);
+  mesh.receiveShadow = true;
+  return mesh;
 }
 
 // 3. Classical Arch Portal

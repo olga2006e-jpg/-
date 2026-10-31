@@ -170,6 +170,42 @@ class SoundEngine {
       osc.stop(t + 0.03);
     } catch (e) {}
   }
+  // 5. Authentic wooden door creak and latch sound
+  playDoorSound(isOpen) {
+    if (this.isMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      if (isOpen) {
+        // Door opening: creak (pitch slides 180Hz -> 260Hz)
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, t);
+        osc.frequency.linearRampToValueAtTime(260, t + 0.35);
+
+        gain.gain.setValueAtTime(0.04, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+      } else {
+        // Door closing: soft latch thud
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120, t);
+        osc.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+
+        gain.gain.setValueAtTime(0.06, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      }
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + (isOpen ? 0.4 : 0.2));
+    } catch (e) {}
+  }
 }
 
 export const soundEngine = new SoundEngine();

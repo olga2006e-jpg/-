@@ -179,7 +179,7 @@ class GameApp {
 
     // 3. Update chunk streaming (strict <= 10% cache enforcement)
     this.chunkManager.updatePlayerPosition(playerPos.x, playerPos.z);
-    this.chunkManager.animate(delta, elapsed);
+    this.chunkManager.animate(delta, elapsed, playerPos);
 
     // 4. Interpolate remote players
     this.network.interpolate(delta);

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   createFloorTile,
+  createCeiling,
   createPillar,
   createPumpkin,
   createTorch,
@@ -21,6 +22,7 @@ import {
   createGhostNPC,
   createArtifactMesh
 } from './environment.js';
+import { soundEngine } from './audio.js';
 
 export const CHUNK_SIZE = 24;
 
@@ -176,7 +178,11 @@ export class ChunkManager {
       } else if (obj.type === 'wall') {
         chunkGroup.add(createWall(obj.x, obj.y, obj.z, obj.width, obj.height, obj.depth, obj.rotY));
       } else if (obj.type === 'door') {
-        chunkGroup.add(createDoor(obj.x, obj.y, obj.z, obj.rotY, obj.roomNumber, obj.label));
+        const door = createDoor(obj.x, obj.y, obj.z, obj.rotY, obj.roomNumber, obj.label);
+        chunkGroup.add(door);
+        this.animatedObjects.push(door);
+      } else if (obj.type === 'ceiling') {
+        chunkGroup.add(createCeiling(obj.x, obj.y, obj.z, obj.width, obj.depth));
       } else if (obj.type === 'arch') {
         chunkGroup.add(createArch(obj.x, obj.y, obj.z, obj.rotY));
       } else if (obj.type === 'desk_row') {
@@ -281,7 +287,7 @@ export class ChunkManager {
   }
 
   // Update animated objects (flickering torches, bobbing ghosts, rotating artifacts)
-  animate(delta, elapsed) {
+  animate(delta, elapsed, playerPos) {
     for (const obj of this.animatedObjects) {
       if (obj.userData?.light) {
         // Flickering torch
@@ -303,6 +309,28 @@ export class ChunkManager {
         // Rotating & bobbing collectible artifact
         obj.rotation.y += delta * 1.5;
         obj.position.y = obj.userData.baseY + Math.sin(elapsed * 2.5 + obj.userData.timeOffset) * 0.12;
+      }
+      if (obj.userData?.isDoor && playerPos) {
+        // Distance from player to door
+        const dx = playerPos.x - obj.position.x;
+        const dz = playerPos.z - obj.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        // Door opens when player approaches within 4.2m
+        const shouldOpen = dist < 4.2;
+        obj.userData.targetAngle = shouldOpen ? -Math.PI * 0.48 : 0;
+
+        const diff = obj.userData.targetAngle - obj.userData.hinge.rotation.y;
+        if (Math.abs(diff) > 0.003) {
+          obj.userData.hinge.rotation.y += diff * Math.min(1, delta * 5.0);
+          if (shouldOpen && !obj.userData.isOpen) {
+            obj.userData.isOpen = true;
+            soundEngine.playDoorSound(true);
+          } else if (!shouldOpen && obj.userData.isOpen) {
+            obj.userData.isOpen = false;
+            soundEngine.playDoorSound(false);
+          }
+        }
       }
     }
   }
