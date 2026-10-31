@@ -14,7 +14,7 @@ class GameApp {
     this.gameScene = new GameScene(this.container);
 
     // 2. Controls
-    this.controls = new PlayerControls(this.gameScene.camera, this.gameScene.renderer.domElement);
+    this.controls = new PlayerControls(this.gameScene.camera, this.gameScene.renderer.domElement, this.gameScene.scene);
 
     // 3. Network
     this.network = new NetworkClient(this.gameScene.scene);
@@ -67,6 +67,12 @@ class GameApp {
     this.ui.onGateCodeSubmit = (code) => {
       this.network.sendGateCode(code);
     };
+    this.ui.onToggleLantern = () => {
+      if (this.controls && this.controls.playerBody) {
+        const isOn = this.controls.playerBody.toggleLantern();
+        this.ui.addNotification(isOn ? '💡 Фонарь зажжён' : '🌑 Фонарь погашен');
+      }
+    };
 
     this.ui.onModalStateChange = (isOpen) => {
       if (isOpen) {
@@ -117,6 +123,8 @@ class GameApp {
     };
 
     this.network.onItemCollected = (msg) => {
+      soundEngine.playItemPickup();
+      this.chunkManager.hideArtifact(msg.item.id);
       this.ui.addNotification(`✨ Вы подобрали: ${msg.item.name}! ${msg.item.clue || ''}`);
       this.ui.updateInventory(msg.inventory);
     };
@@ -126,21 +134,61 @@ class GameApp {
     };
 
     this.network.onVictory = (msg) => {
+      this.ui.closeAllModals();
       this.ui.showVictory(msg.message, msg.winner);
     };
 
     this.network.onCodeIncorrect = (msg) => {
+      if (this.ui.safeStatusMsg) {
+        this.ui.safeStatusMsg.textContent = `❌ ${msg.message}`;
+      }
       this.ui.addNotification(`❌ ${msg.message}`);
     };
   }
 
   setupKeyBindings() {
     window.addEventListener('keydown', (e) => {
-      // 'E' to interact with nearby ghost NPC
-      if (e.code === 'KeyE' && !this.ui.isModalOpen() && this.nearbyNpc) {
-        this.ui.openDialogue(this.nearbyNpc);
+      if (e.code === 'KeyE' && !this.ui.isModalOpen()) {
+        if (this.nearbyNpc) {
+          this.ui.openDialogue(this.nearbyNpc);
+        } else if (this.nearSafe) {
+          this.ui.openSafeModal();
+        } else if (this.nearElevator) {
+          this.cycleElevatorFloor();
+        }
       }
     });
+  }
+  goToFloor1() {
+    soundEngine.playItemFound();
+    this.controls.setPosition(0, 1.6, 5.5, 0);
+    this.ui.addChatMessage('🏛️ Парадная лестница ГУК', 'Вы спустились в Центральный Вестибюль (1-й ЭТАЖ) — Гардероб, Музей & Турникеты', '#ffd700');
+    this.chunkManager.forceReload();
+  }
+
+  goToFloor2() {
+    soundEngine.playItemFound();
+    this.controls.setPosition(-48, 1.6, -20, 0);
+    this.ui.addChatMessage('🏛️ Парадная лестница ГУК', 'Вы поднялись на 2-й ЭТАЖ — Кафедра К5 (ИУ-5), Ауд. 227 (Канев) & Учёный Совет', '#8be9fd');
+    this.chunkManager.forceReload();
+  }
+
+  goToFloor3() {
+    soundEngine.playItemFound();
+    this.controls.setPosition(48, 1.6, -20, 0);
+    this.ui.addChatMessage('🔬 Верхняя лестница ГУК', 'Вы поднялись на 3-й ЭТАЖ — Лаборатории Фотоники и Лазеров, Мария Кюри', '#50fa7b');
+    this.chunkManager.forceReload();
+  }
+
+  cycleElevatorFloor() {
+    this.currentFloor = ((this.currentFloor || 1) % 3) + 1;
+    if (this.currentFloor === 1) {
+      this.goToFloor1();
+    } else if (this.currentFloor === 2) {
+      this.goToFloor2();
+    } else if (this.currentFloor === 3) {
+      this.goToFloor3();
+    }
   }
 
   async login(username, color) {
@@ -185,7 +233,7 @@ class GameApp {
     // 4. Interpolate remote players
     this.network.interpolate(delta);
 
-    // 5. Check NPC proximity for interaction prompt
+    // 5. Check NPC and architectural portal proximity
     if (this.controls.enabled && !this.ui.isModalOpen()) {
       const npc = this.chunkManager.getNearbyNpc(playerPos.x, playerPos.z, 3.5);
       if (npc !== this.nearbyNpc) {
@@ -196,10 +244,27 @@ class GameApp {
           this.ui.hideInteractionPrompt();
         }
       }
+
+      if (!this.nearbyNpc) {
+        // A. Founders' Safe in Council Hall (Aud. 223) at (x = 0, z = -37.4)
+        const distToSafe = Math.hypot(playerPos.x - 0, playerPos.z - (-37.4));
+        this.nearSafe = distToSafe < 3.8;
+
+        // B. Elevator proximity check at (x = 8.5, z = 3.5)
+        const distToElevator = Math.hypot(playerPos.x - 8.5, playerPos.z - 3.5);
+        this.nearElevator = distToElevator < 3.2;
+
+        if (this.nearSafe) {
+          this.ui.showCustomPrompt('🔒 [E] — Исследовать Сейф Основателей МГТУ (1830 г.)');
+        } else if (this.nearElevator) {
+          this.ui.showCustomPrompt('🛗 [E] — Вызвать Коллежский Лифт (1, 2, 3 этажи)');
+        } else {
+          this.ui.hideInteractionPrompt();
+        }
+      }
     }
 
     // 6. Update scene atmosphere (floating particles, breathing glow)
-    this.gameScene.update(delta, elapsed);
 
     // 7. Update Minimap Radar & Location Badge
     const remoteList = Array.from(this.network.remotePlayers.values()).map(p => ({

@@ -53,6 +53,13 @@
     <div class="minimap-subhint">Клавиша [M] — план этажей</div>
   </div>
 
+  <!-- HUD: Top Interactive Navigation Bar -->
+  <div id="top-navbar">
+    <button id="nav-btn-quest" class="nav-pill-btn" title="Журнал расследования (Клавиша J)"><span class="nav-icon">📜</span> Квест [J]</button>
+    <button id="nav-btn-cafeteria" class="nav-pill-btn" title="Меню Кафедры Питания"><span class="nav-icon">🍴</span> Меню столовой</button>
+    <button id="nav-btn-zachetka" class="nav-pill-btn" title="Зачётная книжка студента (Клавиша B)"><span class="nav-icon">🎒</span> Зачётка [B]</button>
+    <button id="nav-btn-lantern" class="nav-pill-btn" title="Зажечь/погасить фонарь (Клавиша L)"><span class="nav-icon">💡</span> Фонарь [L]</button>
+  </div>
 
   <!-- HUD: Online Players -->
   <div id="players-hud" class="hud-panel">
@@ -126,6 +133,285 @@
     </div>
   </div>
 
+  <!-- Quest Journal Modal (Клавиша J) -->
+  <div id="quest-modal" class="modal-overlay hidden">
+    <div class="quest-card">
+      <div class="quest-card-header">
+        <div>
+          <h2>📜 ТАЙНА ЗОЛОТОЙ ЗАЧЁТКИ 1830 ГОДА</h2>
+          <div class="quest-card-subtitle">Ночной рубежный контроль • Заброшенные коридоры ГУК МГТУ им. Н.Э. Баумана</div>
+        </div>
+        <button id="quest-modal-close" class="close-btn">&times;</button>
+      </div>
+
+      <div class="quest-card-body">
+        <div class="quest-storyline-box">
+          <div class="quest-storyline-badge">🎃 ЛОР И ЦЕЛЬ МИССИИ</div>
+          <p>
+            В полночь Хэллоуина куранты ГУК пробили 13 ударов. Магическое поле закрыло выходы из Главного Здания!
+            Чтобы развеять чары и открыть Главные Врата, студенческая команда из четырёх исследователей должна сдать
+            <b>«Экзамен Четырёх Стихий Науки»</b> легендарным призракам инженерии.
+          </p>
+        </div>
+
+        <h3 class="quest-section-title">📋 ЭТАПЫ ИСПЫТАНИЙ (КООПЕРАТИВНЫЙ КВЕСТ)</h3>
+
+        <div class="quest-steps-grid">
+          <div class="quest-step-card" id="qstep-1">
+            <div class="qstep-header">
+              <span class="qstep-icon">🍴</span>
+              <span class="qstep-title">1. Кафедра Питания</span>
+              <span class="qstep-status active">В ПРОЦЕССЕ</span>
+            </div>
+            <p>Загляните в Студенческую столовую (1-й этаж, направо от вестибюля). Поговорите с буфетчицей Тётей Клавой, возьмите горячую сосиску в тесте и узнайте, почему закрылся проход.</p>
+          </div>
+
+          <div class="quest-step-card" id="qstep-2">
+            <div class="qstep-header">
+              <span class="qstep-icon">💻</span>
+              <span class="qstep-title">2. Стихия Сетей: Кафедра ИУ-5</span>
+              <span class="qstep-status pending">ОЖИДАНИЕ</span>
+            </div>
+            <p>Поднимитесь по Парадной лестнице на 2-й этаж в Ауд. 227 к преподавателю Антону Игоревичу Каневу. Защитите лабу по маршрутизации и получите Зашифрованную USB-флешку.</p>
+          </div>
+
+          <div class="quest-step-card" id="qstep-3">
+            <div class="qstep-header">
+              <span class="qstep-icon">⏳</span>
+              <span class="qstep-title">3. Стихия Времени: Обсерватория</span>
+              <span class="qstep-status pending">ОЖИДАНИЕ</span>
+            </div>
+            <p>Поднимитесь на лифте или лестнице в Астрономическую башню к Альберту Эйнштейну. Разберитесь с замедлением времени у черных дыр, чтобы синхронизировать хронометр сейфа.</p>
+          </div>
+
+          <div class="quest-step-card" id="qstep-4">
+            <div class="qstep-header">
+              <span class="qstep-icon">🧪</span>
+              <span class="qstep-title">4. Стихия Материи: Фотоника & Радиохимия</span>
+              <span class="qstep-status pending">ОЖИДАНИЕ</span>
+            </div>
+            <p>Найдите Марию Кюри и Владислава Коршунова на 3-м этаже. Зарядите люминесцентный кристалл в лазерном резонаторе, чтобы проявить невидимые чернила на чертеже Шухова.</p>
+          </div>
+
+          <div class="quest-step-card" id="qstep-5">
+            <div class="qstep-header">
+              <span class="qstep-icon">🏛️</span>
+              <span class="qstep-title">5. Финал: Зал Учёного Совета (Ауд. 223)</span>
+              <span class="qstep-status pending">ФИНАЛ</span>
+            </div>
+            <p>Соберите 4 полученных шифра воедино, введите кодовую комбинацию в Сейф Совета и откройте Главные Врата ГУК навстречу утреннему солнцу!</p>
+          </div>
+        </div>
+
+        <div class="quest-coop-hint">
+          <b>🤝 Совет для команды из 4 человек:</b> Распределитесь по этажам! Один игрок может разговаривать с профессором в лаборатории и пересылать подсказки напарникам через общий командный чат внизу экрана!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cafeteria Interactive Menu Modal -->
+  <div id="cafeteria-modal" class="modal-overlay hidden">
+    <div class="cafeteria-card">
+      <div class="cafeteria-card-header">
+        <div>
+          <h2>🍴 КАФЕДРА ПИТАНИЯ • СТОЛОВАЯ ГУК №1</h2>
+          <div class="cafeteria-card-subtitle">Легендарный буфет Бауманки • Тётя Клава встречает полуночных студентов</div>
+        </div>
+        <button id="cafeteria-modal-close" class="close-btn">&times;</button>
+      </div>
+
+      <div class="cafeteria-card-body">
+        <div class="cafeteria-quote">
+          «Не сдав лабу — голодным не уйдёшь! Подкрепись, студент, впереди долгая ночь в лабиринтах ГУКа!»
+        </div>
+
+        <div class="menu-items-list">
+          <div class="menu-item-row">
+            <div class="menu-item-info">
+              <div class="menu-item-name">🌭 Сосиска в тесте «Хэллоуинская»</div>
+              <div class="menu-item-desc">Свежевыпеченная, в золотистом тесте с полоской кетчупа. Восстанавливает силы для сдачи рубежного контроля!</div>
+            </div>
+            <div class="menu-item-action">
+              <span class="menu-price">50 ₽</span>
+              <button class="order-btn" data-item="sosiska">Заказать</button>
+            </div>
+          </div>
+
+          <div class="menu-item-row">
+            <div class="menu-item-info">
+              <div class="menu-item-name">🍵 Горячий чай с сахаром и лимоном</div>
+              <div class="menu-item-desc">В аутентичном гранёном стакане и серебряном подстаканнике с символикой МГТУ. Согревает в холодных коридорах.</div>
+            </div>
+            <div class="menu-item-action">
+              <span class="menu-price">12 ₽</span>
+              <button class="order-btn" data-item="tea">Заказать</button>
+            </div>
+          </div>
+
+          <div class="menu-item-row">
+            <div class="menu-item-info">
+              <div class="menu-item-name">🥣 Студенческий борщ со сметаной</div>
+              <div class="menu-item-desc">Классика советской кулинарии. Ясность инженерного ума +15.</div>
+            </div>
+            <div class="menu-item-action">
+              <span class="menu-price">45 ₽</span>
+              <button class="order-btn" data-item="borscht">Заказать</button>
+            </div>
+          </div>
+
+          <div class="menu-item-row special">
+            <div class="menu-item-info">
+              <div class="menu-item-name">🎃 Ведьминский суп сессии (Спецблюдо)</div>
+              <div class="menu-item-desc">Секретное зелье из бурлящего котла на раздаче. Гарантирует автозачёт у самых строгих преподавателей!</div>
+            </div>
+            <div class="menu-item-action">
+              <span class="menu-price free">БЕСПЛАТНО</span>
+              <button class="order-btn" data-item="witch_soup">Попробовать</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Record Book Modal («Зачётка», Клавиша B) -->
+  <div id="zachetka-modal" class="modal-overlay hidden">
+    <div class="zachetka-card">
+      <div class="zachetka-card-header">
+        <div>
+          <h2>📘 ЗАЧЁТНАЯ КНИЖКА СТУДЕНТА МГТУ ИМ. Н.Э. БАУМАНА</h2>
+          <div class="zachetka-card-subtitle">Факультет Информатики и Систем Управления (ИУ) • Кафедра ИУ-5</div>
+        </div>
+        <button id="zachetka-modal-close" class="close-btn">&times;</button>
+      </div>
+
+      <div class="zachetka-card-body">
+        <div class="zachetka-spread">
+          <!-- Left page -->
+          <div class="zachetka-page left-page">
+            <div class="student-seal">
+              <div class="seal-crest">⚙️🏛️</div>
+              <div class="seal-title">МГТУ ИМ. Н.Э. БАУМАНА</div>
+              <div class="seal-sub">Основано в 1830 году</div>
+            </div>
+            <div class="student-info-table">
+              <div><b>Студент:</b> <span id="zachetka-student-name">Саша_ИУ5</span></div>
+              <div><b>Специальность:</b> Программная инженерия</div>
+              <div><b>Семестр:</b> Осенний (Хэллоуин 2026)</div>
+              <div><b>Статус:</b> Ночной рубежный контроль</div>
+            </div>
+          </div>
+
+          <!-- Right page: Exam Table -->
+          <div class="zachetka-page right-page">
+            <div class="page-title">РЕЗУЛЬТАТЫ СДАЧИ ПРИЗРАКАМ</div>
+            <table class="exam-table">
+              <thead>
+                <tr>
+                  <th>Дисциплина</th>
+                  <th>Преподаватель</th>
+                  <th>Оценка</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Сети и протоколы РИП</td>
+                  <td>Канев А.И.</td>
+                  <td><span class="grade-badge pending">Защита лабы</span></td>
+                </tr>
+                <tr>
+                  <td>Математический анализ</td>
+                  <td>Ахметова Ф.Х.</td>
+                  <td><span class="grade-badge pending">Интегралы</span></td>
+                </tr>
+                <tr>
+                  <td>Теория относительности</td>
+                  <td>Эйнштейн А.</td>
+                  <td><span class="grade-badge pending">Парадокс близнецов</span></td>
+                </tr>
+                <tr>
+                  <td>Лазерная спектроскопия</td>
+                  <td>Кюри / Коршунов</td>
+                  <td><span class="grade-badge pending">Люминесценция</span></td>
+                </tr>
+                <tr>
+                  <td>История инженерии</td>
+                  <td>Геродот</td>
+                  <td><span class="grade-badge pending">Папирус</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="zachetka-artifacts">
+          <div class="artifacts-title">🎒 НАЙДЕННЫЕ АРТЕФАКТЫ И ПРЕДМЕТЫ:</div>
+          <div class="artifacts-row" id="zachetka-inventory-list">
+            <div class="art-slot empty">Пусто</div>
+            <div class="art-slot empty">Пусто</div>
+            <div class="art-slot empty">Пусто</div>
+            <div class="art-slot empty">Пусто</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Founders' Vault Safe Modal (Сейф Основателей 1830 г.) -->
+  <div id="safe-modal" class="modal-overlay hidden">
+    <div class="safe-card">
+      <div class="safe-card-header">
+        <div>
+          <h2>🔒 СЕЙФ ОСНОВАТЕЛЕЙ МГТУ (1830 ГОД)</h2>
+          <div class="safe-card-subtitle">Зал Учёного Совета (Ауд. 223) • Четырёхзначный механический шифр</div>
+        </div>
+        <button id="safe-modal-close" class="close-btn">&times;</button>
+      </div>
+
+      <div class="safe-card-body">
+        <div class="safe-dials-container">
+          <div class="dial-slot">
+            <div class="dial-label">⏳ ВРЕМЯ</div>
+            <div class="dial-value" id="safe-digit-0">-</div>
+            <div class="dial-hint">E=mc² (Степень c)</div>
+          </div>
+          <div class="dial-slot">
+            <div class="dial-label">📜 ПИРАМИДЫ</div>
+            <div class="dial-value" id="safe-digit-1">-</div>
+            <div class="dial-hint">Число пирамид Гизы</div>
+          </div>
+          <div class="dial-slot">
+            <div class="dial-label">🧪 РАДИЙ</div>
+            <div class="dial-value" id="safe-digit-2">-</div>
+            <div class="dial-hint">Группа Менделеева</div>
+          </div>
+          <div class="dial-slot">
+            <div class="dial-label">💻 СКЛЕП</div>
+            <div class="dial-value" id="safe-digit-3">-</div>
+            <div class="dial-hint">Число печатей знаний</div>
+          </div>
+        </div>
+
+        <div class="safe-status-msg" id="safe-status-msg">Введите 4 цифры шифра, найденные у призраков...</div>
+
+        <div class="safe-keypad">
+          <button class="keypad-btn" data-key="1">1</button>
+          <button class="keypad-btn" data-key="2">2</button>
+          <button class="keypad-btn" data-key="3">3</button>
+          <button class="keypad-btn" data-key="4">4</button>
+          <button class="keypad-btn" data-key="5">5</button>
+          <button class="keypad-btn" data-key="6">6</button>
+          <button class="keypad-btn" data-key="7">7</button>
+          <button class="keypad-btn" data-key="8">8</button>
+          <button class="keypad-btn" data-key="9">9</button>
+          <button class="keypad-btn action-clear" id="safe-btn-clear">СБРОС</button>
+          <button class="keypad-btn" data-key="0">0</button>
+          <button class="keypad-btn action-enter" id="safe-btn-enter">ОТКРЫТЬ 🔓</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Login Modal -->
   <div id="login-modal" class="modal-overlay">

@@ -15,17 +15,21 @@ export class AuthManager {
       user = {
         username: cleanName,
         color,
-        x: (Math.random() - 0.5) * 6,
+        x: (Math.random() - 0.5) * 1.6,
         y: 1.6,
-        z: (Math.random() - 0.5) * 6,
+        z: 10.5, // Authentic South entrance of GUK (Главный вход с улицы)
         rotY: 0,
         score: 0,
         inventory: []
       };
       db.saveUser(user);
     } else {
-      // update color if user re-selected
       user.color = color || user.color;
+      // Fresh login always starts at Main Entrance doors of GUK!
+      user.x = (Math.random() - 0.5) * 1.6;
+      user.y = 1.6;
+      user.z = 10.5;
+      user.rotY = 0;
       db.saveUser(user);
     }
 

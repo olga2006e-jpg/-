@@ -20,7 +20,27 @@ import {
   createSignpost,
   createCeilingLamp,
   createGhostNPC,
-  createArtifactMesh
+  createArtifactMesh,
+  createGrandStairs,
+  createElevator,
+  createBaumanBench,
+  createRadiator,
+  createBaumanCrest,
+  createBust,
+  createWardrobe,
+  createLecturePodium,
+  createCobweb,
+  createScheduleBoard,
+  createDeanNoticeBoard,
+  createClock,
+  createFireHoseCabinet,
+  createFoodServiceCounter,
+  createDiningTable,
+  createWitchCauldron,
+  createCafeteriaMenuBoard,
+  createTeacherDesk,
+  createFloatingCandle,
+  createFoundersSafe
 } from './environment.js';
 import { soundEngine } from './audio.js';
 
@@ -105,28 +125,59 @@ export class ChunkManager {
     this.onPlayerEnterChunk(cx, cz);
   }
 
-  onPlayerEnterChunk(cx, cz) {
-    // Current chunk + adjacent neighbors within 3x3 window (<= 10 chunks budget)
-    const neededCoords = [];
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dz = -1; dz <= 1; dz++) {
-        const targetCx = cx + dx;
-        const targetCz = cz + dz;
-        // 1. MUST NEVER exceed 10x10 world grid bounds [-5, 4]
-        if (targetCx < -5 || targetCx > 4 || targetCz < -5 || targetCz > 4) continue;
-        // 2. Strict building boundary clamping: do not request empty campus tiles beyond [-3, 3]!
-        if (Math.abs(targetCx) > 3 || Math.abs(targetCz) > 3) continue;
-        neededCoords.push({ cx: targetCx, cz: targetCz });
-      }
+  // Return the optimal 10 chunks for the current wing so all corridors and sealing walls are 100% visible
+  getWingCoords(cx, cz) {
+    // 1. West Wing (K5, Museum, West Gallery)
+    if (cx < 0 && Math.abs(cz) <= 1) {
+      return [
+        { cx: -2, cz: 0 }, { cx: -1, cz: 0 }, { cx: -3, cz: 0 }, { cx: 0, cz: 0 },
+        { cx: -2, cz: -1 }, { cx: -1, cz: -1 }, { cx: -3, cz: -1 },
+        { cx: -2, cz: 1 }, { cx: -3, cz: 1 }, { cx: -1, cz: 1 }
+      ];
     }
+    // 2. East Wing (Photonics, K1, K2, East Gallery)
+    if (cx > 0 && Math.abs(cz) <= 1) {
+      return [
+        { cx: 2, cz: 0 }, { cx: 1, cz: 0 }, { cx: 3, cz: 0 }, { cx: 0, cz: 0 },
+        { cx: 2, cz: -1 }, { cx: 3, cz: -1 }, { cx: 1, cz: -1 },
+        { cx: 2, cz: 1 }, { cx: 3, cz: 1 }, { cx: 1, cz: 1 }
+      ];
+    }
+    // 3. North Wing (Math Analysis, Akhmetova 404, Library, Lecture Halls)
+    if (cz < 0 && Math.abs(cx) <= 1) {
+      return [
+        { cx: 0, cz: -2 }, { cx: 0, cz: -1 }, { cx: 0, cz: -3 }, { cx: 0, cz: 0 },
+        { cx: -1, cz: -2 }, { cx: 1, cz: -2 }, { cx: -1, cz: -3 }, { cx: 1, cz: -3 },
+        { cx: -1, cz: -1 }, { cx: 1, cz: -1 }
+      ];
+    }
+    // 4. South Wing (Scientific Council, Directorate, Rectorate)
+    if (cz > 0 && Math.abs(cx) <= 1) {
+      return [
+        { cx: 0, cz: 2 }, { cx: 0, cz: 1 }, { cx: 0, cz: 3 }, { cx: 0, cz: 0 },
+        { cx: -1, cz: 2 }, { cx: 1, cz: 2 }, { cx: 2, cz: 2 }, { cx: -2, cz: 2 },
+        { cx: -1, cz: 1 }, { cx: 1, cz: 1 }
+      ];
+    }
+    // 5. Central Grand Foyer (0, 0)
+    return [
+      { cx: 0, cz: 0 }, { cx: -1, cz: 0 }, { cx: 1, cz: 0 },
+      { cx: 0, cz: -1 }, { cx: 0, cz: 1 }, { cx: -2, cz: 0 },
+      { cx: 2, cz: 0 }, { cx: 0, cz: -2 }, { cx: 0, cz: 2 },
+      { cx: -1, cz: -1 }
+    ];
+  }
 
-    // Sort by distance to player (load center first)
+  onPlayerEnterChunk(cx, cz) {
+    // Load the coherent 10-chunk set for the active wing (strictly <= 10 chunks budget)
+    const neededCoords = this.getWingCoords(cx, cz);
+
+    // Sort by distance to player (closest load first)
     neededCoords.sort((a, b) => {
       const distA = Math.hypot(a.cx - cx, a.cz - cz);
       const distB = Math.hypot(b.cx - cx, b.cz - cz);
       return distA - distB;
     });
-
     // Request missing chunks without premature eviction (only evict upon chunk arrival!)
     for (const coord of neededCoords) {
       const key = `${coord.cx},${coord.cz}`;
@@ -211,6 +262,10 @@ export class ChunkManager {
         chunkGroup.add(createCouncilTable(obj.x, obj.y, obj.z));
       } else if (obj.type === 'turnstile') {
         chunkGroup.add(createTurnstile(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'grand_stairs') {
+        chunkGroup.add(createGrandStairs(obj.x, obj.y, obj.z));
+      } else if (obj.type === 'elevator') {
+        chunkGroup.add(createElevator(obj.x, obj.y, obj.z, obj.rotY));
       } else if (obj.type === 'signpost') {
         chunkGroup.add(createSignpost(obj.x, obj.y, obj.z, obj.rotY, obj.text));
       } else if (obj.type === 'ceiling_lamp') {
@@ -238,6 +293,48 @@ export class ChunkManager {
         const artifact = createArtifactMesh(obj);
         chunkGroup.add(artifact);
         this.animatedObjects.push(artifact);
+      } else if (obj.type === 'bench') {
+        chunkGroup.add(createBaumanBench(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'radiator') {
+        chunkGroup.add(createRadiator(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'bauman_crest') {
+        chunkGroup.add(createBaumanCrest(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'bust') {
+        chunkGroup.add(createBust(obj.x, obj.y, obj.z, obj.name));
+      } else if (obj.type === 'wardrobe') {
+        chunkGroup.add(createWardrobe(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'podium') {
+        chunkGroup.add(createLecturePodium(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'cobweb') {
+        chunkGroup.add(createCobweb(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'schedule_board') {
+        chunkGroup.add(createScheduleBoard(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'dean_notice_board') {
+        chunkGroup.add(createDeanNoticeBoard(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'clock') {
+        chunkGroup.add(createClock(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'fire_cabinet') {
+        chunkGroup.add(createFireHoseCabinet(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'food_counter') {
+        chunkGroup.add(createFoodServiceCounter(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'dining_table') {
+        chunkGroup.add(createDiningTable(obj.x, obj.y, obj.z));
+      } else if (obj.type === 'witch_cauldron') {
+        const cauldron = createWitchCauldron(obj.x, obj.y, obj.z);
+        chunkGroup.add(cauldron);
+        this.animatedObjects.push(cauldron);
+      } else if (obj.type === 'cafeteria_menu') {
+        chunkGroup.add(createCafeteriaMenuBoard(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'teacher_desk') {
+        chunkGroup.add(createTeacherDesk(obj.x, obj.y, obj.z, obj.rotY));
+      } else if (obj.type === 'floating_candle') {
+        const fc = createFloatingCandle(obj.x, obj.y, obj.z);
+        chunkGroup.add(fc);
+        this.animatedObjects.push(fc);
+      } else if (obj.type === 'founders_safe') {
+        const safe = createFoundersSafe(obj.x, obj.y, obj.z, obj.rotY);
+        chunkGroup.add(safe);
+        this.animatedObjects.push(safe);
       }
     }
 
@@ -253,10 +350,72 @@ export class ChunkManager {
       }
     }
 
+    // Pre-calculate comprehensive 3D AABB collision boxes for this chunk
+    const collisionBoxes = [];
+    for (const obj of chunkData.objects) {
+      const rotY = obj.rotY || 0;
+      const isRot = Math.abs(Math.sin(rotY)) > 0.5;
+      const baseY = obj.y || 0;
+
+      let w = 0, d = 0, h = 3.5;
+
+      if (obj.type === 'wall') {
+        w = isRot ? (obj.depth || 0.4) : (obj.width || 24);
+        d = isRot ? (obj.width || 24) : (obj.depth || 0.4);
+        h = obj.height || 5.0;
+      } else if (obj.type === 'pillar') {
+        w = 1.3; d = 1.3; h = obj.height || 5.0;
+      } else if (obj.type === 'desk_row') {
+        w = isRot ? 1.4 : 5.4; d = isRot ? 5.4 : 1.4; h = 1.2;
+      } else if (obj.type === 'council_table') {
+        w = isRot ? 3.6 : 8.2; d = isRot ? 8.2 : 3.6; h = 1.2;
+      } else if (obj.type === 'laser_bench') {
+        w = isRot ? 1.8 : 3.4; d = isRot ? 3.4 : 1.8; h = 1.4;
+      } else if (obj.type === 'server_rack') {
+        w = 1.4; d = 1.2; h = 2.4;
+      } else if (obj.type === 'bookshelf') {
+        w = isRot ? 0.9 : 2.8; d = isRot ? 2.8 : 0.9; h = 2.6;
+      } else if (obj.type === 'podium') {
+        w = 1.2; d = 1.0; h = 1.6;
+      } else if (obj.type === 'teacher_desk') {
+        w = isRot ? 1.6 : 2.8; d = isRot ? 2.8 : 1.6; h = 1.2;
+      } else if (obj.type === 'bench') {
+        w = isRot ? 0.9 : 2.6; d = isRot ? 2.6 : 0.9; h = 1.0;
+      } else if (obj.type === 'bust') {
+        w = 1.0; d = 1.0; h = 2.0;
+      } else if (obj.type === 'radiator') {
+        w = isRot ? 0.5 : 1.4; d = isRot ? 1.4 : 0.5; h = 1.0;
+      } else if (obj.type === 'turnstile') {
+        w = isRot ? 0.6 : 1.4; d = isRot ? 1.4 : 0.6; h = 1.2;
+      } else if (obj.type === 'wardrobe') {
+        w = isRot ? 1.2 : 8.0; d = isRot ? 8.0 : 1.2; h = 2.2;
+      } else if (obj.type === 'food_counter') {
+        w = isRot ? 1.4 : 10.2; d = isRot ? 10.2 : 1.4; h = 1.4;
+      } else if (obj.type === 'dining_table') {
+        w = 2.2; d = 1.2; h = 1.1;
+      } else if (obj.type === 'witch_cauldron') {
+        w = 1.4; d = 1.4; h = 1.2;
+      } else if (obj.type === 'founders_safe') {
+        w = isRot ? 1.4 : 2.4; d = isRot ? 2.4 : 1.4; h = 2.6;
+      }
+
+      if (w > 0) {
+        collisionBoxes.push({
+          minX: obj.x - w / 2,
+          maxX: obj.x + w / 2,
+          minZ: obj.z - d / 2,
+          maxZ: obj.z + d / 2,
+          minY: baseY - 0.2,
+          maxY: baseY + h + 0.2
+        });
+      }
+    }
+
     this.scene.add(chunkGroup);
     this.loadedChunks.set(key, {
       group: chunkGroup,
       data: chunkData,
+      collisionBoxes,
       lastAccessed: Date.now()
     });
 
@@ -321,7 +480,24 @@ export class ChunkManager {
           obj.userData.npcMat.emissiveIntensity = 0.55 + Math.sin(elapsed * 2.8 + obj.userData.timeOffset) * 0.25;
         }
         if (obj.userData.light) {
-          obj.userData.light.intensity = 1.4 + Math.sin(elapsed * 2.8 + obj.userData.timeOffset) * 0.35;
+          obj.userData.light.intensity = 1.6 + Math.sin(elapsed * 2.8 + obj.userData.timeOffset) * 0.45;
+        }
+        // Ethereal tail waving animation
+        if (obj.userData.tailGroup) {
+          obj.userData.tailGroup.rotation.x = Math.sin(elapsed * 3.2 + obj.userData.timeOffset) * 0.12;
+          obj.userData.tailGroup.rotation.z = Math.cos(elapsed * 2.4 + obj.userData.timeOffset) * 0.08;
+        }
+        // Special animated props (halo, cube, crystal)
+        if (obj.userData.specialProp) {
+          if (obj.userData.npcData.id === 'akhmetova') {
+            obj.userData.specialProp.rotation.z += delta * 0.8;
+          } else if (obj.userData.npcData.id === 'korshunov') {
+            obj.userData.specialProp.rotation.y += delta * 1.2;
+            obj.userData.specialProp.rotation.x += delta * 0.6;
+          } else if (obj.userData.specialProp.userData?.netCube) {
+            obj.userData.specialProp.userData.netCube.rotation.y += delta * 1.5;
+            obj.userData.specialProp.userData.netCube.rotation.x += delta * 0.8;
+          }
         }
       }
       if (obj.userData?.isArtifact) {
@@ -351,6 +527,17 @@ export class ChunkManager {
           }
         }
       }
+      if (obj.userData?.isVault && obj.userData.wheelGroup) {
+        obj.userData.wheelGroup.rotation.z += delta * 0.3;
+      }
+    }
+  }
+  // Hide collected artifact from 3D scene
+  hideArtifact(itemId) {
+    for (const obj of this.animatedObjects) {
+      if (obj.userData?.isArtifact && obj.userData.itemId === itemId) {
+        obj.visible = false;
+      }
     }
   }
 
@@ -370,20 +557,21 @@ export class ChunkManager {
 
     return closestNpc;
   }
-  // Get all active wall collision boxes near the player
-  getNearbyWalls(px, pz, radius = 28) {
-    const walls = [];
-    for (const [key, entry] of this.loadedChunks.entries()) {
-      if (!entry.data?.objects) continue;
-      for (const obj of entry.data.objects) {
-        if (obj.type === 'wall') {
-          // Only include walls at body/head height (ignore transoms above 3.0m)
-          if (obj.y <= 3.0 && Math.hypot(obj.x - px, obj.z - pz) < radius) {
-            walls.push(obj);
-          }
+  // Ultra-fast collision box queries near the player (zero allocation per frame)
+  getCollisionBoxes(px, pz, radius = 14, playerY = 1.6) {
+    const boxes = [];
+    for (const entry of this.loadedChunks.values()) {
+      if (!entry.collisionBoxes) continue;
+      for (const box of entry.collisionBoxes) {
+        if (box.minY !== undefined && (playerY < box.minY || playerY > box.maxY)) continue;
+        if (
+          px + radius > box.minX && px - radius < box.maxX &&
+          pz + radius > box.minZ && pz - radius < box.maxZ
+        ) {
+          boxes.push(box);
         }
       }
     }
-    return walls;
+    return boxes;
   }
 }

@@ -29,17 +29,21 @@ export function setupMultiplayer(wss) {
         }
 
         authenticatedUser = username;
-        const savedUser = db.getUser(username) || { x: 0, y: 1.6, z: 0, rotY: 0, color: '#ff79c6', inventory: [] };
+        const savedUser = db.getUser(username) || { x: 0, y: 1.6, z: 10.5, rotY: 0, color: '#ff79c6', inventory: [] };
+
+        const startX = savedUser.x ?? 0;
+        const startZ = savedUser.z ?? 10.5;
+        const startRotY = savedUser.rotY ?? 0;
 
         const clientState = {
           ws,
           username,
           color: savedUser.color,
-          x: savedUser.x || 0,
+          x: startX,
           y: savedUser.y || 1.6,
-          z: savedUser.z || 0,
-          rotY: savedUser.rotY || 0,
-          currentChunk: worldToChunkCoord(savedUser.x || 0, savedUser.z || 0),
+          z: startZ,
+          rotY: startRotY,
+          currentChunk: worldToChunkCoord(startX, startZ),
           lastUpdate: Date.now()
         };
 
@@ -83,7 +87,7 @@ export function setupMultiplayer(wss) {
       if (!player) return;
 
       // 2. Position and Movement Update
-      if (msg.type === 'MOVE') {
+      if (msg.type === 'MOVE' || msg.type === 'PLAYER_MOVE') {
         player.x = msg.x ?? player.x;
         player.y = msg.y ?? player.y;
         player.z = msg.z ?? player.z;

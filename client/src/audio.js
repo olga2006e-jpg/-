@@ -206,6 +206,78 @@ class SoundEngine {
       osc.stop(t + (isOpen ? 0.4 : 0.2));
     } catch (e) {}
   }
-}
 
+  // 6. Artifact pickup chime
+  playItemPickup() {
+    if (this.isMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+      notes.forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + i * 0.08);
+
+        gain.gain.setValueAtTime(0.08, t + i * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.08 + 0.35);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t + i * 0.08);
+        osc.stop(t + i * 0.08 + 0.35);
+      });
+    } catch (e) {}
+  }
+
+  // 7. Grand Victory Fanfare & Bauman Chimes (Gaudeamus chord + bells)
+  playVictoryFanfare() {
+    if (this.isMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      // Majestic chord progression: C4, G4, C5, E5, G5
+      const chord = [261.63, 392.00, 523.25, 659.25, 783.99];
+      chord.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+
+        gain.gain.setValueAtTime(0.06, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 2.5);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 2.5);
+      });
+
+      // Shimmering chimes
+      const bells = [1046.5, 1318.5, 1567.98, 2093.0];
+      bells.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + 0.5 + idx * 0.2);
+
+        gain.gain.setValueAtTime(0.07, t + 0.5 + idx * 0.2);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.8 + idx * 0.2);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t + 0.5 + idx * 0.2);
+        osc.stop(t + 1.8 + idx * 0.2);
+      });
+    } catch (e) {}
+  }
+}
 export const soundEngine = new SoundEngine();

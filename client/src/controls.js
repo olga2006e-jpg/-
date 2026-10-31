@@ -1,14 +1,16 @@
 import * as THREE from 'three';
 import { soundEngine } from './audio.js';
+import { PlayerBody } from './playerBody.js';
 
 export class PlayerControls {
-  constructor(camera, domElement) {
+  constructor(camera, domElement, scene = null) {
     this.camera = camera;
     this.domElement = domElement;
+    this.scene = scene;
 
     this.enabled = false;
     this.isLocked = false;
-
+    this.playerBody = new PlayerBody(this.camera, this.scene);
     // Movement state
     this.moveForward = false;
     this.moveBackward = false;
@@ -94,6 +96,11 @@ export class PlayerControls {
         case 'ShiftRight':
           this.isSprinting = true;
           break;
+        case 'KeyL':
+          if (this.playerBody) {
+            this.playerBody.toggleLantern();
+          }
+          break;
       }
     };
 
@@ -169,14 +176,91 @@ export class PlayerControls {
     const deltaX = (forwardX * (-this.velocity.z) + rightX * this.velocity.x) * delta;
     const deltaZ = (forwardZ * (-this.velocity.z) + rightZ * this.velocity.x) * delta;
 
+    const oldX = this.camera.position.x;
+    const oldZ = this.camera.position.z;
+    const playerRadius = 0.45;
+    const playerY = this.camera.position.y;
+
+    let nextX = oldX + deltaX;
+    let nextZ = oldZ + deltaZ;
+
+    // Robust sliding AABB collision against ALL physical scene obstacles
+    if (this.chunkManager) {
+      const boxes = this.chunkManager.getCollisionBoxes(oldX, oldZ, 10, playerY);
+
+      // --- 1. Solve X axis with continuous sliding clamp ---
+      for (const b of boxes) {
+        if (oldZ + playerRadius > b.minZ && oldZ - playerRadius < b.maxZ) {
+          if (nextX > oldX && nextX + playerRadius > b.minX && oldX + playerRadius <= b.minX + 0.08) {
+            nextX = b.minX - playerRadius;
+          } else if (nextX < oldX && nextX - playerRadius < b.maxX && oldX - playerRadius >= b.maxX - 0.08) {
+            nextX = b.maxX + playerRadius;
+          } else if (nextX + playerRadius > b.minX && nextX - playerRadius < b.maxX) {
+            // Safety push-out if embedded
+            const dLeft = Math.abs(nextX + playerRadius - b.minX);
+            const dRight = Math.abs(b.maxX - (nextX - playerRadius));
+            nextX = dLeft < dRight ? b.minX - playerRadius : b.maxX + playerRadius;
+          }
+        }
+      }
+
+      // --- 2. Solve Z axis with continuous sliding clamp ---
+      for (const b of boxes) {
+        if (nextX + playerRadius > b.minX && nextX - playerRadius < b.maxX) {
+          if (nextZ > oldZ && nextZ + playerRadius > b.minZ && oldZ + playerRadius <= b.minZ + 0.08) {
+            nextZ = b.minZ - playerRadius;
+          } else if (nextZ < oldZ && nextZ - playerRadius < b.maxZ && oldZ - playerRadius >= b.maxZ - 0.08) {
+            nextZ = b.maxZ + playerRadius;
+          } else if (nextZ + playerRadius > b.minZ && nextZ - playerRadius < b.maxZ) {
+            // Safety push-out if embedded
+            const dBack = Math.abs(nextZ + playerRadius - b.minZ);
+            const dFront = Math.abs(b.maxZ - (nextZ - playerRadius));
+            nextZ = dBack < dFront ? b.minZ - playerRadius : b.maxZ + playerRadius;
+          }
+        }
+      }
+    }
+
     // Campus perimeter clamping: player can NEVER fall into the void!
     const bound = 78;
-    this.camera.position.x = THREE.MathUtils.clamp(this.camera.position.x + deltaX, -bound, bound);
-    this.camera.position.z = THREE.MathUtils.clamp(this.camera.position.z + deltaZ, -bound, bound);
+    this.camera.position.x = THREE.MathUtils.clamp(nextX, -bound, bound);
+    this.camera.position.z = THREE.MathUtils.clamp(nextZ, -bound, bound);
 
-    this.camera.position.y = 1.6; // Fixed eye-height
+    // Continuous Elevation System: Completely Seamless Multi-Floor Walking!
+    let targetEyeY = 1.6;
+    const px = this.camera.position.x;
+    const pz = this.camera.position.z;
+
+    // 1. Central Foyer chunk (0, 0)
+    if (Math.abs(px) <= 12.0 && pz >= -12.0 && pz <= 12.0) {
+      if (Math.abs(px) <= 3.4 && pz <= 1.0 && pz >= -9.0) {
+        // Climbing up/down the Grand Marble Staircase smoothly with WASD
+        const progress = Math.max(0, Math.min(1, (1.0 - pz) / 10.0));
+        targetEyeY = 1.6 + progress * 4.0; // rises from 1.6m up to 5.6m (Floor 2 level)
+      } else if (pz < -9.0 && pz >= -12.0 && Math.abs(px) <= 11.5) {
+        // On 2nd Floor Mezzanine Gallery (y = 4.0m floor + 1.6m eyes = 5.6m)
+        targetEyeY = 5.6;
+
+        // Balustrade safety barrier: prevent walking over railing into 1st floor central hall
+        if (Math.abs(px) > 3.4 && nextZ > -9.0) {
+          nextZ = -9.0;
+          this.camera.position.z = -9.0;
+        }
+      }
+    } else if (pz < -12.0) {
+      // Entire 2nd Floor Wings (Gallery, Department K5, Council Hall, Library, Photonics)
+      // All 2nd floor classrooms and hallways are physically at y = 4.0m floor!
+      targetEyeY = 5.6;
+    }
+
+    // Smooth camera step-up and step-down interpolation (no sharp cuts or jumps!)
+    this.camera.position.y += (targetEyeY - this.camera.position.y) * Math.min(1, delta * 14);
+
+    // Update player first-person body viewmodel & lantern sway
+    if (this.playerBody) {
+      this.playerBody.update(delta, isMoving, this.pitch);
+    }
   }
-
   getPosition() {
     return {
       x: this.camera.position.x,

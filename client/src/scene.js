@@ -6,10 +6,9 @@ export class GameScene {
 
     // 1. Scene & Bauman GZ Indoor Lighting
     this.scene = new THREE.Scene();
-    // Warm classical Bauman architectural background
-    this.scene.background = new THREE.Color(0x1a1924);
-    // Soft gentle indoor depth (no blind black fog!)
-    this.scene.fog = new THREE.FogExp2(0x1a1924, 0.009);
+    // Deep gothic midnight purple-black background & creeping Halloween fog
+    this.scene.background = new THREE.Color(0x0c0817);
+    this.scene.fog = new THREE.Fog(0x0c0817, 30, 75);
 
     // 2. Camera
     this.camera = new THREE.PerspectiveCamera(
@@ -18,14 +17,13 @@ export class GameScene {
       0.1,
       350
     );
-    this.camera.position.set(0, 1.6, 0);
+    this.camera.position.set(0, 1.6, 10.5);
 
     // 3. WebGL Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = false;
     container.appendChild(this.renderer.domElement);
 
     // 4. Bright, warm lighting for Bauman GZ Halls
@@ -38,33 +36,22 @@ export class GameScene {
   }
 
   setupBaumanLighting() {
-    // Ambient light: generous warm fill so EVERYTHING is visible
-    const ambient = new THREE.AmbientLight(0xfff3e0, 1.4);
+    // 1. Eerie gothic purple-indigo midnight ambient (shadows are truly dark and spooky!)
+    const ambient = new THREE.AmbientLight(0x231a38, 0.45);
     this.scene.add(ambient);
 
-    // Main hall chandeliers (directional downward warm white light)
-    const mainLight = new THREE.DirectionalLight(0xfffaed, 1.6);
-    mainLight.position.set(20, 50, 20);
-    mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 1024;
-    mainLight.shadow.mapSize.height = 1024;
-    mainLight.shadow.camera.near = 5;
-    mainLight.shadow.camera.far = 140;
-    mainLight.shadow.camera.left = -60;
-    mainLight.shadow.camera.right = 60;
-    mainLight.shadow.camera.top = 60;
-    mainLight.shadow.camera.bottom = -60;
-    mainLight.shadow.bias = -0.0003;
-    mainLight.shadow.normalBias = 0.04;
-    this.scene.add(mainLight);
+    // 2. Cool silver-cyan moonlight angling through high Bauman windows
+    const moonLight = new THREE.DirectionalLight(0x7bc4e2, 0.75);
+    moonLight.position.set(30, 60, 40);
+    this.scene.add(moonLight);
 
-    // Secondary fill light from opposite side
-    const fillLight = new THREE.DirectionalLight(0xb0c4de, 0.9);
-    fillLight.position.set(-30, 40, -30);
+    // 3. Deep purple-violet underfill
+    const fillLight = new THREE.DirectionalLight(0x3e2358, 0.4);
+    fillLight.position.set(-30, 30, -30);
     this.scene.add(fillLight);
 
-    // Hemisphere light: warm ceiling, cool floor
-    const hemiLight = new THREE.HemisphereLight(0xfff5e6, 0x4a4759, 1.0);
+    // 4. Gothic hemisphere: dark violet ceiling, pitch-black floor
+    const hemiLight = new THREE.HemisphereLight(0x382252, 0x090611, 0.5);
     this.scene.add(hemiLight);
   }
 
