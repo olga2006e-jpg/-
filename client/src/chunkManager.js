@@ -65,11 +65,19 @@ export class ChunkManager {
     const cx = Math.round(x / CHUNK_SIZE);
     const cz = Math.round(z / CHUNK_SIZE);
 
-    if (cx !== this.currentChunkX || cz !== this.currentChunkZ) {
+    const shouldLoad = cx !== this.currentChunkX || cz !== this.currentChunkZ || (this.loadedChunks.size === 0 && this.network.isConnected());
+    if (shouldLoad) {
       this.currentChunkX = cx;
       this.currentChunkZ = cz;
       this.onPlayerEnterChunk(cx, cz);
     }
+  }
+
+  forceReload() {
+    this.pendingRequests.clear();
+    const cx = this.currentChunkX ?? 0;
+    const cz = this.currentChunkZ ?? 0;
+    this.onPlayerEnterChunk(cx, cz);
   }
 
   onPlayerEnterChunk(cx, cz) {

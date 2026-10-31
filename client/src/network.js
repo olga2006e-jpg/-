@@ -7,7 +7,8 @@ export class NetworkClient {
     this.ws = null;
     this.token = null;
     this.myUsername = null;
-
+    this.isAuthenticated = false;
+    this.sendQueue = [];
     // Remote players: username -> { mesh: THREE.Group, targetX, targetY, targetZ, targetRotY }
     this.remotePlayers = new Map();
 
@@ -53,9 +54,31 @@ export class NetworkClient {
     };
   }
 
+  isConnected() {
+    return this.ws && this.ws.readyState === WebSocket.OPEN && this.isAuthenticated;
+  }
+
   send(msgObj) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    if (msgObj.type === 'AUTH') {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify(msgObj));
+      }
+      return;
+    }
+
+    if (this.isConnected()) {
       this.ws.send(JSON.stringify(msgObj));
+    } else {
+      // Buffer messages until authenticated
+      this.sendQueue.push(msgObj);
+    }
+  }
+
+  flushQueue() {
+    if (!this.isConnected()) return;
+    while (this.sendQueue.length > 0) {
+      const msg = this.sendQueue.shift();
+      this.ws.send(JSON.stringify(msg));
     }
   }
 
@@ -75,6 +98,8 @@ export class NetworkClient {
     switch (msg.type) {
       case 'AUTH_SUCCESS':
         console.log('[WS] Auth successful! Total chunks:', msg.totalWorldChunks);
+        this.isAuthenticated = true;
+        this.flushQueue();
         if (this.onAuthSuccess) this.onAuthSuccess(msg);
         break;
 

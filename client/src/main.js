@@ -80,6 +80,7 @@ class GameApp {
         );
       }
       this.controls.enabled = true;
+      this.chunkManager.forceReload();
       this.ui.updatePlayersList(this.myUsername, []);
     };
 
