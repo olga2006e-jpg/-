@@ -50,7 +50,7 @@ app.get('/api/status', async (req, res) => {
     totalChunks: TOTAL_WORLD_CHUNKS,
     totalWorldBytes: TOTAL_WORLD_CANONICAL_BYTES,
     databaseEngine: db.type,
-    aiModel: process.env.OLLAMA_MODEL || 'qwen2.5:3b',
+    aiModel: process.env.OLLAMA_MODEL || 'qwen2.5:0.5b',
     ollama: ollamaHealth
   });
 });

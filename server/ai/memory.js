@@ -11,12 +11,12 @@ export class MemoryManager {
     const memory = db.getAgentMemory(username, agentId);
 
     const knownFactIds = new Set(memory.factsKnown || []);
-    const knownFactsList = persona.factsCatalog
+    const knownFactsList = (persona.factsCatalog || [])
       .filter(f => knownFactIds.has(f.id))
       .map(f => `• ${f.title}: ${f.text}`)
       .join('\n');
 
-    const unknownFactsList = persona.factsCatalog
+    const unknownFactsList = (persona.factsCatalog || [])
       .filter(f => !knownFactIds.has(f.id))
       .map(f => `• [Новая тема] ${f.title}: ${f.text}`)
       .join('\n');
@@ -56,25 +56,17 @@ ${persona.name}:`;
       if (mem.history.length > 10) {
         mem.history = mem.history.slice(-10);
       }
-
-      // Strictly register facts only when explicitly mentioned in the actual dialogue
-      // NEVER use random unlocking!
-      const combined = (userMessage + ' ' + responseText).toLowerCase();
+      // Only mark facts present in the answer; asking a question is not learning it.
+      const lower = responseText.toLowerCase();
       mem.factsKnown = mem.factsKnown || [];
       mem.discussedTopics = mem.discussedTopics || [];
 
-      for (const fact of persona.factsCatalog) {
-        if (!mem.factsKnown.includes(fact.id)) {
-          const keywords = [
-            ...(fact.keywords || []),
-            ...fact.title.toLowerCase().split(/\s+/).filter(w => w.length > 3)
-          ];
-          const matched = keywords.some(kw => combined.includes(kw));
-          if (matched) {
-            mem.factsKnown.push(fact.id);
-            if (!mem.discussedTopics.includes(fact.title)) {
-              mem.discussedTopics.push(fact.title);
-            }
+      for (const fact of (persona.factsCatalog || [])) {
+        if (!mem.factsKnown.includes(fact.id) &&
+            (lower.includes(fact.text.toLowerCase()) || lower.includes(fact.title.toLowerCase()))) {
+          mem.factsKnown.push(fact.id);
+          if (!mem.discussedTopics.includes(fact.title)) {
+            mem.discussedTopics.push(fact.title);
           }
         }
       }
@@ -83,3 +75,48 @@ ${persona.name}:`;
     });
   }
 }
+
+// Compatible version of the team's STORY -> RIDDLE -> DONE state machine.
+// Uses existing server storage rather than a volatile Map.
+export const memory = {
+  getNextFact(playerId, npcId, npcData) {
+    const persona = AGENT_PERSONAS[npcId];
+    if (!persona) throw new Error('Персонаж не найден');
+    const state = db.getAgentMemory(playerId, npcId);
+    const next = (persona.factsCatalog || []).find(f => !state.factsKnown.includes(f.id));
+    if (state.lessonState === 'DONE') {
+      return { type: 'DONE', text: 'Вы уже решили мою загадку. Можем продолжить разговор по моему предмету.' };
+    }
+    if (!next) {
+      db.updateAgentMemory(playerId, npcId, m => { m.lessonState = 'RIDDLE'; });
+      return { type: 'RIDDLE', text: `Мы уже обсудили основные темы. Теперь вопрос: ${persona.riddle}`, isLastFact: true };
+    }
+    db.updateAgentMemory(playerId, npcId, m => { m.lessonState = 'STORY'; });
+    return { type: 'STORY', text: `${state.turnsCount ? 'Продолжим нашу беседу. ' : ''}${next.title}. ${next.text}`, factId: next.id };
+  },
+
+  checkRiddle(playerId, npcId, answer) {
+    const persona = AGENT_PERSONAS[npcId];
+    const state = db.getAgentMemory(playerId, npcId);
+    if (!persona || state.lessonState !== 'RIDDLE') {
+      return { isCorrect: false, message: 'Я пока не задавал вам загадку.' };
+    }
+    const normalized = String(answer).trim().toLowerCase().replace(/[.!?]+$/, '');
+    const words = {
+      '0': ['ноль', 'нулю', 'zero'],
+      '2': ['два', 'две', 'вторая', 'второй'],
+      '3': ['три'],
+      '7': ['семь']
+    };
+    const isCorrect = normalized === persona.codeDigit || (words[persona.codeDigit] || []).includes(normalized);
+    if (isCorrect) {
+      db.updateAgentMemory(playerId, npcId, m => { m.lessonState = 'DONE'; });
+    }
+    return {
+      isCorrect,
+      message: isCorrect
+        ? 'Верно! Вы решили мою учебную загадку. Это отдельная задача, код сейфа ищите в четырёх предметах.'
+        : `Пока неверно. Попробуйте ещё раз: ${persona.riddle}`
+    };
+  }
+};

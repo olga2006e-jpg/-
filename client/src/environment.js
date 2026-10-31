@@ -74,7 +74,7 @@ const stemMaterial = new THREE.MeshStandardMaterial({
 });
 
 // 0a. Floating text billboard for NPC and Player nametags
-export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(15, 12, 28, 0.85)') {
+export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(16, 27, 34, 0.93)') {
   const canvas = document.createElement('canvas');
   canvas.width = 384;
   canvas.height = 72;
@@ -88,7 +88,9 @@ export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(15, 12
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.font = 'bold 22px monospace';
+  let fontSize=22;
+  ctx.font = `500 ${fontSize}px Segoe UI`;
+  while(ctx.measureText(text).width>344 && fontSize>11)ctx.font=`500 ${--fontSize}px Segoe UI`;
   ctx.fillStyle = colorHex;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -1640,16 +1642,27 @@ export function createFloorTile(x, y, z, width, depth, zoneType) {
     roughness = 0.85;
   }
 
-  const geo = new THREE.PlaneGeometry(width, depth);
-  const mat = new THREE.MeshStandardMaterial({
-    color: floorColor,
-    roughness,
-    metalness
-  });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.position.set(x, y, z);
-  mesh.receiveShadow = true;
+  const canvas=document.createElement('canvas');
+  canvas.width=canvas.height=512;
+  const ctx=canvas.getContext('2d');
+  const palette=zoneType==='foyer'?['#545d59','#626b65']:zoneType==='k5_lab'?['#455760','#4c6068']:zoneType==='photonics_lab'?['#495e55','#53685e']:['#65594d','#706353'];
+  for(let tx=0;tx<8;tx++)for(let tz=0;tz<8;tz++){
+    ctx.fillStyle=palette[(tx+tz)%2];ctx.fillRect(tx*64,tz*64,64,64);
+    ctx.strokeStyle='#ffffff0a';ctx.strokeRect(tx*64+.5,tz*64+.5,63,63);
+  }
+  ctx.strokeStyle='#d2bb83';ctx.lineWidth=2;ctx.strokeRect(20,20,472,472);
+  ctx.strokeStyle='#d2bb8355';ctx.strokeRect(25,25,462,462);
+  if(zoneType==='foyer'){
+    ctx.fillStyle='#263e41';ctx.fillRect(218,0,76,512);ctx.fillRect(0,218,512,76);
+    ctx.strokeStyle='#cbb47e88';ctx.lineWidth=2;ctx.strokeRect(218,0,76,512);ctx.strokeRect(0,218,512,76);
+    ctx.beginPath();ctx.arc(256,256,78,0,Math.PI*2);ctx.fillStyle='#263e41';ctx.fill();ctx.strokeStyle='#cbb47e';ctx.stroke();
+    ctx.fillStyle='#ddbd81';ctx.font='70px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Б',256,259);
+  }
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+  const geo=new THREE.PlaneGeometry(width,depth);
+  const mat=new THREE.MeshStandardMaterial({map:texture,roughness:.72,metalness:.04});
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.rotation.x=-Math.PI/2;mesh.position.set(x,y,z);mesh.receiveShadow=true;
   return mesh;
 }
 

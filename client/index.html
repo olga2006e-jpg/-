@@ -1,450 +1,264 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Хэллоуин в Бауманке: Ночь в ГЗ (МГТУ им. Н.Э. Баумана)</title>
-  <link rel="stylesheet" href="/style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101b22">
+<title>Ночь в Бауманке — учебный павильон</title>
+<link rel="stylesheet" href="/style.css">
 </head>
-<body>
-  <!-- 3D Canvas Container -->
-  <div id="game-container"></div>
-
-  <!-- Reticle / Crosshair -->
-  <div id="crosshair"></div>
-
-  <!-- HUD: Cache Monitor (Proof of <= 10% rule for judges) -->
-  <div id="cache-monitor" class="hud-panel">
-    <div class="hud-title">⚡ СТРИМИНГ МИРА & КЭШ</div>
-    <div class="metric-row">
-      <span>Всего чанков мира:</span>
-      <span id="metric-total-chunks" class="metric-val">100</span>
-    </div>
-    <div class="metric-row">
-      <span>Загружено в память:</span>
-      <span id="metric-loaded-chunks" class="metric-val">0</span>
-    </div>
-    <div class="metric-row">
-      <span>Использовано кэша:</span>
-      <span id="metric-cache-percent" class="metric-val highlight">0.0%</span>
-    </div>
-    <div class="metric-badge pass" id="metric-badge">
-      ЛИМИТ: ≤ 10% [СОБЛЮДЕНО ✅]
-    </div>
-    <div class="metric-sub" id="metric-zone">Зона: Загрузка...</div>
-  </div>
-  <!-- HUD: Minimap (Radar of the Campus Building) -->
-  <div id="minimap-panel" class="hud-panel">
-    <div class="minimap-header">
-      <div class="hud-title" style="margin: 0; border: none; padding: 0;">🗺️ ПЛАН ГУК МГТУ</div>
-      <div class="minimap-controls">
-        <button id="minimap-zoom-in" class="minimap-btn" title="Приблизить">+</button>
-        <button id="minimap-zoom-out" class="minimap-btn" title="Отдалить">-</button>
-        <button id="minimap-expand-btn" class="minimap-btn" title="Развернуть план здания (Клавиша M)">⛶</button>
-      </div>
-    </div>
-    <div class="minimap-canvas-wrapper">
-      <canvas id="minimap-canvas" width="228" height="200"></canvas>
-    </div>
-    <div id="minimap-location-badge">📍 ГУК: Загрузка...</div>
-    <div class="minimap-subhint">Клавиша [M] — план этажей</div>
-  </div>
-
-  <!-- HUD: Top Interactive Navigation Bar -->
-  <div id="top-navbar">
-    <button id="nav-btn-quest" class="nav-pill-btn" title="Журнал расследования (Клавиша J)"><span class="nav-icon">📜</span> Квест [J]</button>
-    <button id="nav-btn-cafeteria" class="nav-pill-btn" title="Меню Кафедры Питания"><span class="nav-icon">🍴</span> Меню столовой</button>
-    <button id="nav-btn-zachetka" class="nav-pill-btn" title="Зачётная книжка студента (Клавиша B)"><span class="nav-icon">🎒</span> Зачётка [B]</button>
-    <button id="nav-btn-lantern" class="nav-pill-btn" title="Зажечь/погасить фонарь (Клавиша L)"><span class="nav-icon">💡</span> Фонарь [L]</button>
-  </div>
-
-  <!-- HUD: Online Players -->
-  <div id="players-hud" class="hud-panel">
-    <div class="hud-title">👻 ИССЛЕДОВАТЕЛИ В СЕТИ</div>
-    <div id="players-list"></div>
-  </div>
-
-  <!-- Interaction Prompt -->
-  <div id="interaction-prompt">
-    <span class="key-badge">E</span> <span id="prompt-text">Поговорить с призраком</span>
-  </div>
-
-  <!-- Chat Overlay -->
-  <div id="chat-container">
-    <div id="chat-messages"></div>
-    <form id="chat-form">
-      <input type="text" id="chat-input" placeholder="Нажмите Enter для чата..." autocomplete="off" />
-    </form>
-  </div>
-
-  <!-- AI Dialogue Modal -->
-  <div id="dialogue-modal" class="modal-overlay hidden">
-    <div class="dialogue-card">
-      <div class="dialogue-header">
-        <div class="dialogue-avatar" id="dialogue-avatar">👻</div>
-        <div>
-          <h2 id="dialogue-name">Альберт Эйнштейн</h2>
-          <div class="dialogue-role" id="dialogue-role">Призрак Обсерватории</div>
-        </div>
-        <button id="dialogue-close" class="close-btn">&times;</button>
-      </div>
-
-      <div class="dialogue-body">
-        <div id="dialogue-history"></div>
-        <div id="dialogue-typing" class="typing-indicator hidden">
-          <span></span><span></span><span></span> Призрак формулирует мысль...
-        </div>
-      </div>
-
-      <div class="dialogue-footer">
-        <div class="quick-questions" id="quick-questions"></div>
-        <form id="dialogue-form">
-          <input type="text" id="dialogue-input" placeholder="Задайте свой вопрос призраку..." autocomplete="off" />
-          <button type="submit" class="send-btn">Спросить</button>
-        </form>
-      </div>
-    </div>
-  </div>
-  <!-- Full Interactive Map Modal (5 Floors, like map.mf.bmstu.ru) -->
-  <div id="map-modal" class="modal-overlay hidden">
-    <div class="map-card">
-      <div class="map-card-header">
-        <div>
-          <h2>ИНТЕРАКТИВНАЯ КАРТА ГУК МГТУ ИМ. Н.Э. БАУМАНА</h2>
-          <div class="map-card-subtitle">Архитектурный план Главного Учебного Корпуса • map.mf.bmstu.ru</div>
-        </div>
-        <button id="map-modal-close" class="close-btn">&times;</button>
-      </div>
-
-      <div class="floor-tabs">
-        <button class="floor-tab-btn" data-floor="1">1 ЭТАЖ • Вестибюль & Турникеты</button>
-        <button class="floor-tab-btn active" data-floor="2">2 ЭТАЖ • К5 (ИУ5) & Учёный Совет</button>
-        <button class="floor-tab-btn" data-floor="3">3 ЭТАЖ • Деканаты & ООТ</button>
-        <button class="floor-tab-btn" data-floor="4">4 ЭТАЖ • Поточные аудитории ФН</button>
-        <button class="floor-tab-btn" data-floor="5">5 ЭТАЖ • Обсерватория & Кафедры</button>
-      </div>
-
-      <div class="map-card-body">
-        <canvas id="full-map-canvas" width="940" height="520"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- Quest Journal Modal (Клавиша J) -->
-  <div id="quest-modal" class="modal-overlay hidden">
-    <div class="quest-card">
-      <div class="quest-card-header">
-        <div>
-          <h2>📜 ТАЙНА ЗОЛОТОЙ ЗАЧЁТКИ 1830 ГОДА</h2>
-          <div class="quest-card-subtitle">Ночной рубежный контроль • Заброшенные коридоры ГУК МГТУ им. Н.Э. Баумана</div>
-        </div>
-        <button id="quest-modal-close" class="close-btn">&times;</button>
-      </div>
-
-      <div class="quest-card-body">
-        <div class="quest-storyline-box">
-          <div class="quest-storyline-badge">🎃 ЛОР И ЦЕЛЬ МИССИИ</div>
-          <p>
-            В полночь Хэллоуина куранты ГУК пробили 13 ударов. Магическое поле закрыло выходы из Главного Здания!
-            Чтобы развеять чары и открыть Главные Врата, студенческая команда из четырёх исследователей должна сдать
-            <b>«Экзамен Четырёх Стихий Науки»</b> легендарным призракам инженерии.
-          </p>
-        </div>
-
-        <h3 class="quest-section-title">📋 ЭТАПЫ ИСПЫТАНИЙ (КООПЕРАТИВНЫЙ КВЕСТ)</h3>
-
-        <div class="quest-steps-grid">
-          <div class="quest-step-card" id="qstep-1">
-            <div class="qstep-header">
-              <span class="qstep-icon">🍴</span>
-              <span class="qstep-title">1. Кафедра Питания</span>
-              <span class="qstep-status active">В ПРОЦЕССЕ</span>
-            </div>
-            <p>Загляните в Студенческую столовую (1-й этаж, направо от вестибюля). Поговорите с буфетчицей Тётей Клавой, возьмите горячую сосиску в тесте и узнайте, почему закрылся проход.</p>
-          </div>
-
-          <div class="quest-step-card" id="qstep-2">
-            <div class="qstep-header">
-              <span class="qstep-icon">💻</span>
-              <span class="qstep-title">2. Стихия Сетей: Кафедра ИУ-5</span>
-              <span class="qstep-status pending">ОЖИДАНИЕ</span>
-            </div>
-            <p>Поднимитесь по Парадной лестнице на 2-й этаж в Ауд. 227 к преподавателю Антону Игоревичу Каневу. Защитите лабу по маршрутизации и получите Зашифрованную USB-флешку.</p>
-          </div>
-
-          <div class="quest-step-card" id="qstep-3">
-            <div class="qstep-header">
-              <span class="qstep-icon">⏳</span>
-              <span class="qstep-title">3. Стихия Времени: Обсерватория</span>
-              <span class="qstep-status pending">ОЖИДАНИЕ</span>
-            </div>
-            <p>Поднимитесь на лифте или лестнице в Астрономическую башню к Альберту Эйнштейну. Разберитесь с замедлением времени у черных дыр, чтобы синхронизировать хронометр сейфа.</p>
-          </div>
-
-          <div class="quest-step-card" id="qstep-4">
-            <div class="qstep-header">
-              <span class="qstep-icon">🧪</span>
-              <span class="qstep-title">4. Стихия Материи: Фотоника & Радиохимия</span>
-              <span class="qstep-status pending">ОЖИДАНИЕ</span>
-            </div>
-            <p>Найдите Марию Кюри и Владислава Коршунова на 3-м этаже. Зарядите люминесцентный кристалл в лазерном резонаторе, чтобы проявить невидимые чернила на чертеже Шухова.</p>
-          </div>
-
-          <div class="quest-step-card" id="qstep-5">
-            <div class="qstep-header">
-              <span class="qstep-icon">🏛️</span>
-              <span class="qstep-title">5. Финал: Зал Учёного Совета (Ауд. 223)</span>
-              <span class="qstep-status pending">ФИНАЛ</span>
-            </div>
-            <p>Соберите 4 полученных шифра воедино, введите кодовую комбинацию в Сейф Совета и откройте Главные Врата ГУК навстречу утреннему солнцу!</p>
-          </div>
-        </div>
-
-        <div class="quest-coop-hint">
-          <b>🤝 Совет для команды из 4 человек:</b> Распределитесь по этажам! Один игрок может разговаривать с профессором в лаборатории и пересылать подсказки напарникам через общий командный чат внизу экрана!
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cafeteria Interactive Menu Modal -->
-  <div id="cafeteria-modal" class="modal-overlay hidden">
-    <div class="cafeteria-card">
-      <div class="cafeteria-card-header">
-        <div>
-          <h2>🍴 КАФЕДРА ПИТАНИЯ • СТОЛОВАЯ ГУК №1</h2>
-          <div class="cafeteria-card-subtitle">Легендарный буфет Бауманки • Тётя Клава встречает полуночных студентов</div>
-        </div>
-        <button id="cafeteria-modal-close" class="close-btn">&times;</button>
-      </div>
-
-      <div class="cafeteria-card-body">
-        <div class="cafeteria-quote">
-          «Не сдав лабу — голодным не уйдёшь! Подкрепись, студент, впереди долгая ночь в лабиринтах ГУКа!»
-        </div>
-
-        <div class="menu-items-list">
-          <div class="menu-item-row">
-            <div class="menu-item-info">
-              <div class="menu-item-name">🌭 Сосиска в тесте «Хэллоуинская»</div>
-              <div class="menu-item-desc">Свежевыпеченная, в золотистом тесте с полоской кетчупа. Восстанавливает силы для сдачи рубежного контроля!</div>
-            </div>
-            <div class="menu-item-action">
-              <span class="menu-price">50 ₽</span>
-              <button class="order-btn" data-item="sosiska">Заказать</button>
-            </div>
-          </div>
-
-          <div class="menu-item-row">
-            <div class="menu-item-info">
-              <div class="menu-item-name">🍵 Горячий чай с сахаром и лимоном</div>
-              <div class="menu-item-desc">В аутентичном гранёном стакане и серебряном подстаканнике с символикой МГТУ. Согревает в холодных коридорах.</div>
-            </div>
-            <div class="menu-item-action">
-              <span class="menu-price">12 ₽</span>
-              <button class="order-btn" data-item="tea">Заказать</button>
-            </div>
-          </div>
-
-          <div class="menu-item-row">
-            <div class="menu-item-info">
-              <div class="menu-item-name">🥣 Студенческий борщ со сметаной</div>
-              <div class="menu-item-desc">Классика советской кулинарии. Ясность инженерного ума +15.</div>
-            </div>
-            <div class="menu-item-action">
-              <span class="menu-price">45 ₽</span>
-              <button class="order-btn" data-item="borscht">Заказать</button>
-            </div>
-          </div>
-
-          <div class="menu-item-row special">
-            <div class="menu-item-info">
-              <div class="menu-item-name">🎃 Ведьминский суп сессии (Спецблюдо)</div>
-              <div class="menu-item-desc">Секретное зелье из бурлящего котла на раздаче. Гарантирует автозачёт у самых строгих преподавателей!</div>
-            </div>
-            <div class="menu-item-action">
-              <span class="menu-price free">БЕСПЛАТНО</span>
-              <button class="order-btn" data-item="witch_soup">Попробовать</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Student Record Book Modal («Зачётка», Клавиша B) -->
-  <div id="zachetka-modal" class="modal-overlay hidden">
-    <div class="zachetka-card">
-      <div class="zachetka-card-header">
-        <div>
-          <h2>📘 ЗАЧЁТНАЯ КНИЖКА СТУДЕНТА МГТУ ИМ. Н.Э. БАУМАНА</h2>
-          <div class="zachetka-card-subtitle">Факультет Информатики и Систем Управления (ИУ) • Кафедра ИУ-5</div>
-        </div>
-        <button id="zachetka-modal-close" class="close-btn">&times;</button>
-      </div>
-
-      <div class="zachetka-card-body">
-        <div class="zachetka-spread">
-          <!-- Left page -->
-          <div class="zachetka-page left-page">
-            <div class="student-seal">
-              <div class="seal-crest">⚙️🏛️</div>
-              <div class="seal-title">МГТУ ИМ. Н.Э. БАУМАНА</div>
-              <div class="seal-sub">Основано в 1830 году</div>
-            </div>
-            <div class="student-info-table">
-              <div><b>Студент:</b> <span id="zachetka-student-name">Саша_ИУ5</span></div>
-              <div><b>Специальность:</b> Программная инженерия</div>
-              <div><b>Семестр:</b> Осенний (Хэллоуин 2026)</div>
-              <div><b>Статус:</b> Ночной рубежный контроль</div>
-            </div>
-          </div>
-
-          <!-- Right page: Exam Table -->
-          <div class="zachetka-page right-page">
-            <div class="page-title">РЕЗУЛЬТАТЫ СДАЧИ ПРИЗРАКАМ</div>
-            <table class="exam-table">
-              <thead>
-                <tr>
-                  <th>Дисциплина</th>
-                  <th>Преподаватель</th>
-                  <th>Оценка</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Сети и протоколы РИП</td>
-                  <td>Канев А.И.</td>
-                  <td><span class="grade-badge pending">Защита лабы</span></td>
-                </tr>
-                <tr>
-                  <td>Математический анализ</td>
-                  <td>Ахметова Ф.Х.</td>
-                  <td><span class="grade-badge pending">Интегралы</span></td>
-                </tr>
-                <tr>
-                  <td>Теория относительности</td>
-                  <td>Эйнштейн А.</td>
-                  <td><span class="grade-badge pending">Парадокс близнецов</span></td>
-                </tr>
-                <tr>
-                  <td>Лазерная спектроскопия</td>
-                  <td>Кюри / Коршунов</td>
-                  <td><span class="grade-badge pending">Люминесценция</span></td>
-                </tr>
-                <tr>
-                  <td>История инженерии</td>
-                  <td>Геродот</td>
-                  <td><span class="grade-badge pending">Папирус</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="zachetka-artifacts">
-          <div class="artifacts-title">🎒 НАЙДЕННЫЕ АРТЕФАКТЫ И ПРЕДМЕТЫ:</div>
-          <div class="artifacts-row" id="zachetka-inventory-list">
-            <div class="art-slot empty">Пусто</div>
-            <div class="art-slot empty">Пусто</div>
-            <div class="art-slot empty">Пусто</div>
-            <div class="art-slot empty">Пусто</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Founders' Vault Safe Modal (Сейф Основателей 1830 г.) -->
-  <div id="safe-modal" class="modal-overlay hidden">
-    <div class="safe-card">
-      <div class="safe-card-header">
-        <div>
-          <h2>🔒 СЕЙФ ОСНОВАТЕЛЕЙ МГТУ (1830 ГОД)</h2>
-          <div class="safe-card-subtitle">Зал Учёного Совета (Ауд. 223) • Четырёхзначный механический шифр</div>
-        </div>
-        <button id="safe-modal-close" class="close-btn">&times;</button>
-      </div>
-
-      <div class="safe-card-body">
-        <div class="safe-dials-container">
-          <div class="dial-slot">
-            <div class="dial-label">⏳ ВРЕМЯ</div>
-            <div class="dial-value" id="safe-digit-0">-</div>
-            <div class="dial-hint">E=mc² (Степень c)</div>
-          </div>
-          <div class="dial-slot">
-            <div class="dial-label">📜 ПИРАМИДЫ</div>
-            <div class="dial-value" id="safe-digit-1">-</div>
-            <div class="dial-hint">Число пирамид Гизы</div>
-          </div>
-          <div class="dial-slot">
-            <div class="dial-label">🧪 РАДИЙ</div>
-            <div class="dial-value" id="safe-digit-2">-</div>
-            <div class="dial-hint">Группа Менделеева</div>
-          </div>
-          <div class="dial-slot">
-            <div class="dial-label">💻 СКЛЕП</div>
-            <div class="dial-value" id="safe-digit-3">-</div>
-            <div class="dial-hint">Число печатей знаний</div>
-          </div>
-        </div>
-
-        <div class="safe-status-msg" id="safe-status-msg">Введите 4 цифры шифра, найденные у призраков...</div>
-
-        <div class="safe-keypad">
-          <button class="keypad-btn" data-key="1">1</button>
-          <button class="keypad-btn" data-key="2">2</button>
-          <button class="keypad-btn" data-key="3">3</button>
-          <button class="keypad-btn" data-key="4">4</button>
-          <button class="keypad-btn" data-key="5">5</button>
-          <button class="keypad-btn" data-key="6">6</button>
-          <button class="keypad-btn" data-key="7">7</button>
-          <button class="keypad-btn" data-key="8">8</button>
-          <button class="keypad-btn" data-key="9">9</button>
-          <button class="keypad-btn action-clear" id="safe-btn-clear">СБРОС</button>
-          <button class="keypad-btn" data-key="0">0</button>
-          <button class="keypad-btn action-enter" id="safe-btn-enter">ОТКРЫТЬ 🔓</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Login Modal -->
-  <div id="login-modal" class="modal-overlay">
-    <div class="login-card">
-      <div class="halloween-icon">🎃</div>
-      <h1>МГТУ ИМ. Н.Э. БАУМАНА</h1>
-      <p class="subtitle">Ночь в Главном Здании (ГЗ) • Зачёт у Призраков Инженерии</p>
-
-      <div class="rules-box">
-        <div>• <b>Локация:</b> Лабиринты ГЗ (Циркуль, Нога, Кафедры ФН и ИУ5)</div>
-        <div>• <b>Стриминг:</b> Кэш строго ≤ 10% мира (10 из 100 секторов ГЗ)</div>
-        <div>• <b>Преподаватели-ИИ:</b> Фания Харисовна Ахметова, Антон Игоревич Канев, Владислав Михайлович Коршунов</div>
-        <div>• <b>Цель команды:</b> Сдать рубежный контроль и открыть Врата ГЗ!</div>
-      </div>
-
-      <form id="login-form">
-        <label for="username-input">Имя студента / никнейм:</label>
-        <input type="text" id="username-input" placeholder="Например: Саша, Оля, Сима, Вика" required maxlength="18" value="Саша_ИУ5" />
-
-        <label>Цвет призрачной ауры:</label>
-        <div class="color-picker">
-          <label class="color-opt"><input type="radio" name="avatar-color" value="#8be9fd" checked><span style="background: #8be9fd"></span></label>
-          <label class="color-opt"><input type="radio" name="avatar-color" value="#ff79c6"><span style="background: #ff79c6"></span></label>
-          <label class="color-opt"><input type="radio" name="avatar-color" value="#50fa7b"><span style="background: #50fa7b"></span></label>
-          <label class="color-opt"><input type="radio" name="avatar-color" value="#ffb86c"><span style="background: #ffb86c"></span></label>
-          <label class="color-opt"><input type="radio" name="avatar-color" value="#bd93f9"><span style="background: #bd93f9"></span></label>
-        </div>
-
-        <button type="submit" class="enter-btn">Войти в ГЗ Бауманки (Enter)</button>
-      </form>
-    </div>
-  </div>
-
-  <script type="module" src="/src/main.js"></script>
+<body class="before-login">
+<div id="game-container">
+</div>
+<div id="crosshair">
+</div>
+<header class="topbar">
+<a class="brand" href="/" aria-label="Начало">Б<span>НОЧЬ В БАУМАНКЕ<small>ИНТЕРАКТИВНЫЙ УЧЕБНЫЙ ПАВИЛЬОН</small>
+</span>
+</a>
+<div class="session">
+<span class="status-dot">
+</span>
+<span id="connection-status" role="status">Ожидание входа</span>
+<span class="floor-label">ЭТАЖ 01</span>
+</div>
+</header>
+<aside class="left-rail">
+<section class="hud-panel mission">
+<div class="eyebrow">ВАША ЭКСПЕДИЦИЯ / 01</div>
+<h2>Знания открывают двери.</h2>
+<p>Исследуйте три лаборатории, найдите четыре подсказки и откройте сейф в холле.</p>
+<div class="progress-label">
+<span>Собрано подсказок</span>
+<b id="inventory-count">0 / 4</b>
+</div>
+<progress id="quest-progress" max="4" value="0">
+</progress>
+<button id="inventory-button" class="text-button">Посмотреть находки <span>↗</span>
+</button>
+</section>
+<section class="hud-panel team">
+<div class="eyebrow">ВАША КОМАНДА</div>
+<div id="players-list">
+<span class="muted">Пока никого нет</span>
+</div>
+</section>
+</aside>
+<aside class="right-rail">
+<section id="minimap-panel" class="hud-panel">
+<div class="panel-heading">
+<span class="eyebrow">НАВИГАЦИЯ</span>
+<button id="minimap-expand-btn" class="icon-button" title="Открыть карту — M">↗</button>
+</div>
+<canvas id="minimap-canvas" width="260" height="200">
+</canvas>
+<div id="minimap-location-badge">Центральный холл</div>
+<div class="map-legend">
+<span>● Вы</span>
+<span>◇ Преподаватель</span>
+<span>M — карта</span>
+</div>
+</section>
+<details id="cache-monitor" class="hud-panel">
+<summary>Стриминг мира <span id="metric-cache-percent">0%</span>
+</summary>
+<div class="metric-row">Секторов мира <b id="metric-total-chunks">100</b>
+</div>
+<div class="metric-row">В памяти <b id="metric-loaded-chunks">0 / 10</b>
+</div>
+<div id="metric-badge" class="metric-badge">Ожидание данных</div>
+<p class="fineprint">Доля по числу секторов, не по объёму данных.</p>
+<div id="metric-zone">
+</div>
+</details>
+</aside>
+<div id="interaction-prompt">
+<kbd>E</kbd>
+<span id="prompt-text">
+</span>
+</div>
+<section id="chat-container" class="hud-panel">
+<div class="eyebrow">КОМАНДНЫЙ КАНАЛ</div>
+<div id="chat-messages" role="log" aria-live="polite">
+</div>
+<form id="chat-form">
+<input id="chat-input" maxlength="300" aria-label="Сообщение команде" placeholder="Enter — написать команде" autocomplete="off">
+<button aria-label="Отправить">↑</button>
+</form>
+</section>
+<div id="resume-hint">Нажмите на мир, чтобы осмотреться</div>
+<footer class="controls">
+<span>
+<kbd>W A S D</kbd> движение</span>
+<span>
+<kbd>E</kbd> взаимодействие</span>
+<span>
+<kbd>M</kbd> карта</span>
+<span>
+<kbd>Esc</kbd> курсор</span>
+<button id="lantern-button">Фонарь <kbd>L</kbd>
+</button>
+</footer>
+<div id="login-modal" class="modal-overlay">
+<div class="login-layout">
+<section class="login-story">
+<div class="eyebrow">ОБРАЗОВАТЕЛЬНАЯ ЭКСПЕДИЦИЯ</div>
+<h1>Университет<br>после <em>полуночи.</em>
+</h1>
+<p>Знакомые коридоры. Необычные собеседники.<br>Одна тайна, которую проще раскрыть вместе.</p>
+<div class="story-map" aria-hidden="true">
+<span class="map-line horizontal">
+</span>
+<span class="map-line vertical">
+</span>
+<div class="sketch-room north">02<small>МАТЕМАТИКА</small>
+</div>
+<div class="sketch-room west">01<small>ТЕХНОЛОГИИ</small>
+</div>
+<div class="sketch-room center">Б<small>ВЫ ЗДЕСЬ</small>
+</div>
+<div class="sketch-room east">03<small>СВЕТ</small>
+</div>
+</div>
+<div class="story-foot">
+<span>01 ЭТАЖ</span>
+<span>03 ЛАБОРАТОРИИ</span>
+<span>ВАША КОМАНДА</span>
+</div>
+</section>
+<section class="login-card">
+<span class="edition">НОЧЬ В БАУМАНКЕ / 2026</span>
+<h2>Ваша история<br>начинается здесь.</h2>
+<p>Представьтесь команде и выберите свой цвет.</p>
+<form id="login-form">
+<label for="username-input">Имя исследователя</label>
+<input id="username-input" placeholder="Как вас зовут?" maxlength="20" required autocomplete="nickname">
+<fieldset>
+<legend>Цвет вашего персонажа</legend>
+<div class="color-picker">
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#8be9fd" aria-label="Голубой" checked>
+<span style="--swatch:#8be9fd">
+</span>
+</label>
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#ffb86c" aria-label="Янтарный" >
+<span style="--swatch:#ffb86c">
+</span>
+</label>
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#50fa7b" aria-label="Зелёный" >
+<span style="--swatch:#50fa7b">
+</span>
+</label>
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#bd93f9" aria-label="Лавандовый" >
+<span style="--swatch:#bd93f9">
+</span>
+</label>
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#ff79c6" aria-label="Розовый" >
+<span style="--swatch:#ff79c6">
+</span>
+</label>
+</div>
+</fieldset>
+<button class="primary" id="login-submit">Войти в павильон <span>→</span>
+</button>
+<p id="login-status" role="status" aria-live="polite">
+</p>
+</form>
+<div class="login-note">
+<span>◉</span> Локальный мир. Живое общение.<br>Знания, которые остаются с вами.</div>
+</section>
+</div>
+</div>
+<div id="dialogue-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="dialogue-name">
+<section class="dialogue-card">
+<div class="dialogue-header">
+<div class="avatar">◇</div>
+<div>
+<div class="eyebrow">РАЗГОВОР С ПРЕПОДАВАТЕЛЕМ</div>
+<h2 id="dialogue-name">
+</h2>
+<p id="dialogue-role">
+</p>
+</div>
+<button id="dialogue-close" class="close-btn" aria-label="Закрыть">×</button>
+</div>
+<div class="dialogue-body">
+<div id="dialogue-history">
+</div>
+<div id="dialogue-typing" class="hidden" role="status">Собеседник обдумывает ответ…</div>
+</div>
+<div class="dialogue-footer">
+<div id="ai-mode" class="fineprint">Задайте вопрос по теме собеседника</div>
+<div id="quick-questions">
+</div>
+<form id="dialogue-form">
+<input id="dialogue-input" maxlength="300" placeholder="Что вы хотите узнать?" aria-label="Вопрос преподавателю" required>
+<button class="primary">Спросить ↗</button>
+</form>
+</div>
+</section>
+</div>
+<div id="map-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="map-title">
+<section class="map-card">
+<div class="panel-heading">
+<div>
+<div class="eyebrow">ОДИН ЭТАЖ / ТРИ НАПРАВЛЕНИЯ</div>
+<h2 id="map-title">Учебный павильон</h2>
+</div>
+<button id="map-modal-close" class="close-btn" aria-label="Закрыть">×</button>
+</div>
+<canvas id="full-map-canvas" width="900" height="560">
+</canvas>
+<p class="fineprint">Голубой — вы · цветные точки — команда · ромбы — собеседники · M / Esc — закрыть</p>
+</section>
+</div>
+<div id="inventory-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="inventory-title">
+<section class="compact-card">
+<div class="panel-heading">
+<div>
+<div class="eyebrow">ВАША ЭКСПЕДИЦИЯ</div>
+<h2 id="inventory-title">Найденные подсказки</h2>
+</div>
+<button class="close-btn" id="inventory-close" aria-label="Закрыть">×</button>
+</div>
+<div id="inventory-list">
+</div>
+<button id="open-safe" class="primary">Ввести код сейфа →</button>
+</section>
+</div>
+<div id="safe-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="safe-title">
+<section class="compact-card">
+<div class="panel-heading">
+<div>
+<div class="eyebrow">ПОСЛЕДНИЙ ШАГ</div>
+<h2 id="safe-title">Сейф основателей</h2>
+</div>
+<button id="safe-modal-close" class="close-btn" aria-label="Закрыть">×</button>
+</div>
+<p>Четыре находки — четыре цифры. Соберите подсказки в холле и лабораториях.</p>
+<form id="safe-form">
+<input id="safe-code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="· · · ·" aria-label="Четырёхзначный код" required>
+<button class="primary">Открыть сейф →</button>
+</form>
+<p id="safe-status-msg" role="status">
+</p>
+</section>
+</div>
+<div id="victory-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+<section class="compact-card victory">
+<div class="eyebrow">ЭКСПЕДИЦИЯ ЗАВЕРШЕНА</div>
+<div class="victory-mark">✦</div>
+<h2 id="victory-title">Тайна раскрыта.<br>Знания — ваши.</h2>
+<p id="victory-message">
+</p>
+<button id="victory-close" class="primary">Продолжить исследование →</button>
+</section>
+</div>
+<script type="module" src="/src/main.js">
+</script>
 </body>
 </html>

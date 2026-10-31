@@ -1,3 +1,4 @@
+import { soundEngine } from './audio.js';
 import * as THREE from 'three';
 import { GameScene } from './scene.js';
 import { PlayerControls } from './controls.js';
@@ -40,6 +41,14 @@ class GameApp {
     this.myColor = '#8be9fd';
     this.nearbyNpc = null;
 
+    this.minimap.onModalStateChange = () => this.ui.syncModal();
+    this.network.onConnectionError = message => {
+      this.controls.enabled=false;
+      this.chunkManager.pendingRequests.clear();
+      this.network.sendQueue=[];
+      this.ui.connectionError(message);
+    };
+    document.addEventListener('pointerlockchange',()=>document.body.classList.toggle('locked',Boolean(document.pointerLockElement)));
     this.wireCallbacks();
     this.setupKeyBindings();
 
@@ -85,11 +94,14 @@ class GameApp {
 
     // Network -> Game
     this.network.onAuthSuccess = (msg) => {
+      this.ui.loginSuccess();
+      this.myUsername=msg.username;
       this.chunkManager.setWorldMeta(msg.totalWorldChunks, msg.maxClientCachePercent);
+      if(msg.initialPosition && (Math.abs(msg.initialPosition.x)>35 || msg.initialPosition.z < -35 || msg.initialPosition.z>11)) msg.initialPosition={x:0,y:1.6,z:5,rotY:0};
       if (msg.initialPosition) {
         this.controls.setPosition(
           msg.initialPosition.x,
-          msg.initialPosition.y,
+          1.6,
           msg.initialPosition.z,
           msg.initialPosition.rotY
         );
@@ -99,11 +111,13 @@ class GameApp {
       this.ui.updatePlayersList(this.myUsername, []);
       if (msg.inventory) {
         this.ui.updateInventory(msg.inventory);
+      this.collectedIds=new Set(msg.inventory.map(i=>i.id));
       }
     };
 
     this.network.onChunkReceived = (chunk) => {
       this.chunkManager.loadChunkData(chunk);
+      for(const id of this.collectedIds||[])this.chunkManager.hideArtifact(id);
     };
 
     this.network.onChatMessage = (msg) => {
@@ -127,6 +141,7 @@ class GameApp {
       this.chunkManager.hideArtifact(msg.item.id);
       this.ui.addNotification(`✨ Вы подобрали: ${msg.item.name}! ${msg.item.clue || ''}`);
       this.ui.updateInventory(msg.inventory);
+      this.collectedIds=new Set(msg.inventory.map(i=>i.id));
     };
 
     this.network.onNotification = (text) => {
@@ -148,6 +163,7 @@ class GameApp {
 
   setupKeyBindings() {
     window.addEventListener('keydown', (e) => {
+      if(document.activeElement?.matches('input,textarea')) return;
       // Toggle handheld brass lantern with [L]
       if (e.code === 'KeyL' && !this.ui.isModalOpen()) {
         if (this.controls && this.controls.playerBody) {
@@ -161,44 +177,11 @@ class GameApp {
           this.ui.openDialogue(this.nearbyNpc);
         } else if (this.nearSafe) {
           this.ui.openSafeModal();
-        } else if (this.nearElevator) {
-          this.cycleElevatorFloor();
+
         }
       }
     });
   }
-  goToFloor1() {
-    soundEngine.playItemFound();
-    this.controls.setPosition(0, 1.6, 5.5, 0);
-    this.ui.addChatMessage('🏛️ Парадная лестница ГУК', 'Вы спустились в Центральный Вестибюль (1-й ЭТАЖ) — Гардероб, Музей & Турникеты', '#ffd700');
-    this.chunkManager.forceReload();
-  }
-
-  goToFloor2() {
-    soundEngine.playItemFound();
-    this.controls.setPosition(-48, 1.6, -20, 0);
-    this.ui.addChatMessage('🏛️ Парадная лестница ГУК', 'Вы поднялись на 2-й ЭТАЖ — Кафедра К5 (ИУ-5), Ауд. 227 (Канев) & Учёный Совет', '#8be9fd');
-    this.chunkManager.forceReload();
-  }
-
-  goToFloor3() {
-    soundEngine.playItemFound();
-    this.controls.setPosition(48, 1.6, -20, 0);
-    this.ui.addChatMessage('🔬 Верхняя лестница ГУК', 'Вы поднялись на 3-й ЭТАЖ — Лаборатории Фотоники и Лазеров, Мария Кюри', '#50fa7b');
-    this.chunkManager.forceReload();
-  }
-
-  cycleElevatorFloor() {
-    this.currentFloor = ((this.currentFloor || 1) % 3) + 1;
-    if (this.currentFloor === 1) {
-      this.goToFloor1();
-    } else if (this.currentFloor === 2) {
-      this.goToFloor2();
-    } else if (this.currentFloor === 3) {
-      this.goToFloor3();
-    }
-  }
-
   async login(username, color) {
     try {
       const res = await fetch('/api/login', {
@@ -206,14 +189,13 @@ class GameApp {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, color })
       });
+      if(!res.ok) throw new Error("Сервер отклонил вход");
       const data = await res.json();
       if (data.success && data.token) {
         this.network.connect(data.token, username);
-      }
+      } else throw new Error("Не удалось войти");
     } catch (err) {
-      console.error('[Login Error]', err);
-      // Fallback direct connect
-      this.network.connect('dev_token', username);
+      this.ui.connectionError("Не удалось подключиться. Проверьте адрес сервера и попробуйте ещё раз.");
     }
   }
 
@@ -229,13 +211,13 @@ class GameApp {
 
     // 2. Throttle network move messages (every 50ms = 20Hz)
     const now = performance.now();
-    if (now - this.lastNetworkMoveTime > 50 && this.network.ws) {
+    if (now - this.lastNetworkMoveTime > 50 && this.network.isConnected()) {
       this.network.sendMove(playerPos.x, playerPos.y, playerPos.z, playerPos.rotY);
       this.lastNetworkMoveTime = now;
     }
 
     // 3. Update chunk streaming (strict <= 10% cache enforcement)
-    this.chunkManager.updatePlayerPosition(playerPos.x, playerPos.z);
+    if(this.network.isConnected())this.chunkManager.updatePlayerPosition(playerPos.x, playerPos.z);
     this.chunkManager.animate(delta, elapsed, playerPos);
 
     // 4. Interpolate remote players
@@ -255,24 +237,19 @@ class GameApp {
 
       if (!this.nearbyNpc) {
         // A. Founders' Safe in Council Hall (Aud. 223) at (x = 0, z = -37.4)
-        const distToSafe = Math.hypot(playerPos.x - 0, playerPos.z - (-37.4));
+        const distToSafe = Math.hypot(playerPos.x - 7, playerPos.z - 7);
         this.nearSafe = distToSafe < 3.8;
 
-        // B. Elevator proximity check at (x = 8.5, z = 3.5)
-        const distToElevator = Math.hypot(playerPos.x - 8.5, playerPos.z - 3.5);
-        this.nearElevator = distToElevator < 3.2;
-
         if (this.nearSafe) {
-          this.ui.showCustomPrompt('🔒 [E] — Исследовать Сейф Основателей МГТУ (1830 г.)');
-        } else if (this.nearElevator) {
-          this.ui.showCustomPrompt('🛗 [E] — Вызвать Коллежский Лифт (1, 2, 3 этажи)');
+          this.ui.showCustomPrompt('Открыть сейф основателей');
+
         } else {
           this.ui.hideInteractionPrompt();
         }
       }
     }
 
-    // 6. Update scene atmosphere (floating particles, breathing glow)
+    this.gameScene.update(delta, elapsed);
 
     // 7. Update Minimap Radar & Location Badge
     const remoteList = Array.from(this.network.remotePlayers.values()).map(p => ({

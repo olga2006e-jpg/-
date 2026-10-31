@@ -18,9 +18,9 @@ fi
 echo "✅ Ollama обнаружена!"
 
 # Check if model is downloaded
-# Default model: qwen2.5:3b (great Russian language support, fast on CPU & GPU)
+# Default model: qwen2.5:0.5b (great Russian language support, fast on CPU & GPU)
 # Alternative light model: llama3.2:1b (ultra-fast for low-end laptops)
-MODEL_NAME=${1:-"qwen2.5:3b"}
+MODEL_NAME=${1:-${OLLAMA_MODEL:-"qwen2.5:0.5b"}}
 
 echo "📥 Проверяем / скачиваем модель '$MODEL_NAME' (делайте это пока есть интернет!)..."
 ollama pull "$MODEL_NAME"

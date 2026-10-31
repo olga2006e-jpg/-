@@ -6,9 +6,10 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, '../data');
+const DATA_DIR = process.env.GAME_DATA_DIR ? path.resolve(process.env.GAME_DATA_DIR) : path.resolve(__dirname, '../data');
 const DEFAULT_SQLITE_PATH = process.env.SQLITE_PATH || path.join(DATA_DIR, 'game.db');
 const LEGACY_JSON_PATH = process.env.JSON_PATH || path.join(DATA_DIR, 'gameState.json');
+const DB_FILE = LEGACY_JSON_PATH;
 
 try {
   if (!fs.existsSync(DATA_DIR)) {
@@ -424,9 +425,11 @@ class JsonStorage {
       fs.writeFileSync(tempPath, serialized, 'utf-8');
       fs.renameSync(tempPath, this.filePath);
 
-      // Create backup on successful write
-      const backupPath = `${this.filePath}.backup`;
-      fs.copyFileSync(this.filePath, backupPath);
+      // Create backup on successful write (skip if in temporary test directory)
+      if (!process.env.GAME_DATA_DIR) {
+        const backupPath = `${this.filePath}.backup`;
+        fs.copyFileSync(this.filePath, backupPath);
+      }
     } catch (err) {
       console.error('[DB] Atomic save failed in JsonStorage:', err.message);
       throw err;
@@ -524,6 +527,10 @@ class JsonStorage {
 
 // Global factory
 export function createStorage(preferredPath = process.env.DB_PATH) {
+  if (process.env.GAME_DATA_DIR && !process.env.SQLITE_PATH) {
+    const jsonPath = path.join(DATA_DIR, 'gameState.json');
+    return new JsonStorage(jsonPath);
+  }
   try {
     const sqlitePath = preferredPath || DEFAULT_SQLITE_PATH;
     const store = new SQLiteStorage(sqlitePath);

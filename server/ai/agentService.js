@@ -1,8 +1,58 @@
 import { AGENT_PERSONAS } from './personalities.js';
-import { MemoryManager } from './memory.js';
+import { MemoryManager, memory as lessonMemory } from './memory.js';
 
-export const getOllamaHost = () => process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
-export const getOllamaModel = () => process.env.OLLAMA_MODEL || 'qwen2.5:3b';
+export const getOllamaHost = () =>
+  (process.env.OLLAMA_HOST || process.env.OLLAMA_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
+
+export const getOllamaModel = () =>
+  process.env.OLLAMA_MODEL || 'qwen2.5:0.5b';
+
+export async function askOllama(persona, prompt) {
+  const host = getOllamaHost();
+  const model = getOllamaModel();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(`${host}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        stream: false,
+        messages: [
+          { role: 'system', content: persona.systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        options: { temperature: 0.7, num_predict: 120 }
+      }),
+      signal: controller.signal
+    });
+    if (!response.ok) throw new Error(`Ollama HTTP ${response.status}`);
+    const data = await response.json();
+    const text = data.message?.content?.trim();
+    if (!text) throw new Error('Ollama returned an empty answer');
+    return text;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Keep the interface used by the team's standalone service.
+export async function generateResponse(npcId, userText, context = '') {
+  const npc = AGENT_PERSONAS[npcId];
+  if (!npc) throw new Error('Персонаж не найден');
+  try {
+    return {
+      text: await askOllama(npc, context ? `${context}\nИгрок: ${userText}` : userText),
+      source: 'ollama'
+    };
+  } catch {
+    return {
+      text: `${npc.factsCatalog[0].title}. ${npc.factsCatalog[0].text}`,
+      source: 'fallback'
+    };
+  }
+}
 
 export class AgentService {
   /**
@@ -60,65 +110,55 @@ export class AgentService {
    * Main interaction entry point with timeout, safe fallback, and adaptive state updates.
    */
   static async chat(username, agentId, userMessage) {
-    const persona = AGENT_PERSONAS[agentId] || AGENT_PERSONAS.einstein;
-    const { prompt, memory } = MemoryManager.buildPrompt(username, agentId, userMessage);
+    if (!AGENT_PERSONAS[agentId]) throw new Error(`Unknown agent persona: "${agentId}"`);
+    const { prompt, memory, persona } = MemoryManager.buildPrompt(username, agentId, userMessage);
+    const model = getOllamaModel();
 
     let reply = '';
     let usedLLM = false;
     let provider = 'heuristic_rule_engine';
-    const host = getOllamaHost();
-    const model = getOllamaModel();
 
-    // 1. Attempt local Ollama inference
-    let timeoutId = null;
-    try {
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 10000); // 10s max
-      if (timeoutId && typeof timeoutId.unref === 'function') {
-        timeoutId.unref();
-      }
-
-      const res = await fetch(`${host}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          prompt,
-          stream: false,
-          options: {
-            temperature: 0.7,
-            num_predict: 140
-          }
-        }),
-        signal: controller.signal
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const rawText = (data.response || '').trim();
-        if (rawText) {
-          reply = rawText;
+    if (memory.lessonState === 'RIDDLE') {
+      reply = lessonMemory.checkRiddle(username, agentId, userMessage).message;
+    } else if (
+      persona.riddle &&
+      memory.lessonState !== 'DONE' &&
+      persona.factsCatalog.length > 0 &&
+      persona.factsCatalog.every(f => memory.factsKnown.includes(f.id))
+    ) {
+      reply = lessonMemory.getNextFact(username, agentId, persona).text;
+    } else {
+      // Try local Ollama inference
+      try {
+        const text = await askOllama(persona, prompt);
+        if (text) {
+          reply = text;
           usedLLM = true;
           provider = `ollama:${model}`;
           console.log(`[AI-Ollama] Response generated for ${username} by ${persona.name}`);
         }
+      } catch (err) {
+        // Fall back gracefully
       }
-    } catch (err) {
-      // Offline, unreachable, or timed out: fall back seamlessly without crashing
-    } finally {
-      clearTimeout(timeoutId);
+
+      if (!usedLLM) {
+        if (memory.lessonState === 'DONE') {
+          const lower = userMessage.toLowerCase();
+          const fact =
+            persona.factsCatalog.find(f =>
+              f.title.toLowerCase().split(/\s+/).some(w => w.length > 4 && lower.includes(w))
+            ) || persona.factsCatalog[0];
+          reply = `Загадку вы уже решили. Вернёмся к предмету: ${fact.title}. ${fact.text}`;
+        } else if (persona.factsCatalog && persona.factsCatalog.length > 0 && persona.riddle) {
+          reply = lessonMemory.getNextFact(username, agentId, persona).text;
+        } else {
+          reply = this.generateAdaptiveFallback(persona, memory, userMessage);
+        }
+        console.log(`[AI-Engine] Adaptive rule response for ${username} by ${persona.name}`);
+      }
     }
 
-    // 2. Deterministic Adaptive Fallback (Heuristic Rule Engine)
-    // NEVER calls itself an LLM! Considers question topic and memory.
-    if (!reply) {
-      reply = this.generateAdaptiveFallback(persona, memory, userMessage);
-      usedLLM = false;
-      provider = 'heuristic_rule_engine';
-      console.log(`[AI-Engine] Adaptive rule response for ${username} by ${persona.name}`);
-    }
-
-    // 3. Save memory and dialogue history
+    // Save memory and dialogue history
     MemoryManager.recordResponse(username, agentId, userMessage, reply);
     const updatedMemory = MemoryManager.getContext(username, agentId);
 
@@ -130,7 +170,8 @@ export class AgentService {
       provider,
       knownFactsCount: (updatedMemory.factsKnown || []).length,
       discussedTopics: updatedMemory.discussedTopics || [],
-      turnsCount: updatedMemory.turnsCount || 1
+      turnsCount: updatedMemory.turnsCount || 1,
+      lessonState: updatedMemory.lessonState || 'STORY'
     };
   }
 
@@ -145,7 +186,7 @@ export class AgentService {
     const userLower = (userMessage || '').toLowerCase();
 
     // 1. Check if user is asking about a specific catalog fact
-    for (const fact of persona.factsCatalog) {
+    for (const fact of (persona.factsCatalog || [])) {
       const keywords = [
         ...(fact.keywords || []),
         ...fact.title.toLowerCase().split(/\s+/).filter(w => w.length > 3)
@@ -171,7 +212,7 @@ export class AgentService {
     }
 
     // 3. Offer next unlearned fact
-    const remainingFacts = persona.factsCatalog.filter(f => !knownSet.has(f.id));
+    const remainingFacts = (persona.factsCatalog || []).filter(f => !knownSet.has(f.id));
     if (remainingFacts.length > 0) {
       const nextFact = remainingFacts[0];
       return `${prefix}Знаешь ли ты, что говорит наука о таком явлении, как «${nextFact.title}»? ${nextFact.text}`;
