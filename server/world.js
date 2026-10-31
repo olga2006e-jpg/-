@@ -174,6 +174,24 @@ export function getZoneMeta(cx, cz) {
     const r = ROOMS[`${cx},${cz}`];
     return { name: r?.name || 'Внешний двор', type: r?.type || 'courtyard', roomCode: r?.code || 'Двор', floor: 1, wing: 'Учебный павильон', color: '#d9b978' };
 }
+
+// Global synchronized state for movable/relocated props
+export const movedProps = new Map(); // propId -> { x, y, z, rotY, isHeld, heldBy }
+
+export function pickupProp(propId, heldBy) {
+    const existing = movedProps.get(propId) || {};
+    movedProps.set(propId, { ...existing, isHeld: true, heldBy });
+    return true;
+}
+
+export function placeProp(propId, x, y, z, rotY = 0, heldBy = null) {
+    movedProps.set(propId, { x, y, z, rotY, isHeld: false, heldBy: null });
+    return true;
+}
+
+export function getMovedProps() {
+    return Array.from(movedProps.entries()).map(([id, data]) => ({ id, ...data }));
+}
 export function generateChunk(cx, cz) {
     if (!Number.isInteger(cx) || !Number.isInteger(cz) || cx < -5 || cx > 4 || cz < -5 || cz > 4)
         return null;
@@ -200,9 +218,20 @@ export function generateChunk(cx, cz) {
             for (const px of [-7])
                 objects.push({ type: 'bench', x: px, y: 0, z: 9.5, rotY: 0 });
             objects.push(
-                { type: 'pumpkin', x: 5.8, y: 0.35, z: 8.4, glowing: true },
-                { type: 'pumpkin', x: -6.5, y: 0.35, z: 6.8, glowing: true },
-                { type: 'pumpkin', x: 0, y: 0.35, z: 9.8, glowing: true },
+                { id: 'pumpkin_hub_1', type: 'pumpkin', x: 5.8, y: 0.35, z: 8.4, glowing: true, isMovable: true, label: 'Тыква-фонарь' },
+                { id: 'pumpkin_hub_2', type: 'pumpkin', x: -6.5, y: 0.35, z: 6.8, glowing: true, isMovable: true, label: 'Тыква-фонарь' },
+                { id: 'pumpkin_hub_3', type: 'pumpkin', x: 0, y: 0.35, z: 9.8, glowing: true, isMovable: true, label: 'Большая Тыква' },
+                { id: 'pumpkin_hub_4', type: 'pumpkin', x: -3.5, y: 0.35, z: 2.5, glowing: true, isMovable: true, label: 'Тыква-фонарь' },
+                { id: 'pumpkin_hub_5', type: 'pumpkin', x: 3.5, y: 0.35, z: 2.5, glowing: true, isMovable: true, label: 'Тыква-фонарь' },
+                { id: 'tome_hub_bench', type: 'tome', x: -7, y: 0.5, z: 9.5, isMovable: true, label: 'Гримуар Основателей' },
+                { id: 'tome_hub_safe', type: 'tome', x: 7, y: 1.4, z: 7, isMovable: true, label: 'Летопись 1830 года' },
+                { id: 'flask_hub_1', type: 'flask', x: -2, y: 0.3, z: 7, isMovable: true, label: 'Эликсир Мудрости', color: 0x50fa7b },
+                { id: 'flask_hub_2', type: 'flask', x: 2, y: 0.3, z: 7, isMovable: true, label: 'Зелье Призрачного Огня', color: 0xff79c6 },
+                { id: 'skull_hub_1', type: 'skull', x: -5, y: 0.3, z: 4, isMovable: true, label: 'Хрустальный Череп' },
+                { id: 'skull_hub_2', type: 'skull', x: 5, y: 0.3, z: 4, isMovable: true, label: 'Аметистовый Череп' },
+                { id: 'candelabra_hub_1', type: 'candelabra', x: -4, y: 0, z: -1, isMovable: true, label: 'Бронзовый Канделябр' },
+                { id: 'candelabra_hub_2', type: 'candelabra', x: 4, y: 0, z: -1, isMovable: true, label: 'Золотой Канделябр' },
+                { id: 'crystal_hub_1', type: 'crystal', x: 0, y: 0.3, z: 3, isMovable: true, label: 'Магический Кристалл', color: 0x8be9fd },
                 { type: 'torch', x: -4, y: 2.4, z: 11.2 },
                 { type: 'torch', x: 4, y: 2.4, z: 11.2 },
                 { type: 'lantern', x: -2.5, y: 0, z: 10.2 },
@@ -220,16 +249,24 @@ export function generateChunk(cx, cz) {
             );
         }
         const positions = [[-8, -8], [8, -8], [8, 8], [-8, 8]];
-        for (const [dx, dz] of positions)
-            objects.push({ type: 'pumpkin', x: x + dx, y: 0.35, z: z + dz, glowing: true });
+        for (let i = 0; i < positions.length; i++) {
+            const [dx, dz] = positions[i];
+            objects.push({ id: `pumpkin_corner_${cx}_${cz}_${i}`, type: 'pumpkin', x: x + dx, y: 0.35, z: z + dz, glowing: true, isMovable: true, label: 'Угловая Тыква' });
+        }
         if (cx === -1) {
             objects.push({ type: 'blackboard', x: x - 10, y: 2.3, z, rotY: Math.PI / 2, formulaType: 'software_engineering' });
             for (const dz of [-7, 7])
                 objects.push({ type: 'server_rack', x: x - 8, y: 0, z: z + dz, rotY: Math.PI / 2 });
             objects.push({ type: 'teacher_desk', x: x - 5, y: 0, z: z - 7, rotY: 0 });
             objects.push(
-                { type: 'pumpkin', x: x - 4.2, y: 1.0, z: z - 7, glowing: true },
-                { type: 'pumpkin', x: x - 8, y: 0.35, z: z - 2, glowing: true },
+                { id: 'pumpkin_tech_1', type: 'pumpkin', x: x - 4.2, y: 1.0, z: z - 7, glowing: true, isMovable: true, label: 'Тыква на кафедре' },
+                { id: 'pumpkin_tech_2', type: 'pumpkin', x: x - 8, y: 0.35, z: z - 2, glowing: true, isMovable: true, label: 'Тыква-фонарь' },
+                { id: 'tome_tech_1', type: 'tome', x: x - 5, y: 0.8, z: z - 7, isMovable: true, label: 'Фолиант Архитектуры ЭВМ' },
+                { id: 'tome_tech_2', type: 'tome', x: x - 3, y: 0.8, z: z - 7, isMovable: true, label: 'Манускрипт Алгоритмов' },
+                { id: 'flask_tech_1', type: 'flask', x: x - 7, y: 0.3, z: z + 2, isMovable: true, label: 'Квантовая Плазма', color: 0x8be9fd },
+                { id: 'skull_tech_1', type: 'skull', x: x - 6, y: 0.3, z: z - 4, isMovable: true, label: 'Кибер-Череп' },
+                { id: 'crystal_tech_1', type: 'crystal', x: x - 2, y: 0.3, z: z + 5, isMovable: true, label: 'Кристалл Данных', color: 0x50fa7b },
+                { id: 'candelabra_tech_1', type: 'candelabra', x: x - 5, y: 0.8, z: z - 6, isMovable: true, label: 'Канделябр Серверной' },
                 { type: 'torch', x: x - 11.4, y: 2.4, z },
                 { type: 'lantern', x: x - 4, y: 0, z },
                 { type: 'floating_candle', x: x - 2, y: 2.8, z },
@@ -240,8 +277,14 @@ export function generateChunk(cx, cz) {
         else if (cx === 1) {
             objects.push({ type: 'laser_bench', x: x + 6, y: 0, z: z + 5, rotY: 0 }, { type: 'telescope', x: x + 7, y: 0, z: z - 7 });
             objects.push(
-                { type: 'pumpkin', x: x + 5.5, y: 1.1, z: z + 5, glowing: true },
-                { type: 'pumpkin', x: x + 8.2, y: 0.35, z: z - 5.5, glowing: true },
+                { id: 'pumpkin_light_1', type: 'pumpkin', x: x + 5.5, y: 1.1, z: z + 5, glowing: true, isMovable: true, label: 'Тыква на оптическом столе' },
+                { id: 'pumpkin_light_2', type: 'pumpkin', x: x + 8.2, y: 0.35, z: z - 5.5, glowing: true, isMovable: true, label: 'Тыква у телескопа' },
+                { id: 'tome_light_1', type: 'tome', x: x + 6, y: 0.9, z: z + 5, isMovable: true, label: 'Трактат об Оптике' },
+                { id: 'tome_light_2', type: 'tome', x: x + 4, y: 0.9, z: z + 5, isMovable: true, label: 'Теория Относительности' },
+                { id: 'flask_light_1', type: 'flask', x: x + 7, y: 0.9, z: z + 4, isMovable: true, label: 'Люминесцентный Раствор', color: 0xffb86c },
+                { id: 'skull_light_1', type: 'skull', x: x + 3, y: 0.3, z: z - 2, isMovable: true, label: 'Оптический Череп' },
+                { id: 'crystal_light_1', type: 'crystal', x: x + 5, y: 0.3, z: z - 4, isMovable: true, label: 'Призма Преломления', color: 0xff79c6 },
+                { id: 'candelabra_light_1', type: 'candelabra', x: x + 8, y: 0.3, z: z + 2, isMovable: true, label: 'Канделябр Фотоники' },
                 { type: 'torch', x: x + 11.4, y: 2.4, z },
                 { type: 'lantern', x: x + 4, y: 0, z },
                 { type: 'floating_candle', x: x + 3.5, y: 2.8, z },
@@ -255,8 +298,15 @@ export function generateChunk(cx, cz) {
                 objects.push({ type: 'bookshelf', x: x + dx, y: 0, z: z - 7 });
             objects.push({ type: 'desk_row', x: x - 6, y: 0, z: z + 6, rotY: 0 });
             objects.push(
-                { type: 'pumpkin', x: x - 5.5, y: 1.0, z: z + 6, glowing: true },
-                { type: 'pumpkin', x: x + 7.5, y: 0.35, z: z - 5, glowing: true },
+                { id: 'pumpkin_math_1', type: 'pumpkin', x: x - 5.5, y: 1.0, z: z + 6, glowing: true, isMovable: true, label: 'Тыква на парте' },
+                { id: 'pumpkin_math_2', type: 'pumpkin', x: x + 7.5, y: 0.35, z: z - 5, glowing: true, isMovable: true, label: 'Тыква у шкафа' },
+                { id: 'tome_math_1', type: 'tome', x: x - 6, y: 0.8, z: z + 6, isMovable: true, label: 'Математический Гримуар' },
+                { id: 'tome_math_2', type: 'tome', x: x - 4, y: 0.8, z: z + 6, isMovable: true, label: 'Скрижали Дифференциалов' },
+                { id: 'tome_math_3', type: 'tome', x: x + 8, y: 1.1, z: z - 7, isMovable: true, label: 'Неевклидова Геометрия' },
+                { id: 'skull_math_1', type: 'skull', x: x - 2, y: 0.3, z: z + 4, isMovable: true, label: 'Череп Архимеда' },
+                { id: 'flask_math_1', type: 'flask', x: x + 6, y: 0.3, z: z + 2, isMovable: true, label: 'Экстракт Бесконечности', color: 0xbd93f9 },
+                { id: 'crystal_math_1', type: 'crystal', x: x + 2, y: 0.3, z: z - 3, isMovable: true, label: 'Кристалл Топологии', color: 0x50fa7b },
+                { id: 'candelabra_math_1', type: 'candelabra', x: x - 6, y: 0.8, z: z + 5, isMovable: true, label: 'Канделябр Архива' },
                 { type: 'torch', x, y: 2.4, z: z - 11.4 },
                 { type: 'lantern', x, y: 0, z: z - 4 },
                 { type: 'floating_candle', x, y: 3.0, z: z - 2 },
@@ -277,6 +327,18 @@ export function generateChunk(cx, cz) {
     for (const item of COLLECTIBLE_ITEMS)
         if (item.chunkX === cx && item.chunkZ === cz)
             objects.push({ ...item });
+
+    // Override object coordinates if moved/relocated by player
+    for (const obj of objects) {
+        if (obj.id && movedProps.has(obj.id)) {
+            const m = movedProps.get(obj.id);
+            obj.x = m.x;
+            obj.y = m.y;
+            obj.z = m.z;
+            if (m.rotY !== undefined) obj.rotY = m.rotY;
+            if (m.isHeld) obj.isHeld = true;
+        }
+    }
     return { id: `chunk_${cx}_${cz}`, cx, cz, zoneName: zone.name, zoneType: zone.type, floor: 1, wing: zone.wing, color: zone.color, objects, npcs: NPCS.filter(n => n.chunkX === cx && n.chunkZ === cz) };
 }
 export function worldToChunkCoord(x, z) {

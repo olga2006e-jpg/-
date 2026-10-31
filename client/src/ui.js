@@ -172,10 +172,14 @@ export class UIManager {
         }
     }
     showInteractionPrompt(npc) {
+        const k = $('prompt-key');
+        if (k) k.textContent = 'E';
         $('prompt-text').textContent = `Поговорить · ${npc.name}`;
         $('interaction-prompt').style.display = 'flex';
     }
-    showCustomPrompt(text) {
+    showCustomPrompt(text, key = 'E') {
+        const k = $('prompt-key');
+        if (k) k.textContent = key;
         $('prompt-text').textContent = text;
         $('interaction-prompt').style.display = 'flex';
     }

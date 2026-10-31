@@ -234,6 +234,31 @@ class SoundEngine {
     } catch (e) {}
   }
 
+  // 6b. Prop placement thud & soft wooden/stone resonance
+  playPropPlace() {
+    if (this.isMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(140, t);
+      osc.frequency.exponentialRampToValueAtTime(55, t + 0.18);
+
+      gain.gain.setValueAtTime(0.14, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.22);
+    } catch (e) {}
+  }
+
   // 7. Grand Victory Fanfare & Bauman Chimes (Gaudeamus chord + bells)
   playVictoryFanfare() {
     if (this.isMuted) return;

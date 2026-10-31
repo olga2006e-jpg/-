@@ -111,6 +111,13 @@ export class NetworkClient {
     this.send({ type: 'SUBMIT_GATE_CODE', code });
   }
 
+  sendPropPickup(propId) {
+    this.send({ type: 'PROP_PICKUP', propId });
+  }
+
+  sendPropPlace(propId, x, y, z, rotY = 0) {
+    this.send({ type: 'PROP_PLACE', propId, x, y, z, rotY });
+  }
   handleMessage(msg) {
     switch (msg.type) {
       case 'AUTH_FAIL':
@@ -168,6 +175,14 @@ export class NetworkClient {
 
       case 'CODE_INCORRECT':
         if (this.onCodeIncorrect) this.onCodeIncorrect(msg);
+        break;
+
+      case 'PROP_PICKED_UP':
+        if (this.onPropPickedUp) this.onPropPickedUp(msg);
+        break;
+
+      case 'PROP_PLACED':
+        if (this.onPropPlaced) this.onPropPlaced(msg);
         break;
     }
   }

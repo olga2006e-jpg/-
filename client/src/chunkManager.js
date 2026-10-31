@@ -41,7 +41,13 @@ import {
   createCafeteriaMenuBoard,
   createTeacherDesk,
   createFloatingCandle,
-  createFoundersSafe
+  createFoundersSafe,
+  createTomeProp,
+  createFlaskProp,
+  createSkullProp,
+  createCrystalProp,
+  createCandelabraProp,
+  createCauldron
 } from './environment.js';
 import { soundEngine } from './audio.js';
 
@@ -68,6 +74,7 @@ export class ChunkManager {
     // List of active NPCs currently in scene
     this.activeNpcs = new Map(); // npcId -> THREE.Group
     this.animatedObjects = [];   // torches, pumpkins, npcs, artifacts
+    this.movableProps = new Map(); // propId -> THREE.Group
   }
 
   setWorldMeta(totalChunks, maxCachePercent) {
@@ -246,8 +253,12 @@ export class ChunkManager {
         chunkGroup.add(pillar);
       } else if (obj.type === 'pumpkin') {
         const pumpkin = createPumpkin(obj.x, obj.y, obj.z, obj.glowing);
+        const propId = obj.id || `pumpkin_${obj.x}_${obj.z}`;
+        pumpkin.userData.propId = propId;
+        pumpkin.userData.label = obj.label || 'Тыква-фонарь';
         chunkGroup.add(pumpkin);
         this.animatedObjects.push(pumpkin);
+        this.movableProps.set(propId, pumpkin);
       } else if (obj.type === 'torch') {
         const torch = createTorch(obj.x, obj.y, obj.z);
         chunkGroup.add(torch);
@@ -260,10 +271,48 @@ export class ChunkManager {
         chunkGroup.add(createTelescope(obj.x, obj.y, obj.z));
       } else if (obj.type === 'obelisk') {
         chunkGroup.add(createObelisk(obj.x, obj.y, obj.z, obj.label));
-      } else if (obj.type === 'bookshelf') {
-        chunkGroup.add(createBookshelf(obj.x, obj.y, obj.z));
       } else if (obj.type === 'cauldron') {
-        chunkGroup.add(createServerRack(obj.x, obj.y, obj.z, 0));
+        const cauldron = createCauldron(obj.x, obj.y, obj.z);
+        chunkGroup.add(cauldron);
+        this.animatedObjects.push(cauldron);
+      } else if (obj.type === 'tome') {
+        const tome = createTomeProp(obj.x, obj.y, obj.z, obj.rotY);
+        const propId = obj.id || `tome_${obj.x}_${obj.z}`;
+        tome.userData.propId = propId;
+        tome.userData.label = obj.label || 'Гримуар';
+        chunkGroup.add(tome);
+        this.movableProps.set(propId, tome);
+      } else if (obj.type === 'flask') {
+        const flask = createFlaskProp(obj.x, obj.y, obj.z, obj.color);
+        const propId = obj.id || `flask_${obj.x}_${obj.z}`;
+        flask.userData.propId = propId;
+        flask.userData.label = obj.label || 'Алхимическое зелье';
+        chunkGroup.add(flask);
+        this.animatedObjects.push(flask);
+        this.movableProps.set(propId, flask);
+      } else if (obj.type === 'skull') {
+        const skull = createSkullProp(obj.x, obj.y, obj.z, obj.rotY);
+        const propId = obj.id || `skull_${obj.x}_${obj.z}`;
+        skull.userData.propId = propId;
+        skull.userData.label = obj.label || 'Череп';
+        chunkGroup.add(skull);
+        this.movableProps.set(propId, skull);
+      } else if (obj.type === 'crystal') {
+        const crystal = createCrystalProp(obj.x, obj.y, obj.z, obj.color);
+        const propId = obj.id || `crystal_${obj.x}_${obj.z}`;
+        crystal.userData.propId = propId;
+        crystal.userData.label = obj.label || 'Кристалл';
+        chunkGroup.add(crystal);
+        this.animatedObjects.push(crystal);
+        this.movableProps.set(propId, crystal);
+      } else if (obj.type === 'candelabra') {
+        const candelabra = createCandelabraProp(obj.x, obj.y, obj.z);
+        const propId = obj.id || `candelabra_${obj.x}_${obj.z}`;
+        candelabra.userData.propId = propId;
+        candelabra.userData.label = obj.label || 'Канделябр';
+        chunkGroup.add(candelabra);
+        this.animatedObjects.push(candelabra);
+        this.movableProps.set(propId, candelabra);
       } else if (obj.type === 'artifact') {
         const artifact = createArtifactMesh(obj);
         chunkGroup.add(artifact);
@@ -532,6 +581,44 @@ export class ChunkManager {
 
     return closestNpc;
   }
+
+  // Find closest movable prop within distance
+  findNearbyMovableProp(playerPos, maxDistance = 2.8) {
+    let closestProp = null;
+    let closestDist = maxDistance;
+    for (const prop of this.movableProps.values()) {
+      if (prop.userData?.isHeld) continue;
+      const dist = Math.hypot(prop.position.x - playerPos.x, prop.position.z - playerPos.z);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestProp = prop;
+      }
+    }
+    return closestProp;
+  }
+
+  setPropPosition(propId, x, y, z, rotY = 0) {
+    const prop = this.movableProps.get(propId);
+    if (prop) {
+      prop.position.set(x, y, z);
+      if (Number.isFinite(rotY)) prop.rotation.y = rotY;
+      prop.visible = true;
+      if (prop.userData) prop.userData.isHeld = false;
+    }
+  }
+
+  setPropVisibility(propId, visible) {
+    const prop = this.movableProps.get(propId);
+    if (prop) {
+      prop.visible = visible;
+      if (prop.userData) prop.userData.isHeld = !visible;
+    }
+  }
+
+  getMovableProp(propId) {
+    return this.movableProps.get(propId);
+  }
+
   // Ultra-fast collision box queries near the player (zero allocation per frame)
   getCollisionBoxes(px, pz, radius = 14, playerY = 1.6) {
     const boxes = [];

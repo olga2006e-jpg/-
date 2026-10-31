@@ -7,7 +7,10 @@ import {
   worldToChunkCoord,
   TOTAL_WORLD_CHUNKS,
   TOTAL_WORLD_CANONICAL_BYTES,
-  COLLECTIBLE_ITEMS
+  COLLECTIBLE_ITEMS,
+  pickupProp,
+  placeProp,
+  getMovedProps
 } from './world.js';
 import { AgentService } from './ai/agentService.js';
 import { AGENT_PERSONAS } from './ai/personalities.js';
@@ -100,7 +103,8 @@ export function setupMultiplayer(wss) {
           maxAllowedChunksOnClient: 10,                // 10 chunks max
           initialPosition: { x: clientState.x, y: clientState.y, z: clientState.z, rotY: clientState.rotY },
           inventory: db.getInventory(username),
-          quest: db.getQuestProgress()
+          quest: db.getQuestProgress(),
+          movedProps: getMovedProps()
         }));
 
         // Broadcast player joined to everyone else
@@ -232,6 +236,41 @@ export function setupMultiplayer(wss) {
           time: chatEntry.time,
           x: player.x,
           z: player.z
+        });
+        return;
+      }
+
+      // ==========================================
+      // 4b. Prop Manipulation & Physics Placement
+      // ==========================================
+      if (msg.type === 'PROP_PICKUP') {
+        const { propId } = msg;
+        if (typeof propId !== 'string') return;
+        pickupProp(propId, authenticatedUser);
+        broadcastExcept(authenticatedUser, {
+          type: 'PROP_PICKED_UP',
+          propId,
+          username: authenticatedUser
+        });
+        return;
+      }
+
+      if (msg.type === 'PROP_PLACE') {
+        const { propId, x, y, z, rotY } = msg;
+        if (typeof propId !== 'string' || !Number.isFinite(Number(x)) || !Number.isFinite(Number(z))) return;
+        const px = Number(x);
+        const py = Number.isFinite(Number(y)) ? Number(y) : 0.35;
+        const pz = Number(z);
+        const protY = Number.isFinite(Number(rotY)) ? Number(rotY) : 0;
+        placeProp(propId, px, py, pz, protY, authenticatedUser);
+        broadcast({
+          type: 'PROP_PLACED',
+          propId,
+          x: px,
+          y: py,
+          z: pz,
+          rotY: protY,
+          username: authenticatedUser
         });
         return;
       }

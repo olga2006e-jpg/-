@@ -653,7 +653,9 @@ export function createPumpkin(x, y, z, glowing = true) {
     pLight.position.set(0, 0.2, 0.35);
     group.add(pLight);
 
-    group.userData = { light: pLight, baseIntensity: 2.2, timeOffset: Math.random() * 10 };
+    group.userData = { light: pLight, baseIntensity: 2.2, timeOffset: Math.random() * 10, isMovable: true, label: 'Тыква-фонарь' };
+  } else {
+    group.userData = { isMovable: true, label: 'Тыква' };
   }
 
   return group;
@@ -2389,5 +2391,191 @@ export function createFoundersSafe(x, y, z, rotY = 0) {
     light: vLight
   };
 
+  return group;
+}
+
+// 41. Ancient Mystical Tome / Grimoire Prop
+export function createTomeProp(x, y, z, rotY = 0) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // Cover
+  const coverGeo = new THREE.BoxGeometry(0.36, 0.07, 0.26);
+  const coverMat = new THREE.MeshStandardMaterial({ color: 0x421b2a, roughness: 0.6, metalness: 0.2 });
+  const cover = new THREE.Mesh(coverGeo, coverMat);
+  group.add(cover);
+
+  // Pages inside
+  const pagesGeo = new THREE.BoxGeometry(0.33, 0.05, 0.23);
+  const pagesMat = new THREE.MeshStandardMaterial({ color: 0xeadbb6, roughness: 0.9 });
+  const pages = new THREE.Mesh(pagesGeo, pagesMat);
+  pages.position.set(0.01, 0, 0);
+  group.add(pages);
+
+  // Gold corner protectors & spine
+  const spineGeo = new THREE.BoxGeometry(0.04, 0.075, 0.265);
+  const spineMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.8 });
+  const spine = new THREE.Mesh(spineGeo, spineMat);
+  spine.position.x = -0.17;
+  group.add(spine);
+
+  group.userData = { isMovable: true, label: 'Гримуар' };
+  return group;
+}
+
+// 42. Glowing Alchemical Flask / Potion Prop
+export function createFlaskProp(x, y, z, color = 0x50fa7b) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  // Glass flask body
+  const bodyGeo = new THREE.SphereGeometry(0.18, 12, 10);
+  const glassMat = new THREE.MeshStandardMaterial({ color, roughness: 0.1, metalness: 0.9, transparent: true, opacity: 0.85 });
+  const body = new THREE.Mesh(bodyGeo, glassMat);
+  body.position.y = 0.18;
+  group.add(body);
+
+  // Flask neck & cork
+  const neckGeo = new THREE.CylinderGeometry(0.05, 0.07, 0.16, 8);
+  const neck = new THREE.Mesh(neckGeo, glassMat);
+  neck.position.y = 0.34;
+  group.add(neck);
+
+  const corkGeo = new THREE.CylinderGeometry(0.04, 0.045, 0.08, 8);
+  const corkMat = new THREE.MeshStandardMaterial({ color: 0x8a5a36, roughness: 0.8 });
+  const cork = new THREE.Mesh(corkGeo, corkMat);
+  cork.position.y = 0.44;
+  group.add(cork);
+
+  // Internal magical radiance
+  const pLight = new THREE.PointLight(color, 1.2, 5);
+  pLight.position.y = 0.2;
+  group.add(pLight);
+
+  group.userData = { isMovable: true, label: 'Алхимическое зелье', light: pLight, baseIntensity: 1.2, timeOffset: Math.random() * 5 };
+  return group;
+}
+
+// 43. Gothic Bone / Crystal Skull Prop
+export function createSkullProp(x, y, z, rotY = 0) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+
+  // Cranium
+  const craniumGeo = new THREE.SphereGeometry(0.16, 12, 10);
+  craniumGeo.scale(1.0, 1.1, 1.25);
+  const boneMat = new THREE.MeshStandardMaterial({ color: 0xdfd8c8, roughness: 0.5 });
+  const cranium = new THREE.Mesh(craniumGeo, boneMat);
+  cranium.position.y = 0.2;
+  group.add(cranium);
+
+  // Jaw
+  const jawGeo = new THREE.BoxGeometry(0.12, 0.08, 0.14);
+  const jaw = new THREE.Mesh(jawGeo, boneMat);
+  jaw.position.set(0, 0.08, 0.08);
+  group.add(jaw);
+
+  // Glowing eye sockets
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0xbd93f9 });
+  const eyeGeo = new THREE.SphereGeometry(0.03, 6, 6);
+  for (const ex of [-0.05, 0.05]) {
+    const eye = new THREE.Mesh(eyeGeo, eyeMat);
+    eye.position.set(ex, 0.2, 0.18);
+    group.add(eye);
+  }
+
+  group.userData = { isMovable: true, label: 'Череп' };
+  return group;
+}
+
+// 44. Faceted Mana Crystal Cluster Prop
+export function createCrystalProp(x, y, z, color = 0xbd93f9) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  // Brass stand
+  const standGeo = new THREE.CylinderGeometry(0.08, 0.12, 0.06, 8);
+  const standMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.8 });
+  const stand = new THREE.Mesh(standGeo, standMat);
+  stand.position.y = 0.03;
+  group.add(stand);
+
+  // Crystal
+  const crystalGeo = new THREE.OctahedronGeometry(0.18, 0);
+  crystalGeo.scale(0.8, 1.5, 0.8);
+  const crystalMat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6, roughness: 0.2, metalness: 0.7 });
+  const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+  crystal.position.y = 0.24;
+  group.add(crystal);
+
+  const cLight = new THREE.PointLight(color, 1.2, 6);
+  cLight.position.y = 0.24;
+  group.add(cLight);
+
+  group.userData = { isMovable: true, label: 'Кристалл', light: cLight, baseIntensity: 1.2, timeOffset: Math.random() * 5 };
+  return group;
+}
+
+// 45. Triple Gothic Table Candelabra Prop
+export function createCandelabraProp(x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.35, metalness: 0.75 });
+  const stemGeo = new THREE.CylinderGeometry(0.03, 0.08, 0.45, 8);
+  const stem = new THREE.Mesh(stemGeo, brassMat);
+  stem.position.y = 0.22;
+  group.add(stem);
+
+  // 3 branches
+  const waxMat = new THREE.MeshStandardMaterial({ color: 0xfffbee, roughness: 0.8 });
+  const flameMat = new THREE.MeshBasicMaterial({ color: 0xffaa22 });
+  const candleGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.16, 6);
+  const flameGeo = new THREE.ConeGeometry(0.02, 0.05, 6);
+
+  for (const ox of [-0.14, 0, 0.14]) {
+    const candle = new THREE.Mesh(candleGeo, waxMat);
+    candle.position.set(ox, 0.48, 0);
+    group.add(candle);
+
+    const flame = new THREE.Mesh(flameGeo, flameMat);
+    flame.position.set(ox, 0.59, 0);
+    group.add(flame);
+  }
+
+  const light = new THREE.PointLight(0xffdf88, 1.8, 10, 1.4);
+  light.position.set(0, 0.6, 0);
+  group.add(light);
+
+  group.userData = { isMovable: true, label: 'Канделябр', light, baseIntensity: 1.8, timeOffset: Math.random() * 10 };
+  return group;
+}
+
+// 46. Cast-iron Witch Cauldron
+export function createCauldron(x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  const ironMat = new THREE.MeshStandardMaterial({ color: 0x1f1b26, roughness: 0.7, metalness: 0.8 });
+  const potGeo = new THREE.SphereGeometry(0.42, 12, 10);
+  potGeo.scale(1.2, 0.8, 1.2);
+  const pot = new THREE.Mesh(potGeo, ironMat);
+  pot.position.y = 0.35;
+  group.add(pot);
+
+  const brewGeo = new THREE.CircleGeometry(0.38, 12);
+  const brewMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b });
+  const brew = new THREE.Mesh(brewGeo, brewMat);
+  brew.rotation.x = -Math.PI / 2;
+  brew.position.y = 0.52;
+  group.add(brew);
+
+  const pLight = new THREE.PointLight(0x50fa7b, 1.5, 6);
+  pLight.position.y = 0.6;
+  group.add(pLight);
+
+  group.userData = { light: pLight, baseIntensity: 1.5, timeOffset: Math.random() * 10 };
   return group;
 }

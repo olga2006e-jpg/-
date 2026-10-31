@@ -40,7 +40,8 @@ class GameApp {
     this.myUsername = null;
     this.myColor = '#8be9fd';
     this.nearbyNpc = null;
-
+    this.heldProp = null;
+    this.nearbyProp = null;
     this.minimap.onModalStateChange = () => this.ui.syncModal();
     this.network.onConnectionError = message => {
       this.controls.enabled=false;
@@ -111,7 +112,16 @@ class GameApp {
       this.ui.updatePlayersList(this.myUsername, []);
       if (msg.inventory) {
         this.ui.updateInventory(msg.inventory);
-      this.collectedIds=new Set(msg.inventory.map(i=>i.id));
+        this.collectedIds=new Set(msg.inventory.map(i=>i.id));
+      }
+      if (Array.isArray(msg.movedProps)) {
+        for (const m of msg.movedProps) {
+          if (m.isHeld) {
+            this.chunkManager.setPropVisibility(m.id, false);
+          } else {
+            this.chunkManager.setPropPosition(m.id, m.x, m.y, m.z, m.rotY);
+          }
+        }
       }
     };
 
@@ -159,6 +169,19 @@ class GameApp {
       }
       this.ui.addNotification(`❌ ${msg.message}`);
     };
+
+    this.network.onPropPickedUp = ({ propId, username }) => {
+      this.chunkManager.setPropVisibility(propId, false);
+      this.ui.addNotification(`Исследователь ${username} поднял предмет`);
+    };
+
+    this.network.onPropPlaced = ({ propId, x, y, z, rotY, username }) => {
+      this.chunkManager.setPropPosition(propId, x, y, z, rotY);
+      if (username !== this.myUsername) {
+        soundEngine.playPropPlace();
+        this.ui.addNotification(`Исследователь ${username} переставил предмет`);
+      }
+    };
   }
 
   setupKeyBindings() {
@@ -178,6 +201,46 @@ class GameApp {
         } else if (this.nearSafe) {
           this.ui.openSafeModal();
 
+        }
+      }
+
+      // Pick up or place movable prop with [G]
+      if (e.code === 'KeyG' && !this.ui.isModalOpen()) {
+        const playerPos = this.controls.getPosition();
+        if (this.heldProp) {
+          // Place currently carried prop in front of player
+          const camDir = new THREE.Vector3();
+          this.gameScene.camera.getWorldDirection(camDir);
+          const px = Number((playerPos.x + camDir.x * 1.5).toFixed(2));
+          const pz = Number((playerPos.z + camDir.z * 1.5).toFixed(2));
+          const py = Number((this.heldProp.origY || 0.35).toFixed(2));
+          const rotY = Number(this.controls.camera.rotation.y.toFixed(2));
+
+          this.heldProp.mesh.position.set(px, py, pz);
+          this.heldProp.mesh.rotation.y = rotY;
+          if (this.heldProp.mesh.userData) this.heldProp.mesh.userData.isHeld = false;
+
+          this.network.sendPropPlace(this.heldProp.id, px, py, pz, rotY);
+          soundEngine.playPropPlace();
+          this.ui.addNotification(`📦 Вы поставили: ${this.heldProp.label}`);
+          this.heldProp = null;
+        } else if (this.nearbyProp) {
+          // Pick up nearby prop
+          const propId = this.nearbyProp.userData.propId;
+          const label = this.nearbyProp.userData.label || 'предмет';
+          const origY = this.nearbyProp.position.y;
+          this.heldProp = {
+            id: propId,
+            mesh: this.nearbyProp,
+            label,
+            origY
+          };
+          if (this.nearbyProp.userData) this.nearbyProp.userData.isHeld = true;
+
+          this.network.sendPropPickup(propId);
+          soundEngine.playItemPickup();
+          this.ui.addNotification(`✋ Вы взяли: ${label}`);
+          this.nearbyProp = null;
         }
       }
     });
@@ -245,16 +308,31 @@ class GameApp {
         }
       }
 
-      if (!this.nearbyNpc) {
-        // A. Founders' Safe in Council Hall (Aud. 223) at (x = 0, z = -37.4)
+      if (this.heldProp) {
+        // Smoothly position carried prop in front of camera view
+        const camDir = new THREE.Vector3();
+        this.gameScene.camera.getWorldDirection(camDir);
+        const holdPos = this.gameScene.camera.position.clone().add(camDir.clone().multiplyScalar(1.4));
+        holdPos.y -= 0.3;
+        this.heldProp.mesh.position.copy(holdPos);
+        this.heldProp.mesh.rotation.y = this.controls.camera.rotation.y;
+        this.ui.showCustomPrompt(`Поставить ${this.heldProp.label}`, 'G');
+      } else if (!this.nearbyNpc) {
+        // A. Founders' Safe in Council Hall
         const distToSafe = Math.hypot(playerPos.x - 7, playerPos.z - 7);
         this.nearSafe = distToSafe < 3.8;
 
         if (this.nearSafe) {
-          this.ui.showCustomPrompt('Открыть сейф основателей');
-
+          this.ui.showCustomPrompt('Открыть сейф основателей', 'E');
         } else {
-          this.ui.hideInteractionPrompt();
+          // B. Movable Prop Proximity
+          const prop = this.chunkManager.findNearbyMovableProp(playerPos, 2.5);
+          this.nearbyProp = prop;
+          if (prop) {
+            this.ui.showCustomPrompt(`Взять ${prop.userData.label || 'предмет'}`, 'G');
+          } else {
+            this.ui.hideInteractionPrompt();
+          }
         }
       }
     }
