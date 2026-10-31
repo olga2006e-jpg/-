@@ -7,8 +7,12 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.resolve(__dirname, '../data');
 const DB_FILE = path.join(DATA_DIR, 'gameState.json');
 
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (e) {
+  // Directory may already exist or be managed externally
 }
 
 class Storage {
@@ -55,6 +59,32 @@ class Storage {
       lastSeen: Date.now()
     };
     this.save();
+  }
+
+  addItemToInventory(username, item) {
+    const user = this.getUser(username);
+    if (!user) return false;
+    if (!Array.isArray(user.inventory)) {
+      user.inventory = [];
+    }
+    if (user.inventory.some(i => i.id === item.id)) {
+      return false; // Already collected
+    }
+    user.inventory.push({
+      id: item.id,
+      name: item.name,
+      subType: item.subType || 'artifact',
+      clue: item.clue || '',
+      icon: item.icon || '📜',
+      collectedAt: Date.now()
+    });
+    this.saveUser(user);
+    return true;
+  }
+
+  getInventory(username) {
+    const user = this.getUser(username);
+    return (user && Array.isArray(user.inventory)) ? user.inventory : [];
   }
 
   // Agent memory methods

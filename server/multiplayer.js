@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import { AuthManager } from './auth.js';
 import { db } from './db.js';
-import { getChunk, worldToChunkCoord, TOTAL_WORLD_CHUNKS } from './world.js';
+import { getChunk, worldToChunkCoord, TOTAL_WORLD_CHUNKS, COLLECTIBLE_ITEMS } from './world.js';
 import { AgentService } from './ai/agentService.js';
 
 export function setupMultiplayer(wss) {
@@ -29,7 +29,7 @@ export function setupMultiplayer(wss) {
         }
 
         authenticatedUser = username;
-        const savedUser = db.getUser(username) || { x: 0, y: 1.6, z: 0, rotY: 0, color: '#ff79c6' };
+        const savedUser = db.getUser(username) || { x: 0, y: 1.6, z: 0, rotY: 0, color: '#ff79c6', inventory: [] };
 
         const clientState = {
           ws,
@@ -45,14 +45,15 @@ export function setupMultiplayer(wss) {
 
         clients.set(username, clientState);
 
-        // Send auth success and world metadata
+        // Send auth success, inventory and world metadata
         ws.send(JSON.stringify({
           type: 'AUTH_SUCCESS',
           username,
           totalWorldChunks: TOTAL_WORLD_CHUNKS, // 100
           maxClientCachePercent: 10,           // 10%
           maxAllowedChunksOnClient: 10,         // 10 chunks max
-          initialPosition: { x: clientState.x, y: clientState.y, z: clientState.z, rotY: clientState.rotY }
+          initialPosition: { x: clientState.x, y: clientState.y, z: clientState.z, rotY: clientState.rotY },
+          inventory: db.getInventory(username)
         }));
 
         // Broadcast player joined to everyone else
@@ -89,6 +90,29 @@ export function setupMultiplayer(wss) {
         player.rotY = msg.rotY ?? player.rotY;
         player.lastUpdate = Date.now();
         player.currentChunk = worldToChunkCoord(player.x, player.z);
+
+        // Check proximity to collectible items in player's current chunk
+        for (const item of COLLECTIBLE_ITEMS) {
+          if (item.chunkX === player.currentChunk.cx && item.chunkZ === player.currentChunk.cz) {
+            const dist = Math.hypot(player.x - item.x, player.z - item.z);
+            if (dist < 2.5) {
+              const added = db.addItemToInventory(authenticatedUser, item);
+              if (added) {
+                const userInventory = db.getInventory(authenticatedUser);
+                ws.send(JSON.stringify({
+                  type: 'ITEM_COLLECTED',
+                  item,
+                  inventory: userInventory
+                }));
+                broadcast({
+                  type: 'NOTIFICATION',
+                  message: `✨ Исследователь ${authenticatedUser} нашел артефакт: ${item.icon} ${item.name}!`
+                });
+                console.log(`[Quest] Player ${authenticatedUser} collected artifact ${item.id}`);
+              }
+            }
+          }
+        }
         return;
       }
 
@@ -149,6 +173,38 @@ export function setupMultiplayer(wss) {
             error: true
           }));
         }
+        return;
+      }
+
+      // 6. Quest: Gate Code Submission («Тайна Хэллоуинских Врат»)
+      if (msg.type === 'SUBMIT_GATE_CODE') {
+        const code = (msg.code || '').trim();
+        const WIN_CODE = '2327'; // 2 (E=mc^2) + 3 (Пирамиды) + 2 (Группа радия) + 7 (Склеп)
+
+        if (code === WIN_CODE) {
+          broadcast({
+            type: 'VICTORY',
+            winner: authenticatedUser,
+            code: WIN_CODE,
+            message: `🎉 Игрок ${authenticatedUser} и команда разгадали тайны призраков и открыли Врата Вечности!`
+          });
+          console.log(`[Quest] VICTORY! Gate code solved by ${authenticatedUser}`);
+        } else {
+          ws.send(JSON.stringify({
+            type: 'CODE_INCORRECT',
+            enteredCode: code,
+            message: 'Замок звякнул цепями: код неверен! Спросите призраков или найдите свитки в залах.'
+          }));
+        }
+        return;
+      }
+
+      // 7. Inventory Request
+      if (msg.type === 'GET_INVENTORY') {
+        ws.send(JSON.stringify({
+          type: 'INVENTORY_DATA',
+          inventory: db.getInventory(authenticatedUser)
+        }));
         return;
       }
     });

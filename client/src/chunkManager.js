@@ -18,7 +18,8 @@ import {
   createTurnstile,
   createSignpost,
   createCeilingLamp,
-  createGhostNPC
+  createGhostNPC,
+  createArtifactMesh
 } from './environment.js';
 
 export const CHUNK_SIZE = 24;
@@ -43,7 +44,7 @@ export class ChunkManager {
 
     // List of active NPCs currently in scene
     this.activeNpcs = new Map(); // npcId -> THREE.Group
-    this.animatedObjects = [];   // torches, pumpkins, npcs
+    this.animatedObjects = [];   // torches, pumpkins, npcs, artifacts
   }
 
   setWorldMeta(totalChunks, maxCachePercent) {
@@ -213,6 +214,10 @@ export class ChunkManager {
         chunkGroup.add(createBookshelf(obj.x, obj.y, obj.z));
       } else if (obj.type === 'cauldron') {
         chunkGroup.add(createServerRack(obj.x, obj.y, obj.z, 0));
+      } else if (obj.type === 'artifact') {
+        const artifact = createArtifactMesh(obj);
+        chunkGroup.add(artifact);
+        this.animatedObjects.push(artifact);
       }
     }
 
@@ -275,7 +280,7 @@ export class ChunkManager {
     this.notifyCache();
   }
 
-  // Update animated objects (flickering torches, bobbing ghosts)
+  // Update animated objects (flickering torches, bobbing ghosts, rotating artifacts)
   animate(delta, elapsed) {
     for (const obj of this.animatedObjects) {
       if (obj.userData?.light) {
@@ -294,8 +299,14 @@ export class ChunkManager {
           obj.userData.light.intensity = 1.4 + Math.sin(elapsed * 2.8 + obj.userData.timeOffset) * 0.35;
         }
       }
+      if (obj.userData?.isArtifact) {
+        // Rotating & bobbing collectible artifact
+        obj.rotation.y += delta * 1.5;
+        obj.position.y = obj.userData.baseY + Math.sin(elapsed * 2.5 + obj.userData.timeOffset) * 0.12;
+      }
     }
   }
+
   // Find nearest NPC to player position
   getNearbyNpc(playerX, playerZ, maxDistance = 3.5) {
     let closestNpc = null;

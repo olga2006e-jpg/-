@@ -836,3 +836,58 @@ export function createGhostNPC(npcData) {
 
   return group;
 }
+
+
+// 8. Collectible Artifact Item
+export function createArtifactMesh(item) {
+  const group = new THREE.Group();
+  group.position.set(item.x, item.y, item.z);
+
+  let geom;
+  let colorHex = 0xffd700;
+
+  if (item.subType === 'hourglass') {
+    geom = new THREE.CylinderGeometry(0.18, 0.18, 0.55, 8);
+    colorHex = 0x8be9fd;
+  } else if (item.subType === 'scroll') {
+    geom = new THREE.CylinderGeometry(0.1, 0.1, 0.6, 8);
+    geom.rotateZ(Math.PI / 4);
+    colorHex = 0xf1fa8c;
+  } else if (item.subType === 'flask') {
+    geom = new THREE.OctahedronGeometry(0.25, 0);
+    colorHex = 0x50fa7b;
+  } else {
+    geom = new THREE.TorusGeometry(0.2, 0.08, 8, 16);
+    colorHex = 0xff79c6;
+  }
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: colorHex,
+    emissive: colorHex,
+    emissiveIntensity: 0.8,
+    roughness: 0.2,
+    metalness: 0.8
+  });
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.castShadow = true;
+  group.add(mesh);
+
+  // Floating label with item icon and name
+  const nametag = createNameTag(`${item.icon || '✨'} ${item.name}`, `#${colorHex.toString(16).padStart(6, '0')}`);
+  nametag.position.y = 0.8;
+  group.add(nametag);
+
+  // Soft glowing point light
+  const pLight = new THREE.PointLight(colorHex, 1.2, 5);
+  pLight.position.y = 0.2;
+  group.add(pLight);
+
+  group.userData = {
+    isArtifact: true,
+    itemId: item.id,
+    baseY: item.y,
+    timeOffset: Math.random() * 5
+  };
+
+  return group;
+}

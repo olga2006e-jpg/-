@@ -19,6 +19,10 @@ export class NetworkClient {
     this.onAgentReply = null;
     this.onAgentTyping = null;
     this.onPlayersListChanged = null;
+    this.onItemCollected = null;
+    this.onNotification = null;
+    this.onVictory = null;
+    this.onCodeIncorrect = null;
   }
 
   connect(token, myUsername) {
@@ -94,6 +98,10 @@ export class NetworkClient {
     this.send({ type: 'AGENT_CHAT', agentId, text });
   }
 
+  sendGateCode(code) {
+    this.send({ type: 'SUBMIT_GATE_CODE', code });
+  }
+
   handleMessage(msg) {
     switch (msg.type) {
       case 'AUTH_SUCCESS':
@@ -131,6 +139,22 @@ export class NetworkClient {
 
       case 'AGENT_REPLY':
         if (this.onAgentReply) this.onAgentReply(msg);
+        break;
+
+      case 'ITEM_COLLECTED':
+        if (this.onItemCollected) this.onItemCollected(msg);
+        break;
+
+      case 'NOTIFICATION':
+        if (this.onNotification) this.onNotification(msg.message);
+        break;
+
+      case 'VICTORY':
+        if (this.onVictory) this.onVictory(msg);
+        break;
+
+      case 'CODE_INCORRECT':
+        if (this.onCodeIncorrect) this.onCodeIncorrect(msg);
         break;
     }
   }
