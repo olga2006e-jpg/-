@@ -47,36 +47,39 @@ ${persona.name}:`;
 
   static recordResponse(username, agentId, userMessage, responseText) {
     const persona = AGENT_PERSONAS[agentId] || AGENT_PERSONAS.einstein;
-    
+
     db.updateAgentMemory(username, agentId, mem => {
       mem.turnsCount = (mem.turnsCount || 0) + 1;
       mem.history = mem.history || [];
       mem.history.push({ role: 'user', content: userMessage });
       mem.history.push({ role: 'agent', content: responseText });
-      if (mem.history.length > 8) {
-        mem.history = mem.history.slice(-8);
+      if (mem.history.length > 10) {
+        mem.history = mem.history.slice(-10);
       }
 
-      // Automatically register any facts whose keywords appear in response or message
-      const lower = (responseText + ' ' + userMessage).toLowerCase();
+      // Strictly register facts only when explicitly mentioned in the actual dialogue
+      // NEVER use random unlocking!
+      const combined = (userMessage + ' ' + responseText).toLowerCase();
       mem.factsKnown = mem.factsKnown || [];
+      mem.discussedTopics = mem.discussedTopics || [];
+
       for (const fact of persona.factsCatalog) {
         if (!mem.factsKnown.includes(fact.id)) {
-          const titleWords = fact.title.toLowerCase().split(' ');
-          const matches = titleWords.some(w => w.length > 3 && lower.includes(w));
-          if (matches) {
+          const keywords = [
+            ...(fact.keywords || []),
+            ...fact.title.toLowerCase().split(/\s+/).filter(w => w.length > 3)
+          ];
+          const matched = keywords.some(kw => combined.includes(kw));
+          if (matched) {
             mem.factsKnown.push(fact.id);
+            if (!mem.discussedTopics.includes(fact.title)) {
+              mem.discussedTopics.push(fact.title);
+            }
           }
         }
       }
 
-      // If no new facts triggered but conversation progressed, unlock sequentially
-      if (mem.factsKnown.length < persona.factsCatalog.length && Math.random() > 0.4) {
-        const nextFact = persona.factsCatalog.find(f => !mem.factsKnown.includes(f.id));
-        if (nextFact) mem.factsKnown.push(nextFact.id);
-      }
-
-      mem.lastTopic = userMessage.slice(0, 40);
+      mem.lastTopic = userMessage.trim().slice(0, 60);
     });
   }
 }

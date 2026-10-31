@@ -25,23 +25,43 @@ export class AuthManager {
       db.saveUser(user);
     } else {
       user.color = color || user.color;
-      // Fresh login always starts at Main Entrance doors of GUK!
-      user.x = (Math.random() - 0.5) * 1.6;
-      user.y = 1.6;
-      user.z = 10.5;
-      user.rotY = 0;
+      // Preserve existing saved coordinates if present; fallback to South entrance if unset
+      if (user.x === undefined || user.x === null || !Number.isFinite(user.x)) {
+        user.x = (Math.random() - 0.5) * 1.6;
+        user.y = 1.6;
+        user.z = 10.5;
+        user.rotY = 0;
+      }
       db.saveUser(user);
     }
 
-    sessions.set(token, cleanName);
-    return { token, user };
+    sessions.set(token, {
+      username: cleanName,
+      createdAt: Date.now(),
+      isGuest: true
+    });
+    return {
+      token,
+      user,
+      authType: 'guest_session',
+      isGuest: true,
+      disclaimer: 'Гостевой вход без пароля: сохранение привязано к никнейму на локальном сервере'
+    };
   }
 
   static verifyToken(token) {
     if (!token) return null;
-    return sessions.get(token) || null;
+    const session = sessions.get(token);
+    if (!session) return null;
+    return typeof session === 'string' ? session : session.username;
   }
 
+  static getSession(token) {
+    if (!token) return null;
+    const session = sessions.get(token);
+    if (!session) return null;
+    return typeof session === 'string' ? { username: session, isGuest: true } : session;
+  }
   static logout(token) {
     sessions.delete(token);
   }

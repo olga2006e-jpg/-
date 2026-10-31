@@ -4,9 +4,13 @@ node_modules/
 # Build output
 dist/
 
-# Local database file
-data/gameState.json
-
+# Game persistence & databases
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
 # OS and Editor files
 .DS_Store
 Thumbs.db

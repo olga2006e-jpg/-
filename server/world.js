@@ -849,7 +849,51 @@ export function worldToChunkCoord(x, z) {
     cz: Math.round(z / CHUNK_SIZE)
   };
 }
+
+// Canonical deterministic JSON serializer for byte-accurate chunk sizing
+export function canonicalStringify(obj) {
+  if (obj === null || typeof obj !== 'object') {
+    return JSON.stringify(obj);
+  }
+  if (Array.isArray(obj)) {
+    return '[' + obj.map(canonicalStringify).join(',') + ']';
+  }
+  const keys = Object.keys(obj).sort();
+  return '{' + keys.map(k => JSON.stringify(k) + ':' + canonicalStringify(obj[k])).join(',') + '}';
+}
+
+// Precompute canonical chunk byte sizes for all 100 chunks without runtime world dumps
+const chunkByteSizeMap = new Map();
+let totalCanonicalBytes = 0;
+
+for (let cx = -5; cx <= 4; cx++) {
+  for (let cz = -5; cz <= 4; cz++) {
+    const rawChunk = generateChunk(cx, cz);
+    const serialized = canonicalStringify(rawChunk);
+    const size = Buffer.byteLength(serialized, 'utf-8');
+    chunkByteSizeMap.set(`${cx},${cz}`, size);
+    totalCanonicalBytes += size;
+  }
+}
+
+export const TOTAL_WORLD_CANONICAL_BYTES = totalCanonicalBytes;
+
+export function getChunkByteSize(cx, cz) {
+  const key = `${cx},${cz}`;
+  if (chunkByteSizeMap.has(key)) {
+    return chunkByteSizeMap.get(key);
+  }
+  // Fallback for any dynamic coordinate
+  const c = generateChunk(cx, cz);
+  return Buffer.byteLength(canonicalStringify(c), 'utf-8');
+}
+
 // Alias for backwards compatibility with multiplayer.js
 export function getChunk(cx, cz) {
-  return generateChunk(cx, cz);
+  const chunk = generateChunk(cx, cz);
+  const byteSize = getChunkByteSize(cx, cz);
+  return {
+    ...chunk,
+    byteSize
+  };
 }

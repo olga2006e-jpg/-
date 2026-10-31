@@ -6,8 +6,9 @@ import express from 'express';
 import { WebSocketServer } from 'ws';
 import { AuthManager } from './auth.js';
 import { setupMultiplayer } from './multiplayer.js';
-import { TOTAL_WORLD_CHUNKS } from './world.js';
-
+import { TOTAL_WORLD_CHUNKS, TOTAL_WORLD_CANONICAL_BYTES } from './world.js';
+import { AgentService } from './ai/agentService.js';
+import { db } from './db.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3001;
@@ -30,19 +31,27 @@ app.post('/api/login', (req, res) => {
     success: true,
     token: auth.token,
     user: auth.user,
+    authType: 'guest_session',
+    isGuest: true,
+    disclaimer: 'Гостевой вход без пароля: сохранение привязано к никнейму на локальном сервере',
     world: {
       totalChunks: TOTAL_WORLD_CHUNKS,
+      totalWorldBytes: TOTAL_WORLD_CANONICAL_BYTES,
       maxClientCachePercent: 10
     }
   });
 });
 
-app.get('/api/status', (req, res) => {
+app.get('/api/status', async (req, res) => {
+  const ollamaHealth = await AgentService.checkOllamaHealth();
   res.json({
     status: 'online',
     timestamp: Date.now(),
     totalChunks: TOTAL_WORLD_CHUNKS,
-    aiModel: process.env.OLLAMA_MODEL || 'qwen2.5:3b'
+    totalWorldBytes: TOTAL_WORLD_CANONICAL_BYTES,
+    databaseEngine: db.type,
+    aiModel: process.env.OLLAMA_MODEL || 'qwen2.5:3b',
+    ollama: ollamaHealth
   });
 });
 
