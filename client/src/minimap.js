@@ -3,6 +3,12 @@ export const BUILDING_ROOMS = ROOMS;
 export class MinimapManager {
     constructor() {
         this.mapModal = document.getElementById('map-modal');
+        this.locationBadge = document.getElementById('minimap-location-badge');
+        this.minimapCanvas = document.getElementById('minimap-canvas');
+        this.minimapCtx = this.minimapCanvas?.getContext('2d');
+        this.fullMapCanvas = document.getElementById('full-map-canvas');
+        this.fullMapCtx = this.fullMapCanvas?.getContext('2d');
+        this.currentLocationText = '';
         this.player = { x: 0, z: 0, rotY: 0 };
         this.players = [];
         this.npcs = [];
@@ -37,17 +43,30 @@ export class MinimapManager {
         this.player = player;
         this.players = players;
         this.npcs = npcs;
-        if (performance.now() - this.lastDraw < 80)
+        const now = performance.now();
+        if (now - this.lastDraw < 75)
             return;
-        this.lastDraw = performance.now();
+        this.lastDraw = now;
         const r = ROOMS.find(r => Math.abs(player.x - r.x) <= 12 && Math.abs(player.z - r.z) <= 12);
-        document.getElementById('minimap-location-badge').textContent = r ? `${r.code} / ${r.name.toLowerCase()}` : 'Учебный павильон';
+        const locationText = r ? `${r.code} / ${r.name.toLowerCase()}` : 'Учебный павильон';
+        if (this.currentLocationText !== locationText) {
+            this.currentLocationText = locationText;
+            const badge = this.locationBadge || (this.locationBadge = document.getElementById('minimap-location-badge'));
+            if (badge) {
+                badge.textContent = locationText;
+            }
+        }
         this.draw('minimap-canvas', false);
         if (this.isFullMapOpen)
             this.draw('full-map-canvas', true);
     }
     draw(id, full) {
-        const canvas = document.getElementById(id), ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height, s = full ? 6.8 : 2.6, ox = w / 2, oy = full ? h * .65 : h * .68;
+        const isFull = full || id === 'full-map-canvas';
+        const canvas = isFull ? (this.fullMapCanvas || (this.fullMapCanvas = document.getElementById('full-map-canvas'))) : (this.minimapCanvas || (this.minimapCanvas = document.getElementById('minimap-canvas')));
+        if (!canvas) return;
+        const ctx = isFull ? (this.fullMapCtx || (this.fullMapCtx = canvas.getContext('2d'))) : (this.minimapCtx || (this.minimapCtx = canvas.getContext('2d')));
+        if (!ctx) return;
+        const w = canvas.width, h = canvas.height, s = full ? 6.8 : 2.6, ox = w / 2, oy = full ? h * .65 : h * .68;
         ctx.fillStyle = '#14232a';
         ctx.fillRect(0, 0, w, h);
         ctx.strokeStyle = '#ffffff06';

@@ -42,6 +42,8 @@ class GameApp {
     this.nearbyNpc = null;
     this.heldProp = null;
     this.nearbyProp = null;
+    this._camDir = new THREE.Vector3();
+    this._holdPos = new THREE.Vector3();
     this.minimap.onModalStateChange = () => this.ui.syncModal();
     this.network.onConnectionError = message => {
       this.controls.enabled=false;
@@ -312,11 +314,10 @@ class GameApp {
 
       if (this.heldProp) {
         // Smoothly position carried prop in front of camera view
-        const camDir = new THREE.Vector3();
-        this.gameScene.camera.getWorldDirection(camDir);
-        const holdPos = this.gameScene.camera.position.clone().add(camDir.clone().multiplyScalar(1.4));
-        holdPos.y -= 0.3;
-        this.heldProp.mesh.position.copy(holdPos);
+        this.gameScene.camera.getWorldDirection(this._camDir);
+        this._holdPos.copy(this.gameScene.camera.position).addScaledVector(this._camDir, 1.4);
+        this._holdPos.y -= 0.3;
+        this.heldProp.mesh.position.copy(this._holdPos);
         this.heldProp.mesh.rotation.y = this.controls.camera.rotation.y;
         this.ui.showCustomPrompt(`Поставить ${this.heldProp.label}`, 'G');
       } else if (!this.nearbyNpc) {
@@ -342,13 +343,16 @@ class GameApp {
     this.gameScene.update(delta, elapsed);
 
     // 7. Update Minimap Radar & Location Badge
-    const remoteList = Array.from(this.network.remotePlayers.values()).map(p => ({
-      username: p.username,
-      color: p.color,
-      x: p.mesh.position.x,
-      z: p.mesh.position.z
-    }));
-    this.minimap.update(playerPos, remoteList, Array.from(this.chunkManager.activeNpcs.values()), this.chunkManager.loadedChunks);
+    if (now - this.minimap.lastDraw >= 75) {
+      const remoteList = Array.from(this.network.remotePlayers.values()).map(p => ({
+        username: p.username,
+        color: p.color,
+        x: p.mesh.position.x,
+        z: p.mesh.position.z
+      }));
+      const npcList = Array.from(this.chunkManager.activeNpcs.values());
+      this.minimap.update(playerPos, remoteList, npcList, this.chunkManager.loadedChunks);
+    }
 
     // 7. Render 3D Scene
     this.gameScene.render();

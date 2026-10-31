@@ -3,7 +3,7 @@
   color:#f8f5ee;
   background:#140e24;
   font-synthesis:none;
-  --panel:rgba(22,14,38,.93);
+  --panel:rgba(20, 12, 34, 0.95);
   --line:rgba(255,145,55,.28);
   --gold:#ffaa4a;
   --pumpkin:#ff7e22;
@@ -122,7 +122,6 @@ h2 {
   border:1px solid var(--line);
   border-radius:12px;
   padding:18px;
-  backdrop-filter:blur(16px);
   box-shadow:0 6px 24px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,157,59,.18);
 }
 .left-rail,.right-rail {
@@ -423,8 +422,7 @@ input::placeholder {
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(5,2,10,.85);
-  backdrop-filter:blur(14px);
+  background:rgba(8, 4, 16, 0.92);
   padding:28px;
 }
 .hidden {

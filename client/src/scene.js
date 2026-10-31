@@ -19,9 +19,12 @@ export class GameScene {
     this.camera.position.set(0, 1.6, 10.5);
 
     // 3. WebGL Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: window.devicePixelRatio <= 1,
+      powerPreference: 'high-performance'
+    });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
     this.renderer.shadowMap.enabled = false;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
@@ -106,7 +109,12 @@ export class GameScene {
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     this.particleSpeeds = speeds;
-
+    this.particleSwayCos = new Float32Array(count);
+    this.particleSwaySin = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
+      this.particleSwayCos[i] = Math.cos(i) * 0.02;
+      this.particleSwaySin[i] = Math.sin(i) * 0.02;
+    }
     this.particleMat = new THREE.PointsMaterial({
       size: 0.18,
       vertexColors: true,
@@ -122,21 +130,33 @@ export class GameScene {
   update(delta, elapsed) {
     if (!this.particles) return;
 
+    // Avoid unnecessary math and GPU buffer updates if elapsed hasn't changed noticeably
+    if (this._lastElapsed !== undefined && Math.abs(elapsed - this._lastElapsed) < 0.016) {
+      return;
+    }
+    const dt = this._lastElapsed !== undefined ? (elapsed - this._lastElapsed) : delta;
+    this._lastElapsed = elapsed;
+
     const positions = this.particles.geometry.attributes.position.array;
     const camPos = this.camera.position;
+    const sinE = Math.sin(elapsed);
+    const cosE = Math.cos(elapsed);
 
     for (let i = 0; i < this.particleCount; i++) {
-      positions[i * 3 + 1] += this.particleSpeeds[i] * delta;
-      positions[i * 3] += Math.sin(elapsed + i) * 0.02;
+      const idx = i * 3;
+      positions[idx + 1] += this.particleSpeeds[i] * dt;
+      positions[idx] += this.particleSwayCos
+        ? (sinE * this.particleSwayCos[i] + cosE * this.particleSwaySin[i])
+        : Math.sin(elapsed + i) * 0.02;
 
-      if (positions[i * 3 + 1] > 14) {
-        positions[i * 3 + 1] = 0.2;
+      if (positions[idx + 1] > 14) {
+        positions[idx + 1] = 0.2;
       }
 
-      const dx = positions[i * 3] - camPos.x;
-      const dz = positions[i * 3 + 2] - camPos.z;
-      if (Math.abs(dx) > 40) positions[i * 3] = camPos.x - Math.sign(dx) * 38;
-      if (Math.abs(dz) > 40) positions[i * 3 + 2] = camPos.z - Math.sign(dz) * 38;
+      const dx = positions[idx] - camPos.x;
+      const dz = positions[idx + 2] - camPos.z;
+      if (Math.abs(dx) > 40) positions[idx] = camPos.x - Math.sign(dx) * 38;
+      if (Math.abs(dz) > 40) positions[idx + 2] = camPos.z - Math.sign(dz) * 38;
     }
 
     this.particles.geometry.attributes.position.needsUpdate = true;

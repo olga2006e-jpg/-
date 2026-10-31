@@ -73,6 +73,8 @@ const stemMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.8
 });
 
+const floorTextureCache = new Map();
+
 // 0a. Floating text billboard for NPC and Player nametags
 export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(10, 16, 24, 0.78)') {
   const canvas = document.createElement('canvas');
@@ -101,6 +103,8 @@ export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(10, 16
   ctx.fillText(text, 140, 28);
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
   const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
   const sprite = new THREE.Sprite(spriteMaterial);
   sprite.scale.set(1.05, 0.21, 1);
@@ -144,6 +148,7 @@ export function createPlaqueMesh(text, colorHex = '#ffd700', bgColor = 'rgba(24,
   ctx.fillText(text, 256, 64);
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.generateMipmaps = false;
   texture.minFilter = THREE.LinearFilter;
 
   const plaqueGeo = new THREE.PlaneGeometry(width, height);
@@ -399,6 +404,8 @@ export function createBlackboard(x, y, z, rotY = 0, formulaType = 'math_analysis
   }
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
   const boardMat = new THREE.MeshBasicMaterial({ map: texture });
   const boardGeo = new THREE.PlaneGeometry(6.9, 2.3);
   const board = new THREE.Mesh(boardGeo, boardMat);
@@ -437,11 +444,6 @@ export function createServerRack(x, y, z, rotY = 0) {
     led.position.set(0, 0.5 + i * 0.4, 0.54);
     group.add(led);
   }
-
-  // Cyan network light
-  const cLight = new THREE.PointLight(0x8be9fd, 1.8, 8);
-  cLight.position.set(0, 1.3, 0.8);
-  group.add(cLight);
 
   return group;
 }
@@ -490,11 +492,6 @@ export function createLaserBench(x, y, z, rotY = 0) {
   const prism = new THREE.Mesh(prismGeo, prismMat);
   prism.position.set(1.3, 1.15, 0);
   group.add(prism);
-
-  // Laser point light
-  const pLight = new THREE.PointLight(0x50fa7b, 2.2, 6);
-  pLight.position.set(1.3, 1.25, 0);
-  group.add(pLight);
 
   return group;
 }
@@ -605,6 +602,7 @@ export function createCeilingLamp(x, y, z) {
   const lampLight = new THREE.PointLight(0xffbe73, 1.85, 20, 1.3);
   lampLight.position.set(0, -0.4, 0);
   group.add(lampLight);
+  return group;
 }
 
 // 12. Authentic Carved Halloween Jack-o-Lantern Pumpkin
@@ -652,12 +650,7 @@ export function createPumpkin(x, y, z, glowing = true) {
     mouth.position.set(0, -0.14, 0.51);
     group.add(mouth);
 
-    // Warm flickering candle point light
-    const pLight = new THREE.PointLight(0xff7700, 2.2, 9, 1.6);
-    pLight.position.set(0, 0.2, 0.35);
-    group.add(pLight);
-
-    group.userData = { light: pLight, baseIntensity: 2.2, timeOffset: Math.random() * 10, isMovable: true, label: 'Тыква-фонарь' };
+    group.userData = { timeOffset: Math.random() * 10, isMovable: true, label: 'Тыква-фонарь' };
   } else {
     group.userData = { isMovable: true, label: 'Тыква' };
   }
@@ -1092,10 +1085,6 @@ export function createWitchCauldron(x, y, z) {
   stew.position.y = 0.68;
   group.add(stew);
 
-  const greenLight = new THREE.PointLight(0x50fa7b, 2.2, 10, 1.2);
-  greenLight.position.set(0, 1.0, 0);
-  group.add(greenLight);
-
   // Skull ladle handle sticking out
   const ladleGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.1, 6);
   const ladle = new THREE.Mesh(ladleGeo, darkWoodDoorMat);
@@ -1103,7 +1092,7 @@ export function createWitchCauldron(x, y, z) {
   ladle.position.set(0.2, 0.9, 0);
   group.add(ladle);
 
-  group.userData = { light: greenLight, baseIntensity: 2.2, timeOffset: Math.random() * 10 };
+  group.userData = { timeOffset: Math.random() * 10 };
   return group;
 }
 
@@ -1253,6 +1242,7 @@ export function createTeacherDesk(x, y, z, rotY = 0) {
   const pumpkin = createPumpkin(0.9, 0.81, -0.45, true);
   pumpkin.scale.set(0.55, 0.55, 0.55);
   group.add(pumpkin);
+  return group;
 }
 
 // 37. Floating Gothic Halloween Candles
@@ -1271,11 +1261,7 @@ export function createFloatingCandle(x, y, z) {
   flame.position.y = 0.2;
   group.add(flame);
 
-  const light = new THREE.PointLight(0xffaa00, 1.2, 5, 1.5);
-  light.position.y = 0.25;
-  group.add(light);
-
-  group.userData = { light, baseIntensity: 1.2, timeOffset: Math.random() * 10, baseY: y };
+  group.userData = { timeOffset: Math.random() * 10, baseY: y };
   return group;
 }
 
@@ -1295,11 +1281,7 @@ export function createTorch(x, y, z) {
   glass.position.set(0, 0.32, 0.2);
   group.add(glass);
 
-  const light = new THREE.PointLight(0xffdf99, 2.2, 16, 1.2);
-  light.position.set(0, 0.35, 0.25);
-  group.add(light);
-
-  group.userData = { light, baseIntensity: 2.2, timeOffset: Math.random() * 10 };
+  group.userData = { timeOffset: Math.random() * 10 };
   return group;
 }
 
@@ -1342,12 +1324,7 @@ export function createStreetLantern(x, y, z) {
   glass.position.y = 3.0;
   group.add(glass);
 
-  // 6. Point Light illuminating the surrounding area
-  const light = new THREE.PointLight(0xffdf80, 2.8, 20, 1.2);
-  light.position.set(0, 3.0, 0);
-  group.add(light);
-
-  group.userData = { light, baseIntensity: 2.8, timeOffset: Math.random() * 10 };
+  group.userData = { timeOffset: Math.random() * 10 };
   return group;
 }
 
@@ -1583,10 +1560,6 @@ export function createElevator(x, y, z, rotY = 0) {
     }
   }
 
-  // Warm ceiling indicator lamp
-  const lamp = new THREE.PointLight(0xffdf99, 1.6, 8);
-  lamp.position.set(0, 2.9, 0);
-  group.add(lamp);
 
   // Floor indicator dial over elevator entrance
   const dialPlaque = createPlaqueMesh('🛗 ЛИФТ ГУК • ЭТАЖИ [1 • 2 • 3 • 4 • 5]', '#ffd700', 'rgba(28, 18, 12, 0.98)', 2.4, 0.36);
@@ -1694,27 +1667,37 @@ export function createFloorTile(x, y, z, width, depth, zoneType) {
     roughness = 0.85;
   }
 
-  const canvas=document.createElement('canvas');
-  canvas.width=canvas.height=512;
-  const ctx=canvas.getContext('2d');
-  const palette=zoneType==='foyer'?['#545d59','#626b65']:zoneType==='k5_lab'?['#455760','#4c6068']:zoneType==='photonics_lab'?['#495e55','#53685e']:['#65594d','#706353'];
-  for(let tx=0;tx<8;tx++)for(let tz=0;tz<8;tz++){
-    ctx.fillStyle=palette[(tx+tz)%2];ctx.fillRect(tx*64,tz*64,64,64);
-    ctx.strokeStyle='#ffffff0a';ctx.strokeRect(tx*64+.5,tz*64+.5,63,63);
+  let texture = floorTextureCache.get(zoneType);
+  if (!texture) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    const palette = zoneType === 'foyer' ? ['#545d59', '#626b65'] : zoneType === 'k5_lab' ? ['#455760', '#4c6068'] : zoneType === 'photonics_lab' ? ['#495e55', '#53685e'] : ['#65594d', '#706353'];
+    for (let tx = 0; tx < 8; tx++) for (let tz = 0; tz < 8; tz++) {
+      ctx.fillStyle = palette[(tx + tz) % 2]; ctx.fillRect(tx * 64, tz * 64, 64, 64);
+      ctx.strokeStyle = '#ffffff0a'; ctx.strokeRect(tx * 64 + .5, tz * 64 + .5, 63, 63);
+    }
+    ctx.strokeStyle = '#d2bb83'; ctx.lineWidth = 2; ctx.strokeRect(20, 20, 472, 472);
+    ctx.strokeStyle = '#d2bb8355'; ctx.strokeRect(25, 25, 462, 462);
+    if (zoneType === 'foyer') {
+      ctx.fillStyle = '#263e41'; ctx.fillRect(218, 0, 76, 512); ctx.fillRect(0, 218, 512, 76);
+      ctx.strokeStyle = '#cbb47e88'; ctx.lineWidth = 2; ctx.strokeRect(218, 0, 76, 512); ctx.strokeRect(0, 218, 512, 76);
+      ctx.beginPath(); ctx.arc(256, 256, 78, 0, Math.PI * 2); ctx.fillStyle = '#263e41'; ctx.fill(); ctx.strokeStyle = '#cbb47e'; ctx.stroke();
+      ctx.fillStyle = '#ddbd81'; ctx.font = '70px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('Б', 256, 259);
+    }
+    texture = new THREE.CanvasTexture(canvas);
+    texture.userData = { shared: true };
+    texture.generateMipmaps = false;
+    texture.minFilter = THREE.LinearFilter;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    floorTextureCache.set(zoneType, texture);
   }
-  ctx.strokeStyle='#d2bb83';ctx.lineWidth=2;ctx.strokeRect(20,20,472,472);
-  ctx.strokeStyle='#d2bb8355';ctx.strokeRect(25,25,462,462);
-  if(zoneType==='foyer'){
-    ctx.fillStyle='#263e41';ctx.fillRect(218,0,76,512);ctx.fillRect(0,218,512,76);
-    ctx.strokeStyle='#cbb47e88';ctx.lineWidth=2;ctx.strokeRect(218,0,76,512);ctx.strokeRect(0,218,512,76);
-    ctx.beginPath();ctx.arc(256,256,78,0,Math.PI*2);ctx.fillStyle='#263e41';ctx.fill();ctx.strokeStyle='#cbb47e';ctx.stroke();
-    ctx.fillStyle='#ddbd81';ctx.font='70px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Б',256,259);
-  }
-  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
-  const geo=new THREE.PlaneGeometry(width,depth);
-  const mat=new THREE.MeshStandardMaterial({map:texture,roughness:.72,metalness:.04});
-  const mesh=new THREE.Mesh(geo,mat);
-  mesh.rotation.x=-Math.PI/2;mesh.position.set(x,y,z);mesh.receiveShadow=true;
+  const geo = new THREE.PlaneGeometry(width, depth);
+  const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: .72, metalness: .04 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(x, y, z);
+  mesh.receiveShadow = true;
   return mesh;
 }
 
@@ -2121,10 +2104,6 @@ export function createGhostNPC(npcData) {
     neck.position.y = 0.12;
     flaskGroup.add(neck);
 
-    const radiumLight = new THREE.PointLight(0x50fa7b, 2.2, 7);
-    radiumLight.position.set(0, 0.08, 0);
-    flaskGroup.add(radiumLight);
-
     group.add(flaskGroup);
     specialProp = flaskGroup;
 
@@ -2212,9 +2191,6 @@ export function createGhostNPC(npcData) {
     prism.position.set(0.38, 0.6, 0.24);
     group.add(prism);
 
-    const prismLight = new THREE.PointLight(0x50fa7b, 2.4, 8);
-    prismLight.position.set(0.38, 0.6, 0.24);
-    group.add(prismLight);
     specialProp = prism;
   }
 
@@ -2225,11 +2201,6 @@ export function createGhostNPC(npcData) {
   nametag.position.y = 1.55;
   group.add(nametag);
 
-  // Spectral point light
-  const light = new THREE.PointLight(auraColor, 2.0, 10);
-  light.position.y = 1.0;
-  group.add(light);
-
   group.userData = {
     npcData,
     npcMat: ghostMat,
@@ -2237,7 +2208,6 @@ export function createGhostNPC(npcData) {
     tailGroup,
     headGroup,
     specialProp,
-    light,
     baseY: npcData.y,
     timeOffset: Math.random() * 10
   };
@@ -2284,11 +2254,6 @@ export function createArtifactMesh(item) {
   const nametag = createNameTag(`${item.icon || '✨'} ${item.name}`, `#${colorHex.toString(16).padStart(6, '0')}`);
   nametag.position.y = 0.55;
   group.add(nametag);
-
-  // Soft glowing point light
-  const pLight = new THREE.PointLight(colorHex, 1.2, 5);
-  pLight.position.y = 0.2;
-  group.add(pLight);
 
   group.userData = {
     isArtifact: true,
@@ -2452,12 +2417,7 @@ export function createFlaskProp(x, y, z, color = 0x50fa7b) {
   cork.position.y = 0.44;
   group.add(cork);
 
-  // Internal magical radiance
-  const pLight = new THREE.PointLight(color, 1.2, 5);
-  pLight.position.y = 0.2;
-  group.add(pLight);
-
-  group.userData = { isMovable: true, label: 'Алхимическое зелье', light: pLight, baseIntensity: 1.2, timeOffset: Math.random() * 5 };
+  group.userData = { isMovable: true, label: 'Алхимическое зелье', baseIntensity: 1.2, timeOffset: Math.random() * 5 };
   return group;
 }
 
@@ -2514,11 +2474,7 @@ export function createCrystalProp(x, y, z, color = 0xbd93f9) {
   crystal.position.y = 0.24;
   group.add(crystal);
 
-  const cLight = new THREE.PointLight(color, 1.2, 6);
-  cLight.position.y = 0.24;
-  group.add(cLight);
-
-  group.userData = { isMovable: true, label: 'Кристалл', light: cLight, baseIntensity: 1.2, timeOffset: Math.random() * 5 };
+  group.userData = { isMovable: true, label: 'Кристалл', baseIntensity: 1.2, timeOffset: Math.random() * 5 };
   return group;
 }
 
@@ -2549,11 +2505,7 @@ export function createCandelabraProp(x, y, z) {
     group.add(flame);
   }
 
-  const light = new THREE.PointLight(0xffdf88, 1.8, 10, 1.4);
-  light.position.set(0, 0.6, 0);
-  group.add(light);
-
-  group.userData = { isMovable: true, label: 'Канделябр', light, baseIntensity: 1.8, timeOffset: Math.random() * 10 };
+  group.userData = { isMovable: true, label: 'Канделябр', baseIntensity: 1.8, timeOffset: Math.random() * 10 };
   return group;
 }
 
@@ -2576,10 +2528,6 @@ export function createCauldron(x, y, z) {
   brew.position.y = 0.52;
   group.add(brew);
 
-  const pLight = new THREE.PointLight(0x50fa7b, 1.5, 6);
-  pLight.position.y = 0.6;
-  group.add(pLight);
-
-  group.userData = { light: pLight, baseIntensity: 1.5, timeOffset: Math.random() * 10 };
+  group.userData = { baseIntensity: 1.5, timeOffset: Math.random() * 10 };
   return group;
 }

@@ -108,18 +108,55 @@ function getLocalIPs() {
   return ips;
 }
 
-server.listen(PORT, '0.0.0.0', () => {
-  const ips = getLocalIPs();
-  console.log('\n======================================================');
-  console.log('🎃 HAUNTED ACADEMY — HACKATHON SERVER READY!');
-  console.log(`📡 Localhost:     http://localhost:${PORT}`);
-  if (ips.length > 0) {
-    ips.forEach(ip => {
-      console.log(`🌐 LAN (Wi-Fi):   http://${ip}:${PORT}`);
+function startServer(initialPort, maxAttempts = 20) {
+  let attempts = 0;
+
+  function tryListen(port) {
+    server.removeAllListeners('error');
+    server.removeAllListeners('listening');
+
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        attempts++;
+        if (attempts < maxAttempts) {
+          const nextPort = port + 1;
+          console.warn(`⚠️  Порт ${port} занят другим процессом. Переключаемся на порт ${nextPort}...`);
+          tryListen(nextPort);
+        } else {
+          console.error(`❌ Не удалось запустить сервер: диапазон портов с ${initialPort} по ${port} занят.`);
+          process.exit(1);
+        }
+      } else {
+        console.error('❌ Ошибка запуска сервера:', err);
+        process.exit(1);
+      }
     });
-  } else {
-    console.log('🌐 LAN: (No active Wi-Fi / LAN interface detected, offline mode)');
+
+    server.once('listening', () => {
+      const activePort = server.address().port;
+      try {
+        fs.writeFileSync(path.resolve(__dirname, '../.active-port'), String(activePort), 'utf8');
+      } catch (e) {}
+
+      const ips = getLocalIPs();
+      console.log('\n======================================================');
+      console.log('🎃 HAUNTED ACADEMY — HACKATHON SERVER READY!');
+      console.log(`📡 Localhost:     http://localhost:${activePort}`);
+      if (ips.length > 0) {
+        ips.forEach(ip => {
+          console.log(`🌐 LAN (Wi-Fi):   http://${ip}:${activePort}`);
+        });
+      } else {
+        console.log('🌐 LAN: (No active Wi-Fi / LAN interface detected, offline mode)');
+      }
+      console.log('🤖 AI Endpoint:   Ollama on localhost:11434 (with smart offline fallback)');
+      console.log('======================================================\n');
+    });
+
+    server.listen(port, '0.0.0.0');
   }
-  console.log('🤖 AI Endpoint:   Ollama on localhost:11434 (with smart offline fallback)');
-  console.log('======================================================\n');
-});
+
+  tryListen(initialPort);
+}
+
+startServer(Number(PORT) || 3001);

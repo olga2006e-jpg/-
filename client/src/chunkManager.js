@@ -75,6 +75,7 @@ export class ChunkManager {
     this.activeNpcs = new Map(); // npcId -> THREE.Group
     this.animatedObjects = [];   // torches, pumpkins, npcs, artifacts
     this.movableProps = new Map(); // propId -> THREE.Group
+    this._reusableCollisionBoxes = [];
   }
 
   setWorldMeta(totalChunks, maxCachePercent) {
@@ -475,7 +476,7 @@ export class ChunkManager {
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         for (const m of mats) {
           // Only dispose dynamic canvas textures, not static shared materials!
-          if (m && m.map && m.map.isCanvasTexture) {
+          if (m && m.map && m.map.isCanvasTexture && !m.map.userData?.shared) {
             m.map.dispose();
             m.dispose();
           }
@@ -503,7 +504,7 @@ export class ChunkManager {
         if (obj.userData.npcMat) {
           obj.userData.npcMat.emissiveIntensity = 0.55 + Math.sin(elapsed * 2.8 + obj.userData.timeOffset) * 0.25;
         }
-        if (obj.userData.light) {
+        if (obj.userData?.light) {
           obj.userData.light.intensity = 1.6 + Math.sin(elapsed * 2.8 + obj.userData.timeOffset) * 0.45;
         }
         // Ethereal tail waving animation
@@ -621,7 +622,8 @@ export class ChunkManager {
 
   // Ultra-fast collision box queries near the player (zero allocation per frame)
   getCollisionBoxes(px, pz, radius = 14, playerY = 1.6) {
-    const boxes = [];
+    const boxes = this._reusableCollisionBoxes;
+    boxes.length = 0;
     for (const entry of this.loadedChunks.values()) {
       if (!entry.collisionBoxes) continue;
       for (const box of entry.collisionBoxes) {
