@@ -283,14 +283,19 @@ export class ChunkManager {
     // Clean up from animated objects list
     this.animatedObjects = this.animatedObjects.filter(obj => !group.children.includes(obj));
 
-    // Dispose all geometries and materials to avoid memory leaks
+    // Dispose unique geometries and dynamic canvas textures (NEVER dispose shared global materials!)
     group.traverse((child) => {
-      if (child.geometry) child.geometry.dispose();
+      if (child.geometry) {
+        child.geometry.dispose();
+      }
       if (child.material) {
-        if (Array.isArray(child.material)) {
-          child.material.forEach(m => m.dispose());
-        } else {
-          child.material.dispose();
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        for (const m of mats) {
+          // Only dispose dynamic canvas textures, not static shared materials!
+          if (m && m.map && m.map.isCanvasTexture) {
+            m.map.dispose();
+            m.dispose();
+          }
         }
       }
     });

@@ -58,6 +58,8 @@ export class PlayerControls {
       this.camera.rotation.y = this.yaw;
       this.camera.rotation.x = this.pitch;
     });
+
+    this.setupKeyboard();
   }
   setChunkManager(chunkManager) {
     this.chunkManager = chunkManager;
