@@ -76,27 +76,42 @@ export class GameScene {
   }
 
   setupEtherealParticles() {
-    const count = 350;
+    const count = 450;
     this.particleCount = count;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
     const speeds = new Float32Array(count);
+
+    // Ethereal Halloween palette: pumpkin embers, spectral violet, ectoplasm green, harvest gold
+    const palette = [
+      new THREE.Color(0xff7518), // Pumpkin orange
+      new THREE.Color(0xbd93f9), // Spectral violet
+      new THREE.Color(0x50fa7b), // Radium ectoplasm green
+      new THREE.Color(0xffb86c)  // Candle ember gold
+    ];
 
     for (let i = 0; i < count; i++) {
       positions[i * 3] = (Math.random() - 0.5) * 80;
       positions[i * 3 + 1] = Math.random() * 12;
       positions[i * 3 + 2] = (Math.random() - 0.5) * 80;
-      speeds[i] = 0.2 + Math.random() * 0.4;
+      speeds[i] = 0.25 + Math.random() * 0.45;
+
+      const col = palette[i % palette.length];
+      colors[i * 3] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     this.particleSpeeds = speeds;
 
     this.particleMat = new THREE.PointsMaterial({
-      size: 0.14,
-      color: 0xffb86c, // Warm golden dust motes
+      size: 0.18,
+      vertexColors: true,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.82,
       blending: THREE.AdditiveBlending
     });
 

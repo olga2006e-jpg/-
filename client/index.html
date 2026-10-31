@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101b22">
-<title>Ночь в Бауманке — учебный павильон</title>
+<meta name="theme-color" content="#0c0817">
+<title>🎃 Ночь в Академии • Хэллоуин — Заброшенный Университет</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="before-login">
@@ -13,7 +13,7 @@
 <div id="crosshair">
 </div>
 <header class="topbar">
-<a class="brand" href="/" aria-label="Начало">Б<span>НОЧЬ В БАУМАНКЕ<small>ИНТЕРАКТИВНЫЙ УЧЕБНЫЙ ПАВИЛЬОН</small>
+<a class="brand" href="/" aria-label="Начало">🎃<span>НОЧЬ В БАУМАНКЕ • ХЭЛЛОУИН<small>АКАДЕМИЯ ТЕНЕЙ & УЧЕБНЫЙ ПАВИЛЬОН</small>
 </span>
 </a>
 <div class="session">
@@ -25,9 +25,9 @@
 </header>
 <aside class="left-rail">
 <section class="hud-panel mission">
-<div class="eyebrow">ВАША ЭКСПЕДИЦИЯ / 01</div>
+<div class="eyebrow">🎃 ХЭЛЛОУИНСКАЯ ЭКСПЕДИЦИЯ / 01</div>
 <h2>Знания открывают двери.</h2>
-<p>Исследуйте три лаборатории, найдите четыре подсказки и откройте сейф в холле.</p>
+<p>Исследуйте три мистические лаборатории, найдите четыре подсказки и откройте Сейф Основателей в холле.</p>
 <div class="progress-label">
 <span>Собрано подсказок</span>
 <b id="inventory-count">0 / 4</b>
@@ -38,7 +38,7 @@
 </button>
 </section>
 <section class="hud-panel team">
-<div class="eyebrow">ВАША КОМАНДА</div>
+<div class="eyebrow">👻 ВАША КОМАНДА ИССЛЕДОВАТЕЛЕЙ</div>
 <div id="players-list">
 <span class="muted">Пока никого нет</span>
 </div>
@@ -47,7 +47,7 @@
 <aside class="right-rail">
 <section id="minimap-panel" class="hud-panel">
 <div class="panel-heading">
-<span class="eyebrow">НАВИГАЦИЯ</span>
+<span class="eyebrow">🧭 НАВИГАЦИЯ ЗАМКА</span>
 <button id="minimap-expand-btn" class="icon-button" title="Открыть карту — M">↗</button>
 </div>
 <canvas id="minimap-canvas" width="260" height="200">
@@ -55,7 +55,7 @@
 <div id="minimap-location-badge">Центральный холл</div>
 <div class="map-legend">
 <span>● Вы</span>
-<span>◇ Преподаватель</span>
+<span>👻 Призрак</span>
 <span>M — карта</span>
 </div>
 </section>
@@ -78,7 +78,7 @@
 </span>
 </div>
 <section id="chat-container" class="hud-panel">
-<div class="eyebrow">КОМАНДНЫЙ КАНАЛ</div>
+<div class="eyebrow">🦇 КОМАНДНЫЙ КАНАЛ СВЯЗИ</div>
 <div id="chat-messages" role="log" aria-live="polite">
 </div>
 <form id="chat-form">
@@ -96,16 +96,16 @@
 <kbd>M</kbd> карта</span>
 <span>
 <kbd>Esc</kbd> курсор</span>
-<button id="lantern-button">Фонарь <kbd>L</kbd>
+<button id="lantern-button">Фонарь 🕯️ <kbd>L</kbd>
 </button>
 </footer>
 <div id="login-modal" class="modal-overlay">
 <div class="login-layout">
 <section class="login-story">
-<div class="eyebrow">ОБРАЗОВАТЕЛЬНАЯ ЭКСПЕДИЦИЯ</div>
-<h1>Университет<br>после <em>полуночи.</em>
+<div class="eyebrow">🎃 АКАДЕМИЯ ТЕНЕЙ • ХЭЛЛОУИН 2026</div>
+<h1>Университет в ночь<br><em>Хэллоуина.</em>
 </h1>
-<p>Знакомые коридоры. Необычные собеседники.<br>Одна тайна, которую проще раскрыть вместе.</p>
+<p>Заброшенные аудитории после полуночи. Призраки великих ученых и мыслителей.<br>Одна тайна, которую проще раскрыть вместе.</p>
 <div class="story-map" aria-hidden="true">
 <span class="map-line horizontal">
 </span>
@@ -127,14 +127,14 @@
 </div>
 </section>
 <section class="login-card">
-<span class="edition">НОЧЬ В БАУМАНКЕ / 2026</span>
-<h2>Ваша история<br>начинается здесь.</h2>
-<p>Представьтесь команде и выберите свой цвет.</p>
+<span class="edition">🎃 HALLOWEEN EDITION / 2026</span>
+<h2>Ваша экспедиция<br>начинается здесь.</h2>
+<p>Представьтесь команде и выберите ауру своего исследователя.</p>
 <form id="login-form">
 <label for="username-input">Имя исследователя</label>
 <input id="username-input" placeholder="Как вас зовут?" maxlength="20" required autocomplete="nickname">
 <fieldset>
-<legend>Цвет вашего персонажа</legend>
+<legend>Аура вашего исследователя</legend>
 <div class="color-picker">
 <label class="color-opt">
 <input type="radio" name="avatar-color" value="#8be9fd" aria-label="Голубой" checked>
@@ -163,22 +163,22 @@
 </label>
 </div>
 </fieldset>
-<button class="primary" id="login-submit">Войти в павильон <span>→</span>
+<button class="primary" id="login-submit">Войти в Академию 🎃 <span>→</span>
 </button>
 <p id="login-status" role="status" aria-live="polite">
 </p>
 </form>
 <div class="login-note">
-<span>◉</span> Локальный мир. Живое общение.<br>Знания, которые остаются с вами.</div>
+<span>🕯️</span> Локальный мир без интернета. Адаптивный ИИ.<br>Найдите 4 артефакта и откройте Сейф Врат!</div>
 </section>
 </div>
 </div>
 <div id="dialogue-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="dialogue-name">
 <section class="dialogue-card">
 <div class="dialogue-header">
-<div class="avatar">◇</div>
+<div class="avatar">👻</div>
 <div>
-<div class="eyebrow">РАЗГОВОР С ПРЕПОДАВАТЕЛЕМ</div>
+<div class="eyebrow">👻 ДИАЛОГ С ПРИЗРАКОМ УЧЕНОГО</div>
 <h2 id="dialogue-name">
 </h2>
 <p id="dialogue-role">
@@ -197,7 +197,7 @@
 </div>
 <form id="dialogue-form">
 <input id="dialogue-input" maxlength="300" placeholder="Что вы хотите узнать?" aria-label="Вопрос преподавателю" required>
-<button class="primary">Спросить ↗</button>
+<button class="primary">Спросить 🎃 ↗</button>
 </form>
 </div>
 </section>
@@ -206,43 +206,43 @@
 <section class="map-card">
 <div class="panel-heading">
 <div>
-<div class="eyebrow">ОДИН ЭТАЖ / ТРИ НАПРАВЛЕНИЯ</div>
-<h2 id="map-title">Учебный павильон</h2>
+<div class="eyebrow">🎃 ОДИН ЭТАЖ / ТРИ НАПРАВЛЕНИЯ</div>
+<h2 id="map-title">Учебный павильон Академии</h2>
 </div>
 <button id="map-modal-close" class="close-btn" aria-label="Закрыть">×</button>
 </div>
 <canvas id="full-map-canvas" width="900" height="560">
 </canvas>
-<p class="fineprint">Голубой — вы · цветные точки — команда · ромбы — собеседники · M / Esc — закрыть</p>
+<p class="fineprint">Голубой — вы · цветные точки — команда · ромбы — призраки · M / Esc — закрыть</p>
 </section>
 </div>
 <div id="inventory-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="inventory-title">
 <section class="compact-card">
 <div class="panel-heading">
 <div>
-<div class="eyebrow">ВАША ЭКСПЕДИЦИЯ</div>
-<h2 id="inventory-title">Найденные подсказки</h2>
+<div class="eyebrow">🎃 ВАША ЭКСПЕДИЦИЯ</div>
+<h2 id="inventory-title">Найденные артефакты и подсказки</h2>
 </div>
 <button class="close-btn" id="inventory-close" aria-label="Закрыть">×</button>
 </div>
 <div id="inventory-list">
 </div>
-<button id="open-safe" class="primary">Ввести код сейфа →</button>
+<button id="open-safe" class="primary">Ввести код сейфа 🗝️ →</button>
 </section>
 </div>
 <div id="safe-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="safe-title">
 <section class="compact-card">
 <div class="panel-heading">
 <div>
-<div class="eyebrow">ПОСЛЕДНИЙ ШАГ</div>
-<h2 id="safe-title">Сейф основателей</h2>
+<div class="eyebrow">🗝️ ТАЙНА ХЭЛЛОУИНСКИХ ВРАТ</div>
+<h2 id="safe-title">Сейф Основателей</h2>
 </div>
 <button id="safe-modal-close" class="close-btn" aria-label="Закрыть">×</button>
 </div>
-<p>Четыре находки — четыре цифры. Соберите подсказки в холле и лабораториях.</p>
+<p>Четыре мистические находки — четыре цифры шифра (2327). Спросите призраков или найдите артефакты в залах.</p>
 <form id="safe-form">
 <input id="safe-code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="· · · ·" aria-label="Четырёхзначный код" required>
-<button class="primary">Открыть сейф →</button>
+<button class="primary">Открыть сейф 🗝️ →</button>
 </form>
 <p id="safe-status-msg" role="status">
 </p>
@@ -250,12 +250,12 @@
 </div>
 <div id="victory-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="victory-title">
 <section class="compact-card victory">
-<div class="eyebrow">ЭКСПЕДИЦИЯ ЗАВЕРШЕНА</div>
-<div class="victory-mark">✦</div>
-<h2 id="victory-title">Тайна раскрыта.<br>Знания — ваши.</h2>
+<div class="eyebrow">🎃 ЭКСПЕДИЦИЯ ЗАВЕРШЕНА</div>
+<div class="victory-mark">🗝️</div>
+<h2 id="victory-title">Врата открыты!<br>Тайны призраков познаны.</h2>
 <p id="victory-message">
 </p>
-<button id="victory-close" class="primary">Продолжить исследование →</button>
+<button id="victory-close" class="primary">Продолжить исследование 🎃 →</button>
 </section>
 </div>
 <script type="module" src="/src/main.js">
