@@ -97,8 +97,10 @@ class GameApp {
     this.network.onAuthSuccess = (msg) => {
       this.ui.loginSuccess();
       this.myUsername=msg.username;
+      if (this.controls.setPlayerInfo) {
+        this.controls.setPlayerInfo(this.myUsername, this.myColor || msg.color);
+      }
       this.chunkManager.setWorldMeta(msg.totalWorldChunks, msg.maxClientCachePercent);
-      if(msg.initialPosition && (Math.abs(msg.initialPosition.x)>35 || msg.initialPosition.z < -35 || msg.initialPosition.z>11)) msg.initialPosition={x:0,y:1.6,z:5,rotY:0};
       if (msg.initialPosition) {
         this.controls.setPosition(
           msg.initialPosition.x,

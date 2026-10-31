@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { soundEngine } from './audio.js';
 import { PlayerBody } from './playerBody.js';
-
+import { createPlayerAvatar } from './environment.js';
 export class PlayerControls {
   constructor(camera, domElement, scene = null) {
     this.camera = camera;
@@ -31,6 +31,16 @@ export class PlayerControls {
     this.yaw = 0;   // horizontal
     this.mouseSensitivity = 0.0022;
 
+    // Third-person & Camera View Mode
+    this.cameraMode = 'firstPerson'; // 'firstPerson' | 'thirdPerson'
+    this.cameraDistance = 2.8;
+    this.minDistance = 1.2;
+    this.maxDistance = 5.0;
+    this.playerPos = new THREE.Vector3(0, 1.6, 0);
+    this.thirdPersonMesh = null;
+    this.playerName = 'Вы';
+    this.playerColor = '#8be9fd';
+
     this.velocity = new THREE.Vector3();
     this.direction = new THREE.Vector3();
     this.chunkManager = null;
@@ -59,11 +69,32 @@ export class PlayerControls {
       const maxPitch = Math.PI / 2 - 0.05;
       this.pitch = Math.max(-maxPitch, Math.min(maxPitch, this.pitch));
 
-      // Apply rotation to camera
-      this.camera.rotation.order = 'YXZ';
-      this.camera.rotation.y = this.yaw;
-      this.camera.rotation.x = this.pitch;
+      // Apply rotation to camera if in first person
+      if (this.cameraMode === 'firstPerson') {
+        this.camera.rotation.order = 'YXZ';
+        this.camera.rotation.y = this.yaw;
+        this.camera.rotation.x = this.pitch;
+      }
     });
+
+    // Mouse wheel zoom to seamlessly toggle 1st and 3rd person
+    window.addEventListener('wheel', (e) => {
+      if (!this.enabled || !this.isLocked) return;
+      if (e.deltaY > 0) {
+        if (this.cameraMode === 'firstPerson') {
+          this.setCameraMode('thirdPerson');
+        } else {
+          this.cameraDistance = Math.min(this.maxDistance, this.cameraDistance + 0.35);
+        }
+      } else if (e.deltaY < 0) {
+        if (this.cameraMode === 'thirdPerson') {
+          this.cameraDistance -= 0.35;
+          if (this.cameraDistance < this.minDistance) {
+            this.setCameraMode('firstPerson');
+          }
+        }
+      }
+    }, { passive: true });
 
     this.setupKeyboard();
     window.addEventListener("blur", () => this.resetMovement());
@@ -105,6 +136,10 @@ export class PlayerControls {
           if (this.isGrounded) {
             this.jumpRequested = true;
           }
+          break;
+        case 'KeyV':
+        case 'KeyC':
+          this.toggleCameraMode();
           break;
       }
     };
@@ -191,10 +226,10 @@ export class PlayerControls {
     const deltaX = (forwardX * (-this.velocity.z) + rightX * this.velocity.x) * delta;
     const deltaZ = (forwardZ * (-this.velocity.z) + rightZ * this.velocity.x) * delta;
 
-    const oldX = this.camera.position.x;
-    const oldZ = this.camera.position.z;
+    const oldX = this.playerPos.x;
+    const oldZ = this.playerPos.z;
     const playerRadius = 0.45;
-    const playerY = this.camera.position.y;
+    const playerY = this.playerPos.y;
 
     let nextX = oldX + deltaX;
     let nextZ = oldZ + deltaZ;
@@ -211,7 +246,6 @@ export class PlayerControls {
           } else if (nextX < oldX && nextX - playerRadius < b.maxX && oldX - playerRadius >= b.maxX - 0.08) {
             nextX = b.maxX + playerRadius;
           } else if (nextX + playerRadius > b.minX && nextX - playerRadius < b.maxX) {
-            // Safety push-out if embedded
             const dLeft = Math.abs(nextX + playerRadius - b.minX);
             const dRight = Math.abs(b.maxX - (nextX - playerRadius));
             nextX = dLeft < dRight ? b.minX - playerRadius : b.maxX + playerRadius;
@@ -227,7 +261,6 @@ export class PlayerControls {
           } else if (nextZ < oldZ && nextZ - playerRadius < b.maxZ && oldZ - playerRadius >= b.maxZ - 0.08) {
             nextZ = b.maxZ + playerRadius;
           } else if (nextZ + playerRadius > b.minZ && nextZ - playerRadius < b.maxZ) {
-            // Safety push-out if embedded
             const dBack = Math.abs(nextZ + playerRadius - b.minZ);
             const dFront = Math.abs(b.maxZ - (nextZ - playerRadius));
             nextZ = dBack < dFront ? b.minZ - playerRadius : b.maxZ + playerRadius;
@@ -236,10 +269,11 @@ export class PlayerControls {
       }
     }
 
-    // Campus perimeter clamping: player can NEVER fall into the void!
+    // Campus perimeter clamping
     const bound = 35.3;
-    this.camera.position.x = THREE.MathUtils.clamp(nextX, -bound, bound);
-    this.camera.position.z = THREE.MathUtils.clamp(nextZ, -bound, bound);
+    this.playerPos.x = THREE.MathUtils.clamp(nextX, -bound, bound);
+    this.playerPos.z = THREE.MathUtils.clamp(nextZ, -bound, bound);
+
     // Handle Jumping & Vertical Gravity
     if (this.jumpRequested && this.isGrounded) {
       this.velocityY = this.jumpSpeed;
@@ -250,30 +284,103 @@ export class PlayerControls {
 
     if (!this.isGrounded) {
       this.velocityY -= this.gravity * delta;
-      let nextY = this.camera.position.y + this.velocityY * delta;
+      let nextY = this.playerPos.y + this.velocityY * delta;
       if (nextY <= this.baseY) {
         nextY = this.baseY;
         this.velocityY = 0;
         this.isGrounded = true;
-        soundEngine.playFootstep(); // Landing step impact
+        soundEngine.playFootstep(); // Landing impact
       } else if (nextY > 4.2) {
         nextY = 4.2;
         this.velocityY = 0;
       }
-      this.camera.position.y = nextY;
+      this.playerPos.y = nextY;
     } else {
-      this.camera.position.y = this.baseY;
+      this.playerPos.y = this.baseY;
     }
+
+    // Camera positioning based on view mode (1st person vs 3rd person)
+    if (this.cameraMode === 'thirdPerson') {
+      const mesh = this.ensureThirdPersonMesh();
+      if (mesh) {
+        mesh.position.set(this.playerPos.x, this.playerPos.y - 1.6, this.playerPos.z);
+        mesh.rotation.y = this.yaw;
+      }
+
+      // Over-the-shoulder third-person camera
+      const sinYaw = Math.sin(this.yaw);
+      const cosYaw = Math.cos(this.yaw);
+      const cosPitch = Math.cos(this.pitch);
+      const sinPitch = Math.sin(this.pitch);
+
+      const shoulderOffset = 0.42;
+      const camOffsetX = (sinYaw * cosPitch) * this.cameraDistance + (cosYaw * shoulderOffset);
+      const camOffsetY = (-sinPitch * this.cameraDistance) + 0.35;
+      const camOffsetZ = (cosYaw * cosPitch) * this.cameraDistance - (sinYaw * shoulderOffset);
+
+      let targetCamX = this.playerPos.x + camOffsetX;
+      let targetCamY = THREE.MathUtils.clamp(this.playerPos.y + camOffsetY, 0.4, 4.8);
+      let targetCamZ = this.playerPos.z + camOffsetZ;
+
+      targetCamX = THREE.MathUtils.clamp(targetCamX, -35.0, 35.0);
+      targetCamZ = THREE.MathUtils.clamp(targetCamZ, -35.0, 35.0);
+
+      this.camera.position.set(targetCamX, targetCamY, targetCamZ);
+      this.camera.lookAt(this.playerPos.x, this.playerPos.y + 0.15, this.playerPos.z);
+    } else {
+      // First-person view
+      this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
+      this.camera.rotation.order = 'YXZ';
+      this.camera.rotation.y = this.yaw;
+      this.camera.rotation.x = this.pitch;
+    }
+
     // Update player first-person body viewmodel & lantern sway
-    if (this.playerBody) {
+    if (this.playerBody && this.cameraMode === 'firstPerson') {
       this.playerBody.update(delta, isMoving, this.pitch);
     }
   }
+
+  setPlayerInfo(username, color) {
+    this.playerName = username || this.playerName;
+    this.playerColor = color || this.playerColor;
+    if (this.thirdPersonMesh && this.scene) {
+      this.scene.remove(this.thirdPersonMesh);
+      this.thirdPersonMesh = null;
+    }
+    this.ensureThirdPersonMesh();
+  }
+
+  ensureThirdPersonMesh() {
+    if (!this.thirdPersonMesh && this.scene) {
+      this.thirdPersonMesh = createPlayerAvatar(this.playerName, this.playerColor);
+      this.thirdPersonMesh.visible = this.cameraMode === 'thirdPerson';
+      this.scene.add(this.thirdPersonMesh);
+    }
+    return this.thirdPersonMesh;
+  }
+
+  toggleCameraMode() {
+    this.setCameraMode(this.cameraMode === 'firstPerson' ? 'thirdPerson' : 'firstPerson');
+  }
+
+  setCameraMode(mode) {
+    this.cameraMode = mode;
+    const isThird = mode === 'thirdPerson';
+    this.ensureThirdPersonMesh();
+    if (this.thirdPersonMesh) {
+      this.thirdPersonMesh.visible = isThird;
+    }
+    if (this.playerBody && this.playerBody.viewmodel) {
+      this.playerBody.viewmodel.visible = !isThird;
+    }
+  }
+
   getPosition() {
     return {
-      x: this.camera.position.x,
-      y: this.camera.position.y,
-      z: this.camera.position.z,
+      x: this.playerPos.x,
+      y: this.playerPos.y,
+      z: this.playerPos.z,
       rotY: this.yaw
     };
   }
@@ -283,8 +390,17 @@ export class PlayerControls {
     this.baseY = posY;
     this.velocityY = 0;
     this.isGrounded = true;
-    this.camera.position.set(x, posY, z);
+    this.playerPos.set(x, posY, z);
     this.yaw = rotY;
-    this.camera.rotation.y = rotY;
+    if (this.cameraMode === 'firstPerson') {
+      this.camera.position.set(x, posY, z);
+      this.camera.rotation.y = rotY;
+    } else {
+      const mesh = this.ensureThirdPersonMesh();
+      if (mesh) {
+        mesh.position.set(x, posY - 1.6, z);
+        mesh.rotation.y = rotY;
+      }
+    }
   }
 }
