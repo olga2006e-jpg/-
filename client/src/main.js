@@ -59,10 +59,10 @@ class GameApp {
 
   wireCallbacks() {
     // UI -> Game
-    this.ui.onLogin = async (username, color) => {
+    this.ui.onLogin = async (username, color, password, mode) => {
       this.myUsername = username;
       this.myColor = color;
-      await this.login(username, color);
+      await this.login(username, color, password, mode);
     };
 
     this.ui.onSendChat = (text) => {
@@ -182,20 +182,30 @@ class GameApp {
       }
     });
   }
-  async login(username, color) {
+  async login(username, color, password = null, mode = 'login') {
     try {
-      const res = await fetch('/api/login', {
+      const endpoint = mode === 'register' ? '/api/register' : '/api/login';
+      const body = { username, color };
+      if (password && mode !== 'guest') {
+        body.password = password;
+      }
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, color })
+        body: JSON.stringify(body)
       });
-      if(!res.ok) throw new Error("Сервер отклонил вход");
       const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Сервер отклонил запрос на вход');
+      }
       if (data.success && data.token) {
         this.network.connect(data.token, username);
-      } else throw new Error("Не удалось войти");
+      } else {
+        throw new Error('Не удалось получить токен авторизации');
+      }
     } catch (err) {
-      this.ui.connectionError("Не удалось подключиться. Проверьте адрес сервера и попробуйте ещё раз.");
+      this.ui.connectionError(err.message || 'Ошибка подключения к серверу');
     }
   }
 

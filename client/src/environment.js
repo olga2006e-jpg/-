@@ -2,8 +2,8 @@ import * as THREE from 'three';
 
 // Shared Bauman Collegiate Materials (Reused across instances for high performance)
 const baumanMarbleColumnMat = new THREE.MeshStandardMaterial({
-  color: 0x423a4d,
-  roughness: 0.45,
+  color: 0x8e829d, // Refined classical marble column
+  roughness: 0.35,
   metalness: 0.1
 });
 
@@ -14,8 +14,8 @@ const baumanGoldCapitalMat = new THREE.MeshStandardMaterial({
 });
 
 const wallPlasterMat = new THREE.MeshStandardMaterial({
-  color: 0x2b2633, // Dark moody gothic stone plaster
-  roughness: 0.85,
+  color: 0x766c82, // Warm collegiate stone plaster, clearly visible
+  roughness: 0.75,
   metalness: 0.02
 });
 
@@ -265,8 +265,8 @@ export function createDoor(x, y, z, rotY = 0, roomNumber = '227', label = '') {
 
 // 2b. Collegiate Acoustic Ceiling
 const ceilingMat = new THREE.MeshStandardMaterial({
-  color: 0x1b1722, // Dark gothic vaulted ceiling
-  roughness: 0.9,
+  color: 0x443b52, // Warm vaulted ceiling
+  roughness: 0.85,
   metalness: 0.02
 });
 
@@ -597,11 +597,10 @@ export function createCeilingLamp(x, y, z) {
   dome.position.y = -0.15;
   group.add(dome);
 
-  // Dim, moody warm chandelier light
-  const lampLight = new THREE.PointLight(0xff9944, 0.85, 14, 1.8);
+  // Warm overhead gothic chandelier
+  const lampLight = new THREE.PointLight(0xffbe73, 1.85, 20, 1.3);
   lampLight.position.set(0, -0.4, 0);
   group.add(lampLight);
-  return group;
 }
 
 // 12. Authentic Carved Halloween Jack-o-Lantern Pumpkin
@@ -1290,11 +1289,59 @@ export function createTorch(x, y, z) {
   glass.position.set(0, 0.32, 0.2);
   group.add(glass);
 
-  const light = new THREE.PointLight(0xffdf99, 1.8, 14, 1.2);
+  const light = new THREE.PointLight(0xffdf99, 2.2, 16, 1.2);
   light.position.set(0, 0.35, 0.25);
   group.add(light);
 
-  group.userData = { light, baseIntensity: 1.8, timeOffset: Math.random() * 10 };
+  group.userData = { light, baseIntensity: 2.2, timeOffset: Math.random() * 10 };
+  return group;
+}
+
+// 13b. Ornate Standing Gothic Street / Hall Lantern Post
+export function createStreetLantern(x, y, z) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  // 1. Heavy stone/iron base
+  const baseGeo = new THREE.CylinderGeometry(0.35, 0.5, 0.3, 8);
+  const ironMat = new THREE.MeshStandardMaterial({ color: 0x221c2b, roughness: 0.6, metalness: 0.7 });
+  const base = new THREE.Mesh(baseGeo, ironMat);
+  base.position.y = 0.15;
+  group.add(base);
+
+  // 2. Tall fluted lamppost
+  const postGeo = new THREE.CylinderGeometry(0.08, 0.12, 2.6, 12);
+  const post = new THREE.Mesh(postGeo, ironMat);
+  post.position.y = 1.45;
+  group.add(post);
+
+  // 3. Ornate brass collar & arm
+  const collarGeo = new THREE.TorusGeometry(0.14, 0.035, 8, 16);
+  const collar = new THREE.Mesh(collarGeo, brassMetalMat);
+  collar.rotation.x = Math.PI / 2;
+  collar.position.y = 2.75;
+  group.add(collar);
+
+  // 4. Lantern cage (octagonal / hexagonal)
+  const cageGeo = new THREE.CylinderGeometry(0.24, 0.18, 0.5, 6);
+  const cageMat = new THREE.MeshStandardMaterial({ color: 0x181220, roughness: 0.4, metalness: 0.85 });
+  const cage = new THREE.Mesh(cageGeo, cageMat);
+  cage.position.y = 3.0;
+  group.add(cage);
+
+  // 5. Glowing amber glass housing
+  const glassGeo = new THREE.CylinderGeometry(0.21, 0.15, 0.42, 6);
+  const glassMat = new THREE.MeshBasicMaterial({ color: 0xffe48f, transparent: true, opacity: 0.88 });
+  const glass = new THREE.Mesh(glassGeo, glassMat);
+  glass.position.y = 3.0;
+  group.add(glass);
+
+  // 6. Point Light illuminating the surrounding area
+  const light = new THREE.PointLight(0xffdf80, 2.8, 20, 1.2);
+  light.position.set(0, 3.0, 0);
+  group.add(light);
+
+  group.userData = { light, baseIntensity: 2.8, timeOffset: Math.random() * 10 };
   return group;
 }
 

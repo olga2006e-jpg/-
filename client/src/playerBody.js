@@ -133,8 +133,8 @@ export class PlayerBody {
     this.flameMesh.position.y = 0;
     this.lanternGroup.add(this.flameMesh);
 
-    // Dynamic point light casting warm illumination ahead
-    this.lanternLight = new THREE.PointLight(0xffb35c, 3.2, 24, 1.2);
+    // Dynamic point light casting warm bright illumination ahead
+    this.lanternLight = new THREE.PointLight(0xffdf88, 3.8, 28, 1.15);
     this.lanternLight.position.set(0, 0.02, 0);
     this.lanternGroup.add(this.lanternLight);
 

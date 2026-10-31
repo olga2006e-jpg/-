@@ -17,13 +17,51 @@ export class UIManager {
         this.histories = new Map();
         this.inventory = [];
         this.waiting = new Set();
+        this.authMode = 'login';
+        const setAuthMode = (mode) => {
+            this.authMode = mode;
+            document.querySelectorAll('.auth-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.mode === mode);
+            });
+            const passWrap = $('password-field-wrap');
+            const passInput = $('password-input');
+            const submitBtn = $('login-submit');
+            const loginStatus = $('login-status');
+            if (loginStatus) loginStatus.textContent = '';
+
+            if (mode === 'guest') {
+                if (passWrap) passWrap.style.display = 'none';
+                if (passInput) passInput.required = false;
+                if (submitBtn) submitBtn.innerHTML = 'Войти как гость 🎃 <span>→</span>';
+            } else if (mode === 'register') {
+                if (passWrap) passWrap.style.display = 'grid';
+                if (passInput) {
+                    passInput.required = true;
+                    passInput.placeholder = 'Придумайте пароль (мин. 3 символа)';
+                }
+                if (submitBtn) submitBtn.innerHTML = 'Зарегистрироваться 🎃 <span>→</span>';
+            } else {
+                if (passWrap) passWrap.style.display = 'grid';
+                if (passInput) {
+                    passInput.required = false;
+                    passInput.placeholder = 'Введите пароль (для защищённых аккаунтов)';
+                }
+                if (submitBtn) submitBtn.innerHTML = 'Войти в Академию 🎃 <span>→</span>';
+            }
+        };
+        document.querySelectorAll('.auth-tab').forEach(t => {
+            t.addEventListener('click', () => setAuthMode(t.dataset.mode));
+        });
+
         $('login-form').addEventListener('submit', e => {
             e.preventDefault();
             const name = $('username-input').value.trim();
             if (!name)
                 return;
+            const password = $('password-input')?.value || '';
+            const color = document.querySelector('[name="avatar-color"]:checked')?.value || '#8be9fd';
             this.setLoginBusy(true);
-            this.onLogin?.(name, document.querySelector('[name="avatar-color"]:checked').value);
+            this.onLogin?.(name, color, password, this.authMode);
         });
         $('chat-form').addEventListener('submit', e => {
             e.preventDefault();

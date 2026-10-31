@@ -24,16 +24,40 @@ app.use((req, res, next) => {
 });
 
 // REST Endpoints
-app.post('/api/login', (req, res) => {
-  const { username, color } = req.body || {};
-  const auth = AuthManager.login(username, color);
+app.post('/api/register', (req, res) => {
+  const { username, password, color } = req.body || {};
+  const auth = AuthManager.register(username, password, color);
+  if (auth.error) {
+    return res.status(400).json({ success: false, error: auth.error });
+  }
   res.json({
     success: true,
     token: auth.token,
     user: auth.user,
-    authType: 'guest_session',
-    isGuest: true,
-    disclaimer: 'Гостевой вход без пароля: сохранение привязано к никнейму на локальном сервере',
+    authType: 'registered',
+    isGuest: false,
+    message: auth.message,
+    world: {
+      totalChunks: TOTAL_WORLD_CHUNKS,
+      totalWorldBytes: TOTAL_WORLD_CANONICAL_BYTES,
+      maxClientCachePercent: 10
+    }
+  });
+});
+
+app.post('/api/login', (req, res) => {
+  const { username, color, password } = req.body || {};
+  const auth = AuthManager.login(username, color, password);
+  if (auth.error) {
+    return res.status(401).json({ success: false, error: auth.error });
+  }
+  res.json({
+    success: true,
+    token: auth.token,
+    user: auth.user,
+    authType: auth.authType || 'guest_session',
+    isGuest: !!auth.isGuest,
+    disclaimer: auth.disclaimer || 'Авторизованный вход',
     world: {
       totalChunks: TOTAL_WORLD_CHUNKS,
       totalWorldBytes: TOTAL_WORLD_CANONICAL_BYTES,

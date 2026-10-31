@@ -5,6 +5,7 @@ import {
   createPillar,
   createPumpkin,
   createTorch,
+  createStreetLantern,
   createTelescope,
   createObelisk,
   createBookshelf,
@@ -251,6 +252,10 @@ export class ChunkManager {
         const torch = createTorch(obj.x, obj.y, obj.z);
         chunkGroup.add(torch);
         this.animatedObjects.push(torch);
+      } else if (obj.type === 'lantern' || obj.type === 'street_lantern') {
+        const lantern = createStreetLantern(obj.x, obj.y, obj.z);
+        chunkGroup.add(lantern);
+        this.animatedObjects.push(lantern);
       } else if (obj.type === 'telescope') {
         chunkGroup.add(createTelescope(obj.x, obj.y, obj.z));
       } else if (obj.type === 'obelisk') {

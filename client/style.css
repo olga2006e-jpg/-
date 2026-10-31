@@ -1,16 +1,16 @@
 :root {
   font-family:Segoe UI,Arial,sans-serif;
-  color:#f6f3eb;
-  background:#0a0614;
+  color:#f8f5ee;
+  background:#140e24;
   font-synthesis:none;
-  --panel:rgba(12,7,22,.94);
-  --line:rgba(255,117,24,.25);
-  --gold:#ff9d3b;
-  --pumpkin:#ff7518;
-  --purple:#b388ff;
+  --panel:rgba(22,14,38,.93);
+  --line:rgba(255,145,55,.28);
+  --gold:#ffaa4a;
+  --pumpkin:#ff7e22;
+  --purple:#c49eff;
   --green:#50fa7b;
-  --muted:#9e92b2;
-  --text:#f5f2eb;
+  --muted:#b2a5c9;
+  --text:#f8f5ee;
 }
 * {
   box-sizing:border-box;
@@ -543,7 +543,46 @@ input::placeholder {
 }
 .login-card>p {
   font-size:12px;
-  margin:16px 0 26px;
+  margin:12px 0 18px;
+}
+.auth-tabs {
+  display:flex;
+  gap:6px;
+  background:rgba(0,0,0,.35);
+  padding:4px;
+  border-radius:9px;
+  border:1px solid rgba(255,145,55,.2);
+  margin-bottom:16px;
+}
+.auth-tab {
+  flex:1;
+  background:transparent;
+  border:0;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:600;
+  padding:8px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.auth-tab:hover {
+  color:var(--text);
+  background:rgba(255,255,255,.05);
+}
+.auth-tab.active {
+  background:linear-gradient(135deg,rgba(255,170,74,.3),rgba(255,126,34,.2));
+  color:var(--gold);
+  border:1px solid rgba(255,170,74,.45);
+  box-shadow:0 2px 10px rgba(255,126,34,.2);
+}
+#password-field-wrap {
+  display:grid;
+  gap:6px;
+}
+#password-field-wrap label {
+  font-size:11px;
+  color:#b7c6c4;
 }
 #login-form {
   display:grid;

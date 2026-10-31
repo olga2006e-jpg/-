@@ -205,6 +205,13 @@ export function generateChunk(cx, cz) {
                 { type: 'pumpkin', x: 0, y: 0.35, z: 9.8, glowing: true },
                 { type: 'torch', x: -4, y: 2.4, z: 11.2 },
                 { type: 'torch', x: 4, y: 2.4, z: 11.2 },
+                { type: 'lantern', x: -2.5, y: 0, z: 10.2 },
+                { type: 'lantern', x: 2.5, y: 0, z: 10.2 },
+                { type: 'lantern', x: -7.5, y: 0, z: -2.5 },
+                { type: 'lantern', x: 7.5, y: 0, z: -2.5 },
+                { type: 'lantern', x: -3.5, y: 0, z: -8.5 },
+                { type: 'lantern', x: 3.5, y: 0, z: -8.5 },
+                { type: 'lantern', x: 7, y: 0, z: 4.5 },
                 { type: 'floating_candle', x: 0, y: 2.8, z: 0 },
                 { type: 'floating_candle', x: -3.5, y: 2.6, z: -3.5 },
                 { type: 'floating_candle', x: 3.5, y: 2.9, z: -3.5 },
@@ -224,6 +231,7 @@ export function generateChunk(cx, cz) {
                 { type: 'pumpkin', x: x - 4.2, y: 1.0, z: z - 7, glowing: true },
                 { type: 'pumpkin', x: x - 8, y: 0.35, z: z - 2, glowing: true },
                 { type: 'torch', x: x - 11.4, y: 2.4, z },
+                { type: 'lantern', x: x - 4, y: 0, z },
                 { type: 'floating_candle', x: x - 2, y: 2.8, z },
                 { type: 'cobweb', x: x - 11.2, y: 4.4, z: z - 11.2, rotY: 0 },
                 { type: 'cobweb', x: x - 11.2, y: 4.4, z: z + 11.2, rotY: Math.PI / 2 }
@@ -235,6 +243,7 @@ export function generateChunk(cx, cz) {
                 { type: 'pumpkin', x: x + 5.5, y: 1.1, z: z + 5, glowing: true },
                 { type: 'pumpkin', x: x + 8.2, y: 0.35, z: z - 5.5, glowing: true },
                 { type: 'torch', x: x + 11.4, y: 2.4, z },
+                { type: 'lantern', x: x + 4, y: 0, z },
                 { type: 'floating_candle', x: x + 3.5, y: 2.8, z },
                 { type: 'cobweb', x: x + 11.2, y: 4.4, z: z - 11.2, rotY: 0 },
                 { type: 'cobweb', x: x + 11.2, y: 4.4, z: z + 11.2, rotY: Math.PI / 2 }
@@ -249,6 +258,7 @@ export function generateChunk(cx, cz) {
                 { type: 'pumpkin', x: x - 5.5, y: 1.0, z: z + 6, glowing: true },
                 { type: 'pumpkin', x: x + 7.5, y: 0.35, z: z - 5, glowing: true },
                 { type: 'torch', x, y: 2.4, z: z - 11.4 },
+                { type: 'lantern', x, y: 0, z: z - 4 },
                 { type: 'floating_candle', x, y: 3.0, z: z - 2 },
                 { type: 'cobweb', x: x - 11.2, y: 4.4, z: z - 11.2, rotY: 0 },
                 { type: 'cobweb', x: x + 11.2, y: 4.4, z: z - 11.2, rotY: Math.PI / 2 }
@@ -260,7 +270,8 @@ export function generateChunk(cx, cz) {
         objects.push(
             { type: 'pillar', x: x - 8, y: 2.5, z: z - 8, height: 5 },
             { type: 'bench', x: x + 5, y: 0, z: z + 5, rotY: 0 },
-            { type: 'pumpkin', x: x + 3, y: 0.35, z: z - 3, glowing: true }
+            { type: 'pumpkin', x: x + 3, y: 0.35, z: z - 3, glowing: true },
+            { type: 'lantern', x: x, y: 0, z: z }
         );
     }
     for (const item of COLLECTIBLE_ITEMS)

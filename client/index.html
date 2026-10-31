@@ -129,10 +129,19 @@
 <section class="login-card">
 <span class="edition">🎃 HALLOWEEN EDITION / 2026</span>
 <h2>Ваша экспедиция<br>начинается здесь.</h2>
-<p>Представьтесь команде и выберите ауру своего исследователя.</p>
+<p>Войдите со своим паролем, зарегистрируйтесь или продолжите как гость.</p>
+<div class="auth-tabs" role="tablist">
+<button type="button" class="auth-tab active" id="tab-login" data-mode="login">Вход</button>
+<button type="button" class="auth-tab" id="tab-register" data-mode="register">Регистрация</button>
+<button type="button" class="auth-tab" id="tab-guest" data-mode="guest">Гость</button>
+</div>
 <form id="login-form">
 <label for="username-input">Имя исследователя</label>
-<input id="username-input" placeholder="Как вас зовут?" maxlength="20" required autocomplete="nickname">
+<input id="username-input" placeholder="Как вас зовут?" maxlength="20" required autocomplete="username">
+<div id="password-field-wrap">
+<label for="password-input" id="password-label">Пароль</label>
+<input id="password-input" type="password" placeholder="Введите пароль (для защищённых аккаунтов)" maxlength="50" autocomplete="current-password">
+</div>
 <fieldset>
 <legend>Аура вашего исследователя</legend>
 <div class="color-picker">

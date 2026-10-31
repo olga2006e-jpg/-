@@ -67,8 +67,17 @@ class SQLiteStorage {
         score INTEGER DEFAULT 0,
         inventory TEXT DEFAULT '[]',
         discoveredSecrets TEXT DEFAULT '[]',
-        lastSeen INTEGER
+        lastSeen INTEGER,
+        passwordHash TEXT,
+        salt TEXT
       );
+    `);
+
+    // Safe column migrations if database was created by previous version
+    try { this.sqlite.exec('ALTER TABLE users ADD COLUMN passwordHash TEXT;'); } catch (_) {}
+    try { this.sqlite.exec('ALTER TABLE users ADD COLUMN salt TEXT;'); } catch (_) {}
+
+    this.sqlite.exec(`
 
       CREATE TABLE IF NOT EXISTS agent_memory (
         username TEXT,
@@ -101,8 +110,8 @@ class SQLiteStorage {
     // Prepare reusable statements
     this.stmtGetUser = this.sqlite.prepare('SELECT * FROM users WHERE username = ?');
     this.stmtSaveUser = this.sqlite.prepare(`
-      INSERT INTO users (username, color, x, y, z, rotY, score, inventory, discoveredSecrets, lastSeen)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (username, color, x, y, z, rotY, score, inventory, discoveredSecrets, lastSeen, passwordHash, salt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(username) DO UPDATE SET
         color = COALESCE(excluded.color, users.color),
         x = COALESCE(excluded.x, users.x),
@@ -112,7 +121,9 @@ class SQLiteStorage {
         score = COALESCE(excluded.score, users.score),
         inventory = COALESCE(excluded.inventory, users.inventory),
         discoveredSecrets = COALESCE(excluded.discoveredSecrets, users.discoveredSecrets),
-        lastSeen = excluded.lastSeen
+        lastSeen = excluded.lastSeen,
+        passwordHash = COALESCE(excluded.passwordHash, users.passwordHash),
+        salt = COALESCE(excluded.salt, users.salt)
     `);
 
     this.stmtGetMemory = this.sqlite.prepare('SELECT * FROM agent_memory WHERE username = ? AND agentId = ?');
@@ -237,7 +248,9 @@ class SQLiteStorage {
       score: row.score,
       inventory: safeParseJson(row.inventory, []),
       discoveredSecrets: safeParseJson(row.discoveredSecrets, []),
-      lastSeen: row.lastSeen
+      lastSeen: row.lastSeen,
+      passwordHash: row.passwordHash || null,
+      salt: row.salt || null
     };
   }
 
@@ -259,7 +272,9 @@ class SQLiteStorage {
       merged.score ?? 0,
       JSON.stringify(merged.inventory || []),
       JSON.stringify(merged.discoveredSecrets || []),
-      merged.lastSeen
+      merged.lastSeen,
+      merged.passwordHash || null,
+      merged.salt || null
     );
   }
 
