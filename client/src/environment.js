@@ -392,8 +392,48 @@ export function createGhostNPC(npcData) {
   body.position.y = 0.4;
   group.add(body);
 
-  // Distinct historical items
-  if (npcData.id === 'einstein') {
+  // Distinct Bauman professor items
+  if (npcData.id === 'akhmetova') {
+    // Floating golden math analysis scroll & integral symbol
+    const bookGeo = new THREE.BoxGeometry(0.3, 0.45, 0.08);
+    const bookMat = new THREE.MeshStandardMaterial({ color: 0xff79c6, roughness: 0.3 });
+    const book = new THREE.Mesh(bookGeo, bookMat);
+    book.position.set(0.42, 0.65, 0.3);
+    book.rotation.set(0.3, 0.4, -0.2);
+    group.add(book);
+
+    // Golden halo torus (integral loop)
+    const ringGeo = new THREE.TorusGeometry(0.28, 0.03, 8, 24);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.set(0, 1.45, 0);
+    ring.rotation.x = Math.PI / 2;
+    group.add(ring);
+  } else if (npcData.id === 'kanev') {
+    // Holographic server rack / database cube
+    const dbGeo = new THREE.BoxGeometry(0.35, 0.45, 0.35);
+    const dbMat = new THREE.MeshStandardMaterial({
+      color: 0x8be9fd,
+      wireframe: true,
+      emissive: 0x8be9fd,
+      emissiveIntensity: 0.8
+    });
+    const dbCube = new THREE.Mesh(dbGeo, dbMat);
+    dbCube.position.set(0.42, 0.6, 0.3);
+    group.add(dbCube);
+  } else if (npcData.id === 'korshunov') {
+    // Binary search tree / octahedron graph node
+    const nodeGeo = new THREE.OctahedronGeometry(0.25, 0);
+    const nodeMat = new THREE.MeshStandardMaterial({
+      color: 0x50fa7b,
+      emissive: 0x50fa7b,
+      emissiveIntensity: 0.7,
+      wireframe: true
+    });
+    const node = new THREE.Mesh(nodeGeo, nodeMat);
+    node.position.set(0.42, 0.65, 0.3);
+    group.add(node);
+  } else if (npcData.id === 'einstein') {
     // Wild hair aura
     const hairGeo = new THREE.DodecahedronGeometry(0.55, 1);
     const hairMat = new THREE.MeshStandardMaterial({
@@ -413,15 +453,7 @@ export function createGhostNPC(npcData) {
     scroll.position.set(0.4, 0.5, 0.3);
     scroll.rotation.z = Math.PI / 4;
     group.add(scroll);
-  } else if (npcData.id === 'curie') {
-    // Glowing radioactive flask
-    const flaskGeo = new THREE.OctahedronGeometry(0.2, 0);
-    const flaskMat = new THREE.MeshBasicMaterial({ color: 0x50fa7b });
-    const flask = new THREE.Mesh(flaskGeo, flaskMat);
-    flask.position.set(0.4, 0.5, 0.3);
-    group.add(flask);
   }
-
   // Floating Name / Role badge
   const nametag = createNameTag(npcData.name, npcData.color);
   nametag.position.y = 1.85;
