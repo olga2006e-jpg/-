@@ -199,8 +199,20 @@ export function generateChunk(cx, cz) {
             objects.push({ type: 'signpost', x: 11.5, y: 3.5, z: 0, rotY: -Math.PI / 2, text: '03  /  СВЕТ' });
             for (const px of [-7])
                 objects.push({ type: 'bench', x: px, y: 0, z: 9.5, rotY: 0 });
+            objects.push(
+                { type: 'pumpkin', x: 5.8, y: 0.35, z: 8.4, glowing: true },
+                { type: 'pumpkin', x: -6.5, y: 0.35, z: 6.8, glowing: true },
+                { type: 'pumpkin', x: 0, y: 0.35, z: 9.8, glowing: true },
+                { type: 'torch', x: -4, y: 2.4, z: 11.2 },
+                { type: 'torch', x: 4, y: 2.4, z: 11.2 },
+                { type: 'floating_candle', x: 0, y: 2.8, z: 0 },
+                { type: 'floating_candle', x: -3.5, y: 2.6, z: -3.5 },
+                { type: 'floating_candle', x: 3.5, y: 2.9, z: -3.5 },
+                { type: 'cobweb', x: -11.2, y: 4.4, z: 11.2, rotY: 0 },
+                { type: 'cobweb', x: 11.2, y: 4.4, z: 11.2, rotY: Math.PI / 2 }
+            );
         }
-        const positions = [[-8, -8], [8, -8]];
+        const positions = [[-8, -8], [8, -8], [8, 8], [-8, 8]];
         for (const [dx, dz] of positions)
             objects.push({ type: 'pumpkin', x: x + dx, y: 0.35, z: z + dz, glowing: true });
         if (cx === -1) {
@@ -208,20 +220,48 @@ export function generateChunk(cx, cz) {
             for (const dz of [-7, 7])
                 objects.push({ type: 'server_rack', x: x - 8, y: 0, z: z + dz, rotY: Math.PI / 2 });
             objects.push({ type: 'teacher_desk', x: x - 5, y: 0, z: z - 7, rotY: 0 });
+            objects.push(
+                { type: 'pumpkin', x: x - 4.2, y: 1.0, z: z - 7, glowing: true },
+                { type: 'pumpkin', x: x - 8, y: 0.35, z: z - 2, glowing: true },
+                { type: 'torch', x: x - 11.4, y: 2.4, z },
+                { type: 'floating_candle', x: x - 2, y: 2.8, z },
+                { type: 'cobweb', x: x - 11.2, y: 4.4, z: z - 11.2, rotY: 0 },
+                { type: 'cobweb', x: x - 11.2, y: 4.4, z: z + 11.2, rotY: Math.PI / 2 }
+            );
         }
         else if (cx === 1) {
             objects.push({ type: 'laser_bench', x: x + 6, y: 0, z: z + 5, rotY: 0 }, { type: 'telescope', x: x + 7, y: 0, z: z - 7 });
+            objects.push(
+                { type: 'pumpkin', x: x + 5.5, y: 1.1, z: z + 5, glowing: true },
+                { type: 'pumpkin', x: x + 8.2, y: 0.35, z: z - 5.5, glowing: true },
+                { type: 'torch', x: x + 11.4, y: 2.4, z },
+                { type: 'floating_candle', x: x + 3.5, y: 2.8, z },
+                { type: 'cobweb', x: x + 11.2, y: 4.4, z: z - 11.2, rotY: 0 },
+                { type: 'cobweb', x: x + 11.2, y: 4.4, z: z + 11.2, rotY: Math.PI / 2 }
+            );
         }
         else if (cz === -1) {
             objects.push({ type: 'blackboard', x, y: 2.3, z: z - 10, rotY: 0, formulaType: 'math_analysis' });
             for (const dx of [-8, 8])
                 objects.push({ type: 'bookshelf', x: x + dx, y: 0, z: z - 7 });
             objects.push({ type: 'desk_row', x: x - 6, y: 0, z: z + 6, rotY: 0 });
+            objects.push(
+                { type: 'pumpkin', x: x - 5.5, y: 1.0, z: z + 6, glowing: true },
+                { type: 'pumpkin', x: x + 7.5, y: 0.35, z: z - 5, glowing: true },
+                { type: 'torch', x, y: 2.4, z: z - 11.4 },
+                { type: 'floating_candle', x, y: 3.0, z: z - 2 },
+                { type: 'cobweb', x: x - 11.2, y: 4.4, z: z - 11.2, rotY: 0 },
+                { type: 'cobweb', x: x + 11.2, y: 4.4, z: z - 11.2, rotY: Math.PI / 2 }
+            );
         }
     }
     else {
         // Server world still has 100 genuine sectors; the focused interior uses four.
-        objects.push({ type: 'pillar', x: x - 8, y: 2.5, z: z - 8, height: 5 }, { type: 'bench', x: x + 5, y: 0, z: z + 5, rotY: 0 });
+        objects.push(
+            { type: 'pillar', x: x - 8, y: 2.5, z: z - 8, height: 5 },
+            { type: 'bench', x: x + 5, y: 0, z: z + 5, rotY: 0 },
+            { type: 'pumpkin', x: x + 3, y: 0.35, z: z - 3, glowing: true }
+        );
     }
     for (const item of COLLECTIBLE_ITEMS)
         if (item.chunkX === cx && item.chunkZ === cz)

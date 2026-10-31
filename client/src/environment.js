@@ -2,9 +2,9 @@ import * as THREE from 'three';
 
 // Shared Bauman Collegiate Materials (Reused across instances for high performance)
 const baumanMarbleColumnMat = new THREE.MeshStandardMaterial({
-  color: 0xfbf8f3,
-  roughness: 0.3,
-  metalness: 0.05
+  color: 0x423a4d,
+  roughness: 0.45,
+  metalness: 0.1
 });
 
 const baumanGoldCapitalMat = new THREE.MeshStandardMaterial({
@@ -14,8 +14,8 @@ const baumanGoldCapitalMat = new THREE.MeshStandardMaterial({
 });
 
 const wallPlasterMat = new THREE.MeshStandardMaterial({
-  color: 0xf2ece4, // Warm classical Bauman cream plaster
-  roughness: 0.75,
+  color: 0x2b2633, // Dark moody gothic stone plaster
+  roughness: 0.85,
   metalness: 0.02
 });
 
@@ -265,8 +265,8 @@ export function createDoor(x, y, z, rotY = 0, roomNumber = '227', label = '') {
 
 // 2b. Collegiate Acoustic Ceiling
 const ceilingMat = new THREE.MeshStandardMaterial({
-  color: 0xf5efe6,
-  roughness: 0.85,
+  color: 0x1b1722, // Dark gothic vaulted ceiling
+  roughness: 0.9,
   metalness: 0.02
 });
 
@@ -597,11 +597,10 @@ export function createCeilingLamp(x, y, z) {
   dome.position.y = -0.15;
   group.add(dome);
 
-  // Warm overhead interior room light
-  const lampLight = new THREE.PointLight(0xfff1dc, 2.0, 18, 1.4);
+  // Dim, moody warm chandelier light
+  const lampLight = new THREE.PointLight(0xff9944, 0.85, 14, 1.8);
   lampLight.position.set(0, -0.4, 0);
   group.add(lampLight);
-
   return group;
 }
 

@@ -6,9 +6,9 @@ export class GameScene {
 
     // 1. Scene & Bauman GZ Indoor Lighting
     this.scene = new THREE.Scene();
-    // Deep gothic midnight purple-black background & creeping Halloween fog
-    this.scene.background = new THREE.Color(0x0c0817);
-    this.scene.fog = new THREE.Fog(0x0c0817, 45, 120);
+    // Deep obsidian midnight purple-black background & dense eerie Halloween fog
+    this.scene.background = new THREE.Color(0x05030a);
+    this.scene.fog = new THREE.Fog(0x05030a, 15, 65);
     // 2. Camera
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -24,7 +24,7 @@ export class GameScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = false;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMappingExposure = 0.88;
     container.appendChild(this.renderer.domElement);
     // 4. Bright, warm lighting for Bauman GZ Halls
     this.setupBaumanLighting();
@@ -36,22 +36,22 @@ export class GameScene {
   }
 
   setupBaumanLighting() {
-    // 1. Warm gothic collegiate ambient illumination (balanced visibility with mystery)
-    const ambient = new THREE.AmbientLight(0xc7d3dc, 1.2);
+    // 1. Dark gothic nocturnal ambient illumination (moody shadows, silhouettes)
+    const ambient = new THREE.AmbientLight(0x2d1d3d, 0.45);
     this.scene.add(ambient);
 
-    // 2. Cool silver-cyan moonlight angling through high Bauman windows
-    const moonLight = new THREE.DirectionalLight(0x8cd4ff, 1.2);
+    // 2. Cool ghostly moonlight cutting through high windows
+    const moonLight = new THREE.DirectionalLight(0x6b87b8, 0.55);
     moonLight.position.set(35, 65, 45);
     this.scene.add(moonLight);
 
-    // 3. Warm golden interior fill from university chandeliers
-    const fillLight = new THREE.DirectionalLight(0xffa857, 0.7);
-    fillLight.position.set(-30, 30, -30);
+    // 3. Low warm ember fill from distant fireplaces & torches
+    const fillLight = new THREE.DirectionalLight(0xb85014, 0.3);
+    fillLight.position.set(-30, 20, -30);
     this.scene.add(fillLight);
 
-    // 4. Collegiate hemisphere: violet gothic ceiling, warm dark mahogany floor
-    const hemiLight = new THREE.HemisphereLight(0xc3d6df, 0x635443, 1.3);
+    // 4. Gothic hemisphere: deep occult purple ceiling, dark charred mahogany floor
+    const hemiLight = new THREE.HemisphereLight(0x281938, 0x0f0914, 0.5);
     this.scene.add(hemiLight);
   }
 
