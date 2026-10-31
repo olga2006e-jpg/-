@@ -74,32 +74,36 @@ const stemMaterial = new THREE.MeshStandardMaterial({
 });
 
 // 0a. Floating text billboard for NPC and Player nametags
-export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(16, 27, 34, 0.93)') {
+export function createNameTag(text, colorHex = '#ffffff', bgColor = 'rgba(10, 16, 24, 0.78)') {
   const canvas = document.createElement('canvas');
-  canvas.width = 384;
-  canvas.height = 72;
+  canvas.width = 280;
+  canvas.height = 56;
   const ctx = canvas.getContext('2d');
 
+  // Sleek compact pill badge with subtle glassmorphism
   ctx.fillStyle = bgColor;
-  ctx.roundRect(8, 8, 368, 56, 10);
+  ctx.beginPath();
+  ctx.roundRect(4, 4, 272, 48, 24);
   ctx.fill();
 
   ctx.strokeStyle = colorHex;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 1.8;
   ctx.stroke();
 
-  let fontSize=22;
-  ctx.font = `500 ${fontSize}px Segoe UI`;
-  while(ctx.measureText(text).width>344 && fontSize>11)ctx.font=`500 ${--fontSize}px Segoe UI`;
+  let fontSize = 18;
+  ctx.font = `600 ${fontSize}px "Segoe UI", -apple-system, sans-serif`;
+  while (ctx.measureText(text).width > 244 && fontSize > 11) {
+    ctx.font = `600 ${--fontSize}px "Segoe UI", -apple-system, sans-serif`;
+  }
   ctx.fillStyle = colorHex;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, 192, 36);
+  ctx.fillText(text, 140, 28);
 
   const texture = new THREE.CanvasTexture(canvas);
-  const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
   const sprite = new THREE.Sprite(spriteMaterial);
-  sprite.scale.set(3.0, 0.56, 1);
+  sprite.scale.set(1.05, 0.21, 1);
   return sprite;
 }
 
@@ -1749,7 +1753,7 @@ export function createPlayerAvatar(username, colorHex = '#ff79c6') {
   group.add(body);
 
   const nametag = createNameTag(username, colorHex);
-  nametag.position.y = 1.6;
+  nametag.position.y = 1.35;
   group.add(nametag);
 
   const aura = new THREE.PointLight(color, 1.0, 6);
@@ -2218,7 +2222,7 @@ export function createGhostNPC(npcData) {
 
   // Floating Name / Role badge
   const nametag = createNameTag(npcData.name, npcData.color);
-  nametag.position.y = 1.95;
+  nametag.position.y = 1.55;
   group.add(nametag);
 
   // Spectral point light
@@ -2278,7 +2282,7 @@ export function createArtifactMesh(item) {
 
   // Floating label with item icon and name
   const nametag = createNameTag(`${item.icon || '✨'} ${item.name}`, `#${colorHex.toString(16).padStart(6, '0')}`);
-  nametag.position.y = 0.8;
+  nametag.position.y = 0.55;
   group.add(nametag);
 
   // Soft glowing point light
