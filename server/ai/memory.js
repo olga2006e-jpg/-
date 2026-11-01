@@ -1,6 +1,72 @@
 import { db } from '../db.js';
 import { AGENT_PERSONAS } from './personalities.js';
 
+/**
+ * In-Memory Ephemeral Dialogue Session Cache:
+ * - Keeps only recent conversational turns in RAM while the player is active
+ * - Automatically prunes inactive dialogue sessions after TTL (5 minutes)
+ * - Zero disk I/O for dialogue turns, preventing SQLite database from accumulating raw chat transcripts
+ */
+export class SessionDialogueCache {
+  static sessions = new Map();
+  static TTL_MS = 5 * 60 * 1000; // 5 minutes of inactivity frees RAM
+
+  static getKey(username, agentId) {
+    return `${username}:${agentId}`;
+  }
+
+  static getRecent(username, agentId, maxUtterances = 4) {
+    const key = this.getKey(username, agentId);
+    const session = this.sessions.get(key);
+    if (!session) return [];
+    session.lastActive = Date.now();
+    return session.utterances.slice(-maxUtterances);
+  }
+
+  static addTurn(username, agentId, userMessage, agentMessage) {
+    const key = this.getKey(username, agentId);
+    let session = this.sessions.get(key);
+    if (!session) {
+      session = { utterances: [], lastActive: Date.now() };
+      this.sessions.set(key, session);
+    }
+    session.lastActive = Date.now();
+    session.utterances.push({ role: 'user', content: userMessage });
+    session.utterances.push({ role: 'agent', content: agentMessage });
+    // Retain only last 6 utterances (3 conversational turns) for prompt context
+    if (session.utterances.length > 6) {
+      session.utterances = session.utterances.slice(-6);
+    }
+  }
+
+  static clear(username, agentId = null) {
+    if (agentId) {
+      this.sessions.delete(this.getKey(username, agentId));
+    } else {
+      for (const key of this.sessions.keys()) {
+        if (key.startsWith(`${username}:`)) {
+          this.sessions.delete(key);
+        }
+      }
+    }
+  }
+
+  static pruneExpired() {
+    const now = Date.now();
+    for (const [key, session] of this.sessions.entries()) {
+      if (now - session.lastActive > this.TTL_MS) {
+        this.sessions.delete(key);
+      }
+    }
+  }
+}
+
+// Background periodic cleanup for idle sessions
+const pruneTimer = setInterval(() => SessionDialogueCache.pruneExpired(), 60000);
+if (pruneTimer && typeof pruneTimer.unref === 'function') {
+  pruneTimer.unref();
+}
+
 export class MemoryManager {
   static getContext(username, agentId) {
     return db.getAgentMemory(username, agentId);
@@ -21,8 +87,9 @@ export class MemoryManager {
       .map(f => `• [Новая тема] ${f.title}: ${f.text}`)
       .join('\n');
 
-    const historyExcerpt = (memory.history || [])
-      .slice(-4)
+    // Get dialogue context from fast in-memory sliding window cache (0 SQLite disk I/O)
+    const activeUtterances = SessionDialogueCache.getRecent(username, agentId, 4);
+    const historyExcerpt = activeUtterances
       .map(h => `${h.role === 'user' ? 'Игрок' : persona.name}: ${h.content}`)
       .join('\n');
 
@@ -48,14 +115,15 @@ ${persona.name}:`;
   static recordResponse(username, agentId, userMessage, responseText) {
     const persona = AGENT_PERSONAS[agentId] || AGENT_PERSONAS.einstein;
 
+    // 1. Record in-memory active dialogue session (fast RAM, auto-expires on idle)
+    SessionDialogueCache.addTurn(username, agentId, userMessage, responseText);
+
+    // 2. Persist ONLY compact state (facts learned, quest progression, turns count) to SQLite
     db.updateAgentMemory(username, agentId, mem => {
       mem.turnsCount = (mem.turnsCount || 0) + 1;
-      mem.history = mem.history || [];
-      mem.history.push({ role: 'user', content: userMessage });
-      mem.history.push({ role: 'agent', content: responseText });
-      if (mem.history.length > 10) {
-        mem.history = mem.history.slice(-10);
-      }
+      // Never store bulky conversational transcripts in SQLite!
+      mem.history = [];
+
       // Only mark facts present in the answer; asking a question is not learning it.
       const lower = responseText.toLowerCase();
       mem.factsKnown = mem.factsKnown || [];

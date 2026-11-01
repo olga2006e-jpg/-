@@ -18,3 +18,8 @@ Thumbs.db
 .idea/
 *.log
 .active-port
+
+# SSL / TLS Certificates
+certs/
+*.key
+*.crt

@@ -1,4 +1,5 @@
 import http from 'node:http';
+import https from 'node:https';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +10,7 @@ import { setupMultiplayer } from './multiplayer.js';
 import { TOTAL_WORLD_CHUNKS, TOTAL_WORLD_CANONICAL_BYTES } from './world.js';
 import { AgentService } from './ai/agentService.js';
 import { db } from './db.js';
+import { getTlsCredentials } from './tls.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3001;
@@ -89,10 +91,17 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(clientPath));
 }
 
-// HTTP & WebSocket Server
-const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+// WebSocket Server (shared across HTTP and HTTPS)
+const wss = new WebSocketServer({ noServer: true });
 setupMultiplayer(wss);
+
+function attachWebSocketUpgrade(serverInstance) {
+  serverInstance.on('upgrade', (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  });
+}
 
 // Detect LAN IP
 function getLocalIPs() {
@@ -108,55 +117,116 @@ function getLocalIPs() {
   return ips;
 }
 
-function startServer(initialPort, maxAttempts = 20) {
-  let attempts = 0;
+const localIPs = getLocalIPs();
+const tlsEnabled = process.env.ENABLE_TLS !== 'false' && process.env.NO_TLS !== '1';
+const tlsCreds = tlsEnabled ? getTlsCredentials(localIPs) : null;
 
-  function tryListen(port) {
-    server.removeAllListeners('error');
-    server.removeAllListeners('listening');
+// Primary HTTP server
+const httpServer = http.createServer(app);
+attachWebSocketUpgrade(httpServer);
 
-    server.once('error', (err) => {
+// Optional HTTPS / TLS server
+let httpsServer = null;
+if (tlsCreds) {
+  try {
+    httpsServer = https.createServer({ key: tlsCreds.key, cert: tlsCreds.cert }, app);
+    attachWebSocketUpgrade(httpsServer);
+  } catch (err) {
+    console.warn(`[TLS] Failed to create HTTPS server: ${err.message}`);
+    httpsServer = null;
+  }
+}
+
+function startServer(initialHttpPort, initialHttpsPort, maxAttempts = 20) {
+  let httpAttempts = 0;
+  let activeHttpPort = initialHttpPort;
+  let activeHttpsPort = initialHttpsPort;
+
+  function tryListenHttp(port) {
+    httpServer.removeAllListeners('error');
+    httpServer.removeAllListeners('listening');
+
+    httpServer.once('error', (err) => {
       if (err.code === 'EADDRINUSE') {
-        attempts++;
-        if (attempts < maxAttempts) {
+        httpAttempts++;
+        if (httpAttempts < maxAttempts) {
           const nextPort = port + 1;
-          console.warn(`⚠️  Порт ${port} занят другим процессом. Переключаемся на порт ${nextPort}...`);
-          tryListen(nextPort);
+          console.warn(`⚠️  HTTP Порт ${port} занят. Переключаемся на ${nextPort}...`);
+          tryListenHttp(nextPort);
         } else {
-          console.error(`❌ Не удалось запустить сервер: диапазон портов с ${initialPort} по ${port} занят.`);
+          console.error(`❌ Не удалось запустить HTTP сервер: диапазон занят.`);
           process.exit(1);
         }
       } else {
-        console.error('❌ Ошибка запуска сервера:', err);
+        console.error('❌ Ошибка запуска HTTP сервера:', err);
         process.exit(1);
       }
     });
 
-    server.once('listening', () => {
-      const activePort = server.address().port;
+    httpServer.once('listening', () => {
+      activeHttpPort = httpServer.address().port;
       try {
-        fs.writeFileSync(path.resolve(__dirname, '../.active-port'), String(activePort), 'utf8');
+        fs.writeFileSync(path.resolve(__dirname, '../.active-port'), String(activeHttpPort), 'utf8');
       } catch (e) {}
 
-      const ips = getLocalIPs();
-      console.log('\n======================================================');
-      console.log('🎃 HAUNTED ACADEMY — HACKATHON SERVER READY!');
-      console.log(`📡 Localhost:     http://localhost:${activePort}`);
-      if (ips.length > 0) {
-        ips.forEach(ip => {
-          console.log(`🌐 LAN (Wi-Fi):   http://${ip}:${activePort}`);
-        });
+      if (httpsServer) {
+        tryListenHttps(initialHttpsPort);
       } else {
-        console.log('🌐 LAN: (No active Wi-Fi / LAN interface detected, offline mode)');
+        printBanner(activeHttpPort, null);
       }
-      console.log('🤖 AI Endpoint:   Ollama on localhost:11434 (with smart offline fallback)');
-      console.log('======================================================\n');
     });
 
-    server.listen(port, '0.0.0.0');
+    httpServer.listen(port, '0.0.0.0');
   }
 
-  tryListen(initialPort);
+  function tryListenHttps(port) {
+    httpsServer.removeAllListeners('error');
+    httpsServer.removeAllListeners('listening');
+
+    httpsServer.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        const nextPort = port + 1;
+        console.warn(`⚠️  HTTPS Порт ${port} занят. Переключаемся на ${nextPort}...`);
+        tryListenHttps(nextPort);
+      } else {
+        console.warn(`[TLS] HTTPS server error: ${err.message}. Running HTTP only.`);
+        printBanner(activeHttpPort, null);
+      }
+    });
+
+    httpsServer.once('listening', () => {
+      activeHttpsPort = httpsServer.address().port;
+      printBanner(activeHttpPort, activeHttpsPort);
+    });
+
+    httpsServer.listen(port, '0.0.0.0');
+  }
+
+  function printBanner(httpPort, httpsPort) {
+    const ips = getLocalIPs();
+    console.log('\n======================================================');
+    console.log('🎃 HAUNTED ACADEMY — HACKATHON SERVER READY!');
+    console.log(`📡 HTTP (Localhost):     http://localhost:${httpPort}`);
+    if (httpsPort) {
+      console.log(`🔒 HTTPS/TLS (Local):    https://localhost:${httpsPort}`);
+    }
+    if (ips.length > 0) {
+      ips.forEach(ip => {
+        console.log(`🌐 LAN HTTP:             http://${ip}:${httpPort}`);
+        if (httpsPort) {
+          console.log(`🔒 LAN HTTPS (WebXR/VR): https://${ip}:${httpsPort}`);
+        }
+      });
+    } else {
+      console.log('🌐 LAN: (No active Wi-Fi / LAN interface detected, offline mode)');
+    }
+    console.log('🤖 AI Endpoint:   Ollama on localhost:11434 (with smart offline fallback)');
+    console.log('======================================================\n');
+  }
+
+  tryListenHttp(initialHttpPort);
 }
 
-startServer(Number(PORT) || 3001);
+const HTTP_PORT = Number(process.env.PORT) || 3001;
+const HTTPS_PORT = Number(process.env.HTTPS_PORT) || 3443;
+startServer(HTTP_PORT, HTTPS_PORT);
