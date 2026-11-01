@@ -277,6 +277,33 @@ export function setupMultiplayer(wss) {
         return;
       }
 
+      // Prop Physics Throw Broadcast
+      if (msg.type === 'PROP_THROW') {
+        const { propId, startPos, velocity } = msg;
+        if (!propId) return;
+        const player = clients.get(authenticatedUser) || {};
+        broadcast({
+          type: 'PROP_THROWN',
+          propId,
+          startPos: startPos || { x: player.x, y: player.y, z: player.z },
+          velocity: velocity || { x: 0, y: 3, z: 0 },
+          username: authenticatedUser
+        });
+        return;
+      }
+
+      // Telemetry from connected client (FPS, Ping, Loaded Chunks, Memory)
+      if (msg.type === 'CLIENT_TELEMETRY' || msg.type === 'TELEMETRY') {
+        adminState.recordTelemetry(authenticatedUser, msg, req?.socket?.remoteAddress);
+        return;
+      }
+
+      // Round-trip Ping/Pong latency check
+      if (msg.type === 'PING') {
+        ws.send(JSON.stringify({ type: 'PONG', clientTime: msg.time, serverTime: Date.now() }));
+        return;
+      }
+
       // ==========================================
       // 5. AI Agent Interaction
       // ==========================================
@@ -332,17 +359,51 @@ export function setupMultiplayer(wss) {
             usedLLM: aiResult.source === 'ollama'
           }));
 
-          // Trigger dynamic world mutation if agent invoked action
-          if (aiResult.actions && aiResult.actions.includes('SPAWN_LIGHT_BEAM')) {
-            const mutation = adminState.recordMutation({
-              mutationType: 'SPAWN_LIGHT_BEAM',
-              targetX: 7,
-              targetY: 0,
-              targetZ: 7,
-              author: npcData.name,
-              message: `✨ ${npcData.name} призвал световой маяк к Сейфу Основателей!`
-            });
-            broadcast({ type: 'WORLD_MUTATION', ...mutation });
+          // Trigger dynamic world mutations based on user request / agent action
+          if (aiResult.actions && aiResult.actions.length > 0) {
+            for (const action of aiResult.actions) {
+              if (action === 'SPAWN_LIGHT_BEAM') {
+                const mutation = adminState.recordMutation({
+                  mutationType: 'SPAWN_LIGHT_BEAM',
+                  x: 7,
+                  y: 0,
+                  z: 7,
+                  author: npcData.name,
+                  message: `✨ ${npcData.name} призвал световой маяк к Сейфу Основателей!`
+                });
+                broadcast({ type: 'WORLD_MUTATION', ...mutation });
+              } else if (action === 'SPAWN_SERVER_RACK') {
+                const mutation = adminState.recordMutation({
+                  mutationType: 'SPAWN_SERVER_RACK',
+                  x: -7.5,
+                  y: 0,
+                  z: 4.0,
+                  author: npcData.name,
+                  message: `🖥️ ${npcData.name} материализовал вычислительный кластер!`
+                });
+                broadcast({ type: 'WORLD_MUTATION', ...mutation });
+              } else if (action === 'SPAWN_PORTAL') {
+                const mutation = adminState.recordMutation({
+                  mutationType: 'SPAWN_PORTAL',
+                  x: 0,
+                  y: 0,
+                  z: -12.0,
+                  author: npcData.name,
+                  message: `🌀 ${npcData.name} открыл пространственный портал знаний!`
+                });
+                broadcast({ type: 'WORLD_MUTATION', ...mutation });
+              } else if (action === 'REVEAL_FORMULA') {
+                const mutation = adminState.recordMutation({
+                  mutationType: 'REVEAL_FORMULA',
+                  x: 7,
+                  y: 1.5,
+                  z: 7,
+                  author: npcData.name,
+                  message: `📐 ${npcData.name} проявил формулу на стене!`
+                });
+                broadcast({ type: 'WORLD_MUTATION', ...mutation });
+              }
+            }
           }
 
         } catch (err) {

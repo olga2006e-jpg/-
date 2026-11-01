@@ -1,3 +1,18 @@
+export function classifyIntentActions(userText) {
+  const lower = (userText || '').toLowerCase();
+  const actions = [];
+  if (lower.match(/застрял|помог|где искать|освети|маяк|свет|не вижу|темно|сейф|дорогу/)) {
+    actions.push('SPAWN_LIGHT_BEAM');
+  }
+  if (lower.match(/сервер|стойк|датацентр|вычисли|компьютер|кластер/)) {
+    actions.push('SPAWN_SERVER_RACK');
+  }
+  if (lower.match(/портал|телепорт|перенеси|врата/)) {
+    actions.push('SPAWN_PORTAL');
+  }
+  return actions;
+}
+
 // server/ai/agentService.js
 import { personalities, AGENT_PERSONAS } from './personalities.js';
 import { evaluate } from 'mathjs';
@@ -116,6 +131,7 @@ export async function generateResponse(npcId, userText, context = "", contextTyp
 
     // Извлекаем действия и очищаем текст
     let { cleanText, actions } = extractActions(rawText);
+    if (actions.length === 0) actions = classifyIntentActions(userText);
     
     // === Если нейросеть написала только тег, подставляем текст ===
     if (!cleanText && actions.length > 0) {
@@ -145,10 +161,7 @@ export async function generateResponse(npcId, userText, context = "", contextTyp
       fallbackText = fallbackList[Math.floor(Math.random() * fallbackList.length)];
     }
 
-    let actions = [];
-    if (userText.toLowerCase().match(/застрял|помог|где искать/)) {
-      actions.push("SPAWN_LIGHT_BEAM");
-    }
+    let actions = classifyIntentActions(userText);
     return { text: fallbackText, source: "fallback", actions };
   }
 }

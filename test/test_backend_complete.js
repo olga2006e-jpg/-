@@ -24,6 +24,7 @@ const { setupMultiplayer } = await import('../server/multiplayer.js');
 const { AgentService } = await import('../server/ai/agentService.js');
 const { AGENT_PERSONAS } = await import('../server/ai/personalities.js');
 const { TOTAL_WORLD_CHUNKS, TOTAL_WORLD_CANONICAL_BYTES } = await import('../server/world.js');
+const { createAdminRouter } = await import('../server/adminRoutes.js');
 
 const PORT = 3099;
 const app = express();
@@ -63,6 +64,7 @@ app.get('/api/status', async (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 const multiplayerInstance = setupMultiplayer(wss);
+app.use('/api/admin', createAdminRouter(multiplayerInstance));
 
 function startServer() {
   return new Promise((resolve) => {
@@ -492,6 +494,183 @@ async function runTestSuite() {
     passedChecks++;
     console.log('  ✅ Coordinates and input limits thoroughly validated.');
   }
+
+  // ----------------------------------------------------
+  // TEST 11: Admin REST API Endpoints
+  // ----------------------------------------------------
+  console.log('\n🧪 [Check 11] Admin REST API endpoints (metrics, world, agent config, mutations)...');
+  {
+    // 1. Get metrics
+    const resMetrics = await fetch(`http://127.0.0.1:${PORT}/api/admin/metrics`);
+    assert.strictEqual(resMetrics.status, 200, 'Metrics status must be 200');
+    const dataMetrics = await resMetrics.json();
+    assert(dataMetrics.success, 'Metrics must report success');
+    assert(dataMetrics.world, 'World state must be present');
+    assert(Array.isArray(dataMetrics.agents), 'Agents list must be an array');
+
+    // 2. Update world parameters
+    const resWorld = await fetch(`http://127.0.0.1:${PORT}/api/admin/world`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fogDensity: 0.045, gravity: 6.2, weather: 'spectral_fog' })
+    });
+    assert.strictEqual(resWorld.status, 200, 'World update status must be 200');
+    const dataWorld = await resWorld.json();
+    assert.strictEqual(dataWorld.world.gravity, 6.2, 'Gravity must be updated');
+    assert.strictEqual(dataWorld.world.weather, 'spectral_fog', 'Weather must be updated');
+
+    // 3. Update agent mood and configuration
+    const resAgent = await fetch(`http://127.0.0.1:${PORT}/api/admin/agent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentId: 'kanev', mood: 'strict' })
+    });
+    assert.strictEqual(resAgent.status, 200, 'Agent update status must be 200');
+    const dataAgent = await resAgent.json();
+    assert.strictEqual(dataAgent.agent.mood, 'strict', 'Kanev mood must be updated to strict');
+
+    // 4. Trigger world mutation via Admin
+    const resMut = await fetch(`http://127.0.0.1:${PORT}/api/admin/mutate-world`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mutationType: 'SPAWN_LIGHT_BEAM', targetX: 7, targetY: 0, targetZ: 7, author: 'Admin' })
+    });
+    assert.strictEqual(resMut.status, 200, 'Mutation status must be 200');
+    const dataMut = await resMut.json();
+    assert.strictEqual(dataMut.mutation.mutationType, 'SPAWN_LIGHT_BEAM', 'Mutation must be recorded');
+
+    passedChecks++;
+    console.log('  ✅ Admin API correctly manages world parameters, agent behavior, and mutations.');
+  }
+
+  // ----------------------------------------------------
+  // TEST 12: WebSocket Client Telemetry (FPS + Ping)
+  // ----------------------------------------------------
+  console.log('\n🧪 [Check 12] WebSocket client telemetry (FPS, Ping, loadedChunks)...');
+  {
+    const ws = createClientWs();
+    await new Promise(r => ws.once('open', r));
+
+    ws.send(JSON.stringify({ type: 'AUTH', token: aliceToken }));
+    await new Promise(r => setTimeout(r, 80));
+
+    // Measure round-trip ping/pong
+    let pongReceived = false;
+    ws.on('message', raw => {
+      const m = JSON.parse(raw.toString());
+      if (m.type === 'PONG') pongReceived = true;
+    });
+    ws.send(JSON.stringify({ type: 'PING', time: Date.now() }));
+    await new Promise(r => setTimeout(r, 60));
+    assert(pongReceived, 'Server must respond with PONG');
+
+    // Send client telemetry
+    ws.send(JSON.stringify({
+      type: 'CLIENT_TELEMETRY',
+      fps: 58,
+      ping: 16,
+      loadedChunks: 7,
+      memoryMB: 124
+    }));
+    await new Promise(r => setTimeout(r, 100));
+
+    // Verify telemetry is reflected in Admin API
+    const resMetrics = await fetch(`http://127.0.0.1:${PORT}/api/admin/metrics`);
+    const metrics = await resMetrics.json();
+    const aliceData = metrics.players.find(p => p.username === 'Alice');
+    assert(aliceData, 'Alice must be present in telemetry players');
+    assert.strictEqual(aliceData.fps, 58, 'Alice FPS must match 58');
+    assert.strictEqual(aliceData.ping, 16, 'Alice Ping must match 16');
+
+    ws.close();
+    passedChecks++;
+    console.log('  ✅ Client telemetry & Ping/Pong successfully recorded in Admin dashboard.');
+  }
+
+  // ----------------------------------------------------
+  // TEST 13: Prop Physics Throw Broadcast
+  // ----------------------------------------------------
+  console.log('\n🧪 [Check 13] Physical prop throw broadcast (ballistics, inertia)...');
+  {
+    const wsAlice = createClientWs();
+    const wsBob = createClientWs();
+    await Promise.all([
+      new Promise(r => wsAlice.once('open', r)),
+      new Promise(r => wsBob.once('open', r))
+    ]);
+
+    wsAlice.send(JSON.stringify({ type: 'AUTH', token: aliceToken }));
+    wsBob.send(JSON.stringify({ type: 'AUTH', token: bobToken }));
+    await new Promise(r => setTimeout(r, 100));
+
+    let thrownMessage = null;
+    wsBob.on('message', raw => {
+      const m = JSON.parse(raw.toString());
+      if (m.type === 'PROP_THROWN') thrownMessage = m;
+    });
+
+    wsAlice.send(JSON.stringify({
+      type: 'PROP_THROW',
+      propId: 'flask_potion_99',
+      startPos: { x: 2.5, y: 1.6, z: 5.0 },
+      velocity: { x: 4.2, y: 2.8, z: 1.1 }
+    }));
+
+    await new Promise(r => setTimeout(r, 100));
+    assert(thrownMessage, 'Bob must receive PROP_THROWN broadcast');
+    assert.strictEqual(thrownMessage.propId, 'flask_potion_99', 'Prop ID must match');
+    assert.strictEqual(thrownMessage.username, 'Alice', 'Thrower username must match Alice');
+    assert.strictEqual(thrownMessage.velocity.x, 4.2, 'Velocity must be preserved');
+
+    wsAlice.close();
+    wsBob.close();
+    passedChecks++;
+    console.log('  ✅ Prop throw broadcast synchronized between multiplayer clients.');
+  }
+
+  // ----------------------------------------------------
+  // TEST 14: Dynamic World Mutation from Agent Dialog
+  // ----------------------------------------------------
+  console.log('\n🧪 [Check 14] Dynamic world mutation triggered by agent action...');
+  {
+    const wsAlice = createClientWs();
+    const wsBob = createClientWs();
+    await Promise.all([
+      new Promise(r => wsAlice.once('open', r)),
+      new Promise(r => wsBob.once('open', r))
+    ]);
+
+    wsAlice.send(JSON.stringify({ type: 'AUTH', token: aliceToken }));
+    wsBob.send(JSON.stringify({ type: 'AUTH', token: bobToken }));
+    await new Promise(r => setTimeout(r, 100));
+
+    let mutationBroadcast = null;
+    wsBob.on('message', raw => {
+      const m = JSON.parse(raw.toString());
+      if (m.type === 'WORLD_MUTATION') mutationBroadcast = m;
+    });
+
+    // Alice asks Kanev to light the way
+    wsAlice.send(JSON.stringify({
+      type: 'AGENT_CHAT',
+      agentId: 'kanev',
+      text: 'Профессор, я заблудился в темноте, освети путь к сейфу!'
+    }));
+
+    // Wait for AI response and mutation broadcast
+    for (let wait = 0; wait < 30 && !mutationBroadcast; wait++) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    assert(mutationBroadcast, 'Bob must receive WORLD_MUTATION broadcast');
+    assert(['SPAWN_LIGHT_BEAM', 'REVEAL_FORMULA', 'SPAWN_PORTAL'].includes(mutationBroadcast.mutationType), 'Mutation type must be valid');
+    assert.strictEqual(mutationBroadcast.x, 7, 'Target X must point to safe');
+
+    wsAlice.close();
+    wsBob.close();
+    passedChecks++;
+    console.log('  ✅ Agent successfully triggered dynamic world mutation in response to player request.');
+  }
   multiplayerInstance.gracefulShutdown();
   await stopServer();
   testDb.close();
@@ -502,7 +681,7 @@ async function runTestSuite() {
   }
 
   console.log('\n====================================================');
-  console.log(`🎉 ALL ${passedChecks}/10 AUTOMATED VERIFICATION CHECKS PASSED! 🎉`);
+  console.log(`🎉 ALL ${passedChecks}/14 AUTOMATED VERIFICATION CHECKS PASSED! 🎉`);
   console.log('====================================================\n');
   process.exit(0);
 }

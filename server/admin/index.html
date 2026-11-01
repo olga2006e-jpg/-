@@ -492,6 +492,16 @@
           <button class="btn" style="padding: 4px 10px; font-size: 11px;" onclick="applyWorldSettings()">Сохранить в мир</button>
         </div>
 
+        <div style="margin-bottom: 16px;">
+          <div class="control-label">⚡ Демо-пресеты в 1 клик:</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn" style="padding: 4px 10px; font-size: 11px;" onclick="applyPreset('moon')">🌕 Луна (Low Gravity)</button>
+            <button class="btn orange" style="padding: 4px 10px; font-size: 11px;" onclick="applyPreset('halloween')">🎃 Хэллоуин (Туман)</button>
+            <button class="btn green" style="padding: 4px 10px; font-size: 11px;" onclick="applyPreset('clear')">☀️ Ясный день</button>
+            <button class="btn purple" style="padding: 4px 10px; font-size: 11px;" onclick="applyPreset('heavy')">⚓ Сверхтяжесть</button>
+          </div>
+        </div>
+
         <div class="control-row">
           <div class="control-label">
             <span>Плотность Тумана (Fog Density)</span>
@@ -707,6 +717,39 @@
       }
     }
 
+        function applyPreset(name) {
+      if (name === 'moon') {
+        document.getElementById('slider-fog').value = '0.012';
+        document.getElementById('val-fog').textContent = '0.012';
+        document.getElementById('slider-light').value = '1.25';
+        document.getElementById('val-light').textContent = '1.25';
+        document.getElementById('slider-gravity').value = '2.8';
+        document.getElementById('val-gravity').textContent = '2.8';
+        document.getElementById('select-weather').value = 'spectral_fog';
+      } else if (name === 'halloween') {
+        document.getElementById('slider-fog').value = '0.055';
+        document.getElementById('val-fog').textContent = '0.055';
+        document.getElementById('slider-light').value = '0.85';
+        document.getElementById('val-light').textContent = '0.85';
+        document.getElementById('slider-gravity').value = '9.8';
+        document.getElementById('val-gravity').textContent = '9.8';
+        document.getElementById('select-weather').value = 'halloween_eclipse';
+      } else if (name === 'clear') {
+        document.getElementById('slider-fog').value = '0.008';
+        document.getElementById('val-fog').textContent = '0.008';
+        document.getElementById('slider-light').value = '1.7';
+        document.getElementById('val-light').textContent = '1.7';
+        document.getElementById('slider-gravity').value = '9.8';
+        document.getElementById('val-gravity').textContent = '9.8';
+        document.getElementById('select-weather').value = 'clear';
+      } else if (name === 'heavy') {
+        document.getElementById('slider-gravity').value = '20.0';
+        document.getElementById('val-gravity').textContent = '20.0';
+        document.getElementById('select-weather').value = 'neon_aurora';
+      }
+      applyWorldSettings();
+    }
+
     async function sendBroadcast() {
       const msg = document.getElementById('broadcast-msg').value;
       if (!msg) return;
@@ -732,3 +775,4 @@
   </script>
 </body>
 </html>
+

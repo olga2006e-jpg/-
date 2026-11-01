@@ -38,13 +38,17 @@ export function makeWorld(scene, materials) {
       for(const side of [-1,1]){
         const z=side*(width/2+.1),ry=side===-1?0:Math.PI;
         const lo=x-step/2,hi=x+step/2;
-        if(side===1&&lo<4.5&&hi>-4.5){
+        const studyEntrance=side===-1&&i===8;
+        if(studyEntrance){
+          b.wallX(lo,15.0,z);b.wallX(16.4,hi,z);
+          b.box(15.7,3.45,z,1.4,1.3,.22,'plaster');
+        }else if(side===1&&lo<4.5&&hi>-4.5){
           if(lo<-4.5)b.wallX(lo,-4.5,z);
           if(hi>4.5)b.wallX(4.5,hi,z);
         }else b.wallX(lo,hi,z);
         if(side===-1||Math.abs(lo)>4.5)b.box(lo,2,z,.3,4.04,.3,'marble');
         if(Math.abs(x)>6){
-          doorway(x-.75,z-side*.14,0,ry,String(100+i*2+(side>0?1:0)));
+          if(!studyEntrance)doorway(x-.75,z-side*.14,0,ry,String(100+i*2+(side>0?1:0)));
           framedPoster(x+1.0,1.9,z-side*.14,i,.65,.8,ry);
         }
         if(side===-1&&[1,3,6,8].includes(i))detail.window(x+1.35,z+.15,0,.92,2.5,2.12);
@@ -64,6 +68,18 @@ export function makeWorld(scene, materials) {
       const x=side*(1.0+col*.57);b.portrait(x,2.85-row*.58,-1.77,col+row*6,.38,.43);
     }
     detail.centralStair();
+    // A small playable classroom behind an existing corridor door.
+    region(13.3,18.1,-7.1,-1.84);b.floor(15.7,-4.48,4.8,5.24);b.ceiling(15.7,-4.48,4.8,5.24);
+    b.wallX(13.3,18.1,-7.2);b.wallZ(13.2,-7.2,-2);b.wallZ(18.2,-7.2,-2);
+    b.frame(15.7,2.25,-7.05,3.3,1.6,new THREE.MeshStandardMaterial({color:'#344d47'}),0,'wood');
+    b.label(15.7,2.45,-6.99,'ЗНАНИЯ ОТКРЫВАЮТ ДВЕРИ',2.8,.22,0,{background:'#344d47',color:'#e4e0c7',size:68});
+    b.label(15.7,1.94,-6.99,'TCP  ·  HTTP  ·  WebSocket',2.6,.2,0,{background:'#344d47',color:'#d5c99e',size:64});
+    for(const xx of [14.35,17.05]){
+      b.box(xx,.77,-5.05,1.15,.07,.72,'wood');
+      for(const dx of [-.48,.48])for(const dz of [-.25,.25])b.box(xx+dx,.37,-5.05+dz,.035,.74,.035,'iron');
+      obstacles.push({x1:xx-.6,x2:xx+.6,z1:-5.46,z2:-4.64});
+    }
+    b.chandelier(15.7,-4.35);
   }
 
   function crestMaterial(){

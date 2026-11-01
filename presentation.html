@@ -4,24 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#12252b">
-<title>Ночь в Бауманке — 3 слайда</title>
-<!-- Source: origin/feature/Sasha, 58fe506. Verified 2026-10-31. -->
+<title>Ночь в Бауманке — 4 слайда</title>
+<!-- Source: feature/latest-defense. Verified 2026-11-01. -->
 <style>
-:root{--bg:#12252b;--ink:#f1eee5;--muted:#a9b9b6;--gold:#dfbd7c;--line:#466066;--cyan:#9fcbd0}
+:root{--bg:#12252b;--ink:#f1eee5;--muted:#a9b9b6;--gold:#dfbd7c;--line:#466066;--cyan:#9fcbd0;--purple:#bd93f9;--green:#50fa7b}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09171b;color:var(--ink);font-family:'Segoe UI',Arial,sans-serif}
 button{font:inherit;color:inherit;cursor:pointer}button:focus-visible{outline:2px solid var(--gold);outline-offset:6px}
 #stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale(var(--scale,1));transform-origin:center}
 .slide{position:absolute;inset:0;padding:66px 88px 64px;background:var(--bg);display:none;overflow:hidden}.slide.active{display:block}
 .top{display:flex;justify-content:space-between;align-items:center;padding-bottom:22px;border-bottom:1px solid var(--line);font-size:17px;letter-spacing:2.4px;color:var(--muted)}.top .index{color:var(--gold);font-variant-numeric:tabular-nums}
 h1,h2,p{margin:0}h1,h2{font-weight:500;letter-spacing:-2.5px}h1{font-size:102px;line-height:1.04;margin-top:58px}h1 em{font-style:normal;color:var(--gold)}h2{font-size:65px;line-height:1.1;margin-top:38px}.subtitle{font-size:27px;color:var(--muted);line-height:1.5;margin-top:25px}.eyebrow{color:var(--gold);font-size:17px;letter-spacing:2px}.cover-copy{position:relative;width:860px;z-index:2}.cover-copy .eyebrow{margin-top:42px}.cover-copy h1{margin-top:24px}.cover-bottom{position:absolute;bottom:88px;left:88px;width:1424px;border-top:1px solid var(--line);padding-top:28px;display:flex;align-items:center;gap:42px;font-size:26px}.cover-bottom .num{font-size:15px;color:var(--gold);margin-right:12px}.cover-bottom .arrow{color:#6e8989;font-size:26px}.cover-plan{position:absolute;right:12px;top:250px;width:690px;height:490px;opacity:.95}.cover-caption{position:absolute;right:88px;bottom:190px;color:var(--muted);font-size:17px}.cover-plan text{font-family:'Segoe UI',Arial,sans-serif}.architecture{width:1424px;height:540px;margin-top:36px;display:block}.architecture text{font-family:'Segoe UI',Arial,sans-serif}.architecture .title{font-size:28px;fill:var(--ink)}.architecture .small{font-size:20px;fill:var(--muted)}.architecture .label{font-size:21px;fill:var(--gold)}.architecture .tiny{font-size:17px;fill:var(--muted)}.architecture .outline{fill:#172f35;stroke:var(--line);stroke-width:1.5}.architecture .connection{stroke:var(--gold);stroke-width:2;fill:none}.architecture .ghost{stroke:var(--line);stroke-width:1.5;fill:none}.architecture .boundary{stroke:var(--line);stroke-width:1.5;stroke-dasharray:7 9;fill:none}.flow-note{display:flex;align-items:center;gap:22px;font-size:22px;color:var(--muted);position:absolute;bottom:82px;left:88px}.flow-note span{color:var(--gold)}.tech-grid{display:grid;grid-template-columns:560px 1fr;gap:105px;margin-top:48px}.cache-number{font-size:100px;letter-spacing:-6px;line-height:1;color:var(--gold)}.cache-number span{color:#819b9a;font-size:54px;letter-spacing:-2px}.cache-caption{font-size:25px;color:var(--ink);margin-top:14px}.sector-grid{display:grid;grid-template-columns:repeat(10,20px);gap:8px;margin-top:30px}.sector{width:20px;height:20px;border:1px solid #5a7376;background:#ffffff03}.sector.loaded{background:var(--gold);border-color:var(--gold)}.cache-detail{margin-top:24px;font-size:21px;color:var(--muted)}.tech-rows{margin-top:-8px}.tech-row{border-top:1px solid var(--line);padding:20px 0 22px}.tech-row .label{color:var(--gold);font-size:15px;letter-spacing:1.6px;margin-bottom:9px}.tech-row .value{font-size:27px;line-height:1.4;letter-spacing:-.3px}.tech-row .sub{font-size:19px;color:var(--muted);margin-top:7px}.footnote{position:absolute;bottom:66px;left:88px;font-size:17px;color:var(--muted);max-width:1300px}.footnote b{font-weight:400;color:var(--gold)}
+
+/* Slide 4 Sunday Features Grid */
+.sunday-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:32px;margin-top:40px}
+.feat-card{background:rgba(23,47,53,0.7);border:1px solid var(--line);border-radius:10px;padding:26px 30px}
+.feat-card h3{font-size:27px;color:var(--gold);font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.feat-card p{font-size:20px;color:var(--muted);line-height:1.45}
+.feat-card ul{margin:10px 0 0 20px;padding:0;color:var(--ink);font-size:19px;line-height:1.5}
+.feat-card li{margin-bottom:5px}
+
 #navigation{position:fixed;z-index:10;bottom:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:18px;color:#9ab1b0;font-size:11px;opacity:.5;transition:opacity .15s}#navigation:hover,#navigation:focus-within{opacity:1}#navigation button{border:1px solid #527176;background:#102128;border-radius:5px;padding:5px 10px}#navigation .dots{display:flex;gap:8px}#navigation .dot{width:7px;height:7px;border:0;padding:0;border-radius:50%;background:#648381}#navigation .dot[aria-current="true"]{background:var(--gold)}
 @media print{@page{size:1600px 900px;margin:0}html,body{width:1600px;height:auto;overflow:visible;background:var(--bg);print-color-adjust:exact;-webkit-print-color-adjust:exact}#stage{position:static;transform:none;width:1600px;height:auto}.slide{position:relative;display:block!important;width:1600px;height:900px;break-after:page;page-break-after:always}.slide:last-child{break-after:auto;page-break-after:auto}#navigation{display:none}}
 </style>
 </head>
 <body>
 <main id="stage" aria-label="Презентация проекта">
+
+<!-- СЛАЙД 1: ИДЕЯ -->
 <section class="slide active" aria-label="Идея проекта">
-  <header class="top"><span>HAUNTED ACADEMY</span><span class="index">01 / 03</span></header>
+  <header class="top"><span>HAUNTED ACADEMY</span><span class="index">01 / 04</span></header>
   <div class="cover-copy">
     <div class="eyebrow">УЧЕБНЫЙ КВЕСТ ДЛЯ СТУДЕНТОВ</div>
     <h1>Ночь<br>в <em>Бауманке</em></h1>
@@ -39,10 +50,12 @@ h1,h2,p{margin:0}h1,h2{font-weight:500;letter-spacing:-2.5px}h1{font-size:102px;
   </svg>
   <div class="cover-bottom"><span><span class="num">01</span>Исследовать</span><span class="arrow">→</span><span><span class="num">02</span>Спросить</span><span class="arrow">→</span><span><span class="num">03</span>Решить вместе</span></div>
 </section>
+
+<!-- СЛАЙД 2: АРХИТЕКТУРА -->
 <section class="slide" aria-label="Архитектура проекта">
-  <header class="top"><span>АРХИТЕКТУРА</span><span class="index">02 / 03</span></header>
+  <header class="top"><span>АРХИТЕКТУРА</span><span class="index">02 / 04</span></header>
   <h2>Один сервер. Остальным — браузер</h2>
-  <svg class="architecture" viewBox="0 0 1424 540" role="img" aria-label="Браузеры с Three.js подключены по HTTP и WebSocket к Node.js и Express. На серверном ноутбуке JSON-хранилище, объекты мира и локальная Ollama.">
+  <svg class="architecture" viewBox="0 0 1424 540" role="img" aria-label="Браузеры с Three.js подключены по HTTP и WebSocket к Node.js и Express. На серверном ноутбуке SQLite, объекты мира и локальная Ollama.">
     <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#dfbd7c"/></marker></defs>
     <rect class="boundary" x="548" y="33" width="848" height="446" rx="12"/>
     <text class="tiny" x="579" y="71">ОДИН НОУТБУК-СЕРВЕР</text>
@@ -50,41 +63,101 @@ h1,h2,p{margin:0}h1,h2{font-weight:500;letter-spacing:-2.5px}h1{font-size:102px;
     <path class="connection" d="M350 184H590" marker-end="url(#arrow)"/>
     <text class="label" x="470" y="165" text-anchor="middle">HTTP · вход</text>
     <path class="connection" d="M350 277H590" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
-    <text class="label" x="470" y="255" text-anchor="middle">WebSocket</text><text class="tiny" x="470" y="315" text-anchor="middle">игроки · чат · объекты</text>
+    <text class="label" x="470" y="255" text-anchor="middle">WebSocket</text><text class="tiny" x="470" y="315" text-anchor="middle">игроки · чат · объекты · физика</text>
     <rect class="outline" x="610" y="126" width="290" height="239" rx="9"/>
     <text class="title" x="755" y="184" text-anchor="middle">Node.js + Express</text><path class="ghost" d="M638 211H872"/>
-    <text class="small" x="755" y="251" text-anchor="middle">Игроки и события</text><text class="small" x="755" y="288" text-anchor="middle">Объекты мира</text><text class="small" x="755" y="325" text-anchor="middle">Диалоги NPC</text>
+    <text class="small" x="755" y="251" text-anchor="middle">Игроки и события</text><text class="small" x="755" y="288" text-anchor="middle">Панель админа (/admin)</text><text class="small" x="755" y="325" text-anchor="middle">Диалоги NPC и мутации</text>
     <path class="connection" d="M900 181H1015" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
     <rect class="outline" x="1035" y="117" width="322" height="123" rx="9"/><text class="title" x="1196" y="164" text-anchor="middle">SQLite</text><text class="small" x="1196" y="202" text-anchor="middle">Игроки · диалоги · квест</text>
     <path class="connection" d="M900 309H1015" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
-    <rect class="outline" x="1035" y="274" width="322" height="123" rx="9"/><text class="title" x="1196" y="320" text-anchor="middle">Локальный ИИ</text><text class="small" x="1196" y="359" text-anchor="middle">Ollama · память NPC</text>
-    <text class="tiny" x="579" y="448">Интернет во время игры не нужен</text>
+    <rect class="outline" x="1035" y="274" width="322" height="123" rx="9"/><text class="title" x="1196" y="320" text-anchor="middle">Локальный ИИ</text><text class="small" x="1196" y="359" text-anchor="middle">Ollama · память NPC · Math.js</text>
+    <text class="tiny" x="579" y="448">Интернет во время игры не нужен · 14/14 тестов пройдено</text>
   </svg>
   <p class="flow-note">Позиция игрока <span>→</span> запрос сектора <span>→</span> данные с сервера <span>→</span> 3D-сцена</p>
 </section>
+
+<!-- СЛАЙД 3: ОПТИМИЗАЦИЯ И СЕТЬ -->
 <section class="slide" aria-label="Технические особенности и оптимизация">
-  <header class="top"><span>ТЕХНИЧЕСКИЕ РЕШЕНИЯ</span><span class="index">03 / 03</span></header>
+  <header class="top"><span>ТЕХНИЧЕСКИЕ РЕШЕНИЯ</span><span class="index">03 / 04</span></header>
   <h2>Загружаем ближайшие секторы</h2>
   <div class="tech-grid">
     <div><div class="cache-number">9 <span>/ 100</span></div><p class="cache-caption">Окно вокруг игрока — 3 × 3</p><div class="sector-grid" aria-label="9 загруженных секторов из 100"><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector loaded"></span><span class="sector loaded"></span><span class="sector loaded"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector loaded"></span><span class="sector loaded"></span><span class="sector loaded"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector loaded"></span><span class="sector loaded"></span><span class="sector loaded"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span><span class="sector"></span></div><p class="cache-detail">Лимит — 10 секторов · счётчик в игре</p></div>
     <div class="tech-rows">
       <div class="tech-row"><div class="label">ВХОД</div><div class="value">Ник → токен → WebSocket</div></div>
       <div class="tech-row"><div class="label">ХРАНЕНИЕ</div><div class="value">SQLite + JSON-резерв</div><div class="sub">Автосохранение каждые 5 секунд</div></div>
-      <div class="tech-row"><div class="label">ИИ</div><div class="value">Ollama + учебный алгоритм</div><div class="sub">Характер NPC · история · изученные факты</div></div>
+      <div class="tech-row"><div class="label">ИИ</div><div class="value">Ollama + Math.js + эвристика</div><div class="sub">Характер NPC · история · математика без LLM</div></div>
       <div class="tech-row"><div class="label">ОПТИМИЗАЦИЯ</div><div class="value">Выгрузка дальних секторов</div><div class="sub">dispose() · 20 Гц · интерполяция движения</div></div>
     </div>
   </div>
   <p class="footnote"><b>Лимит 10% — по числу секторов.</b> Размеры в байтах сервер считает, клиент пока не ограничивает.</p>
 </section>
+
+<!-- СЛАЙД 4: ВОСКРЕСНЫЕ ИННОВАЦИИ -->
+<section class="slide" aria-label="Воскресные функции и админка">
+  <header class="top"><span>ВОСКРЕСНЫЕ ИННОВАЦИИ</span><span class="index">04 / 04</span></header>
+  <h2>Панель администратора, физика и живой мир</h2>
+  <div class="sunday-grid">
+    <div class="feat-card">
+      <h3>🌐 Панель администратора (/admin)</h3>
+      <p>Центр мониторинга и управления вселенной в реальном времени:</p>
+      <ul>
+        <li>Телеметрия клиентов: живой FPS, Ping (мс), чанки и память</li>
+        <li>Регулировка мира: плотность тумана, свет, гравитация, погода</li>
+        <li>Управление ИИ: смена настроения профессоров (strict / helpful)</li>
+      </ul>
+    </div>
+    <div class="feat-card">
+      <h3>⚙️ Составные 3D-анимации</h3>
+      <p>Объекты из независимых синхронно подвижных узлов:</p>
+      <ul>
+        <li><b>Напольные часы:</b> физический маятник + противовращение 2 шестерён</li>
+        <li><b>Телескоп:</b> сканирование по азимуту, наклон трубы, линза</li>
+        <li><b>Арканный гироскоп:</b> 3 ортогональных кольца + парящий кристалл</li>
+      </ul>
+    </div>
+    <div class="feat-card">
+      <h3>🎯 Физика бросков и инерция</h3>
+      <p>Полноценная кинематика твердых тел на Three.js:</p>
+      <ul>
+        <li>Баллистический бросок [F] с передачей скорости бегущего игрока</li>
+        <li>Упругие отскоки от пола (e = 0.55), трение скольжения и кувыркание</li>
+        <li>Интерактивные распашные двери [E] на пружинных петлях</li>
+      </ul>
+    </div>
+    <div class="feat-card">
+      <h3>🦇 40+ Реактивных NPC и мутации</h3>
+      <p>Живая экосистема и изменение пространства по просьбе:</p>
+      <ul>
+        <li><b>Летучие мыши:</b> кружат стаями, взмывают вверх от света фонаря</li>
+        <li><b>Кошки:</b> следят взглядом за игроком (head.lookAt), пугаются бега</li>
+        <li><b>Мутации мира:</b> Канев призывает 45-метровый маяк света к сейфу!</li>
+      </ul>
+    </div>
+  </div>
+  <p class="footnote"><b>Все 5 требований воскресенья выполнены.</b> Проверено 14 автоматическими тестами.</p>
+</section>
+
 </main>
-<nav id="navigation" aria-label="Управление презентацией"><button id="prev" aria-label="Предыдущий слайд">←</button><span class="dots"><button class="dot" aria-label="Слайд 1"></button><button class="dot" aria-label="Слайд 2"></button><button class="dot" aria-label="Слайд 3"></button></span><button id="next" aria-label="Следующий слайд">→</button><span>F — полный экран · P — печать</span></nav>
+
+<nav id="navigation" aria-label="Управление презентацией">
+  <button id="prev" aria-label="Предыдущий слайд">←</button>
+  <span class="dots">
+    <button class="dot" aria-label="Слайд 1"></button>
+    <button class="dot" aria-label="Слайд 2"></button>
+    <button class="dot" aria-label="Слайд 3"></button>
+    <button class="dot" aria-label="Слайд 4"></button>
+  </span>
+  <button id="next" aria-label="Следующий слайд">→</button>
+  <span>F — полный экран · P — печать</span>
+</nav>
+
 <script>
 const slides=[...document.querySelectorAll('.slide')],dots=[...document.querySelectorAll('.dot')];let current=0;
 function fit(){document.documentElement.style.setProperty('--scale',Math.min(innerWidth/1600,innerHeight/900));}
 function go(index){current=Math.max(0,Math.min(slides.length-1,index));slides.forEach((slide,i)=>{slide.classList.toggle('active',i===current);slide.setAttribute('aria-hidden',String(i!==current));});dots.forEach((dot,i)=>dot.setAttribute('aria-current',String(i===current)));document.getElementById('prev').disabled=current===0;document.getElementById('next').disabled=current===slides.length-1;history.replaceState(null,'','#'+(current+1));}
 function next(){go(current+1)}function prev(){go(current-1)}
 document.getElementById('prev').onclick=prev;document.getElementById('next').onclick=next;dots.forEach((dot,i)=>dot.onclick=()=>go(i));
-window.addEventListener('resize',fit);window.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();next()}else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();prev()}else if(e.key==='Home')go(0);else if(e.key==='End')go(2);else if(e.key.toLowerCase()==='f'){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.().catch(()=>{});}else if(e.key.toLowerCase()==='p')window.print();});
+window.addEventListener('resize',fit);window.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();next()}else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();prev()}else if(e.key==='Home')go(0);else if(e.key==='End')go(3);else if(e.key.toLowerCase()==='f'){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.().catch(()=>{});}else if(e.key.toLowerCase()==='p')window.print();});
 fit();go((Number(location.hash.slice(1))||1)-1);
 </script>
 </body></html>

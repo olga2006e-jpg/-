@@ -8,6 +8,7 @@ export class WalkController {
     this.eyeHeight=1.66;this.eyeY=this.eyeHeight;this.distance=0;this.stepDistance=0;
     this.onStep=null;
     window.addEventListener('keydown',e=>{
+      if(e.target.matches?.('input,textarea,select,[contenteditable="true"]'))return;
       if(e.target.matches?.('input,textarea,button')&&e.code==='Space')return;
       if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight'].includes(e.code)){
         if(this.enabled&&!this.mapOpen)e.preventDefault();this.keys.add(e.code);
@@ -44,7 +45,7 @@ export class WalkController {
   canWalk(x,z){
     const radius=.19;
     for(const [dx,dz] of [[-radius,-radius],[radius,-radius],[-radius,radius],[radius,radius]])if(this.floorAt(x+dx,z+dz)===null)return false;
-    for(const o of this.world.obstacles)if(x+radius>o.x1&&x-radius<o.x2&&z+radius>o.z1&&z-radius<o.z2)return false;
+    for(const o of this.world.obstacles)if(o.active!==false&&x+radius>o.x1&&x-radius<o.x2&&z+radius>o.z1&&z-radius<o.z2)return false;
     return true;
   }
   teleport(x,z,yaw=this.yaw){
