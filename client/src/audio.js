@@ -233,6 +233,27 @@ class SoundEngine {
     } catch (e) {}
   }
 
+  // 5b. Door locked rattle sound (heavy locked latch rattle)
+  playDoorLocked() {
+    if (this.isMuted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+    try {
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(80, t);
+      osc.frequency.setValueAtTime(60, t + 0.08);
+      gain.gain.setValueAtTime(0.06, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.22);
+    } catch (e) {}
+  }
+
   // 6. Artifact pickup chime
   playItemPickup() {
     if (this.isMuted) return;

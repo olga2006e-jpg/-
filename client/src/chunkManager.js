@@ -73,7 +73,8 @@ export class ChunkManager {
 
     // List of active NPCs currently in scene
     this.activeNpcs = new Map(); // npcId -> THREE.Group
-    this.animatedObjects = [];   // torches, pumpkins, npcs, artifacts
+    this.activeDoors = [];       // active door meshes in loaded chunks
+    this.animatedObjects = [];   // torches, pumpkins, npcs, artifacts, doors
     this.movableProps = new Map(); // propId -> THREE.Group
     this._reusableCollisionBoxes = [];
   }
@@ -214,6 +215,7 @@ export class ChunkManager {
     // Build 3D meshes for chunk
     const chunkGroup = new THREE.Group();
     chunkGroup.name = `Chunk_${key}`;
+    const doorInstances = [];
 
     for (const obj of chunkData.objects) {
       if (obj.type === 'floor') {
@@ -225,6 +227,8 @@ export class ChunkManager {
         const door = createDoor(obj.x, obj.y, obj.z, obj.rotY, obj.roomNumber, obj.label);
         chunkGroup.add(door);
         this.animatedObjects.push(door);
+        this.activeDoors.push(door);
+        doorInstances.push({ obj, door });
       } else if (obj.type === 'ceiling') {
         chunkGroup.add(createCeiling(obj.x, obj.y, obj.z, obj.width, obj.depth));
       } else if (obj.type === 'arch') {
@@ -422,17 +426,28 @@ export class ChunkManager {
         w = 1.4; d = 1.4; h = 1.2;
       } else if (obj.type === 'founders_safe') {
         w = isRot ? 1.4 : 2.4; d = isRot ? 2.4 : 1.4; h = 2.6;
+      } else if (obj.type === 'door') {
+        w = isRot ? 0.4 : 2.2;
+        d = isRot ? 2.2 : 0.4;
+        h = 2.8;
       }
-
       if (w > 0) {
-        collisionBoxes.push({
+        const box = {
           minX: obj.x - w / 2,
           maxX: obj.x + w / 2,
           minZ: obj.z - d / 2,
           maxZ: obj.z + d / 2,
           minY: baseY - ((obj.type === "wall" || obj.type === "pillar") ? h / 2 : 0) - 0.2,
-          maxY: baseY + ((obj.type === "wall" || obj.type === "pillar") ? h / 2 : h) + 0.2
-        });
+          maxY: baseY + ((obj.type === "wall" || obj.type === "pillar") ? h / 2 : h) + 0.2,
+          active: true
+        };
+        collisionBoxes.push(box);
+        if (obj.type === 'door') {
+          const match = doorInstances.find(d => d.obj === obj);
+          if (match) {
+            match.door.userData.collisionBox = box;
+          }
+        }
       }
     }
 
@@ -465,8 +480,8 @@ export class ChunkManager {
     }
 
     // Clean up from animated objects list
+    this.activeDoors = this.activeDoors.filter(d => !group.children.includes(d));
     this.animatedObjects = this.animatedObjects.filter(obj => !group.children.includes(obj));
-
     // Dispose unique geometries and dynamic canvas textures (NEVER dispose shared global materials!)
     group.traverse((child) => {
       if (child.geometry) {
@@ -531,25 +546,22 @@ export class ChunkManager {
         obj.position.y = obj.userData.baseY + Math.sin(elapsed * 2.5 + obj.userData.timeOffset) * 0.12;
       }
       if (obj.userData?.isDoor && playerPos) {
-        // Distance from player to door
         const dx = playerPos.x - obj.position.x;
         const dz = playerPos.z - obj.position.z;
         const dist = Math.hypot(dx, dz);
 
-        // Door opens when player approaches within 4.2m
-        const shouldOpen = dist < 4.2;
-        obj.userData.targetAngle = shouldOpen ? -Math.PI * 0.48 : 0;
+        // Auto-close if player walked away (> 8 meters)
+        if (obj.userData.isOpen && dist > 8.0) {
+          obj.userData.isOpen = false;
+          obj.userData.targetAngle = 0;
+          if (obj.userData.collisionBox) obj.userData.collisionBox.active = true;
+          soundEngine.playDoorSound(false);
+        }
 
+        obj.userData.targetAngle = obj.userData.isOpen ? -Math.PI * 0.48 : 0;
         const diff = obj.userData.targetAngle - obj.userData.hinge.rotation.y;
         if (Math.abs(diff) > 0.003) {
           obj.userData.hinge.rotation.y += diff * Math.min(1, delta * 5.0);
-          if (shouldOpen && !obj.userData.isOpen) {
-            obj.userData.isOpen = true;
-            soundEngine.playDoorSound(true);
-          } else if (!shouldOpen && obj.userData.isOpen) {
-            obj.userData.isOpen = false;
-            soundEngine.playDoorSound(false);
-          }
         }
       }
       if (obj.userData?.isVault && obj.userData.wheelGroup) {
@@ -627,6 +639,7 @@ export class ChunkManager {
     for (const entry of this.loadedChunks.values()) {
       if (!entry.collisionBoxes) continue;
       for (const box of entry.collisionBoxes) {
+        if (box.active === false) continue;
         if (box.minY !== undefined && (playerY < box.minY || playerY > box.maxY)) continue;
         if (
           px + radius > box.minX && px - radius < box.maxX &&
@@ -637,5 +650,58 @@ export class ChunkManager {
       }
     }
     return boxes;
+  }
+
+  // Find closest door within distance
+  findNearbyDoor(playerPos, maxDistance = 3.5) {
+    let closestDoor = null;
+    let closestDist = maxDistance;
+    for (const door of this.activeDoors) {
+      if (!door.visible) continue;
+      const dx = playerPos.x - door.position.x;
+      const dz = playerPos.z - door.position.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestDoor = door;
+      }
+    }
+    return closestDoor;
+  }
+
+  // Toggle door open/closed with academic prerequisite check
+  toggleDoor(door, passedTeachers = new Set()) {
+    if (!door || !door.userData) return { success: false, message: 'Дверь не найдена' };
+    const data = door.userData;
+
+    // 1. If currently OPEN, closing is always allowed
+    if (data.isOpen) {
+      data.isOpen = false;
+      data.targetAngle = 0;
+      if (data.collisionBox) data.collisionBox.active = true;
+      soundEngine.playDoorSound(false);
+      return { success: true, isOpen: false, label: data.label, roomNumber: data.roomNumber };
+    }
+
+    // 2. If CLOSED, check if prerequisite professor has been passed
+    if (data.requiredTeacher && !passedTeachers.has(data.requiredTeacher)) {
+      soundEngine.playDoorLocked?.();
+      return {
+        success: false,
+        isLocked: true,
+        roomNumber: data.roomNumber,
+        label: data.label,
+        prereqTeacherName: data.prereqTeacherName,
+        prereqRoom: data.prereqRoom,
+        message: `🔒 Дверь заперта! Сначала сдайте зачёт: ${data.prereqTeacherName} в ${data.prereqRoom}.`
+      };
+    }
+
+    // 3. Unlocked: swing door open!
+    data.isOpen = true;
+    data.targetAngle = -Math.PI * 0.48;
+    if (data.collisionBox) data.collisionBox.active = false;
+    soundEngine.playDoorSound(true);
+    return { success: true, isOpen: true, label: data.label, roomNumber: data.roomNumber };
   }
 }

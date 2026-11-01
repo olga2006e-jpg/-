@@ -200,6 +200,32 @@ export function createWall(x, y, z, width, height, depth, rotY = 0) {
   return group;
 }
 
+// Academic door progression prerequisites:
+// Room 01 (Kanev) is open from the start
+// Room 02 (Akhmetova) requires Kanev passed
+// Room 03 (Korshunov) requires Akhmetova passed
+export const DOOR_PREREQUISITES = {
+  '01': {
+    requiredTeacher: null,
+    teacherName: 'Канев А.И.',
+    roomTitle: 'Цифровая лаборатория'
+  },
+  '02': {
+    requiredTeacher: 'kanev',
+    prereqTeacherName: 'Каневу А.И.',
+    prereqRoom: 'Ауд. 01',
+    teacherName: 'Ахметова Ф.Х.',
+    roomTitle: 'Математическая гостиная'
+  },
+  '03': {
+    requiredTeacher: 'akhmetova',
+    prereqTeacherName: 'Ахметовой Ф.Х.',
+    prereqRoom: 'Ауд. 02',
+    teacherName: 'Коршунов В.М.',
+    roomTitle: 'Лаборатория света'
+  }
+};
+
 // 2. Animated Collegiate Door with Frame and Swinging Hinge Leaf
 export function createDoor(x, y, z, rotY = 0, roomNumber = '227', label = '') {
   const group = new THREE.Group();
@@ -248,6 +274,11 @@ export function createDoor(x, y, z, rotY = 0, roomNumber = '227', label = '') {
   handleBack.position.z = -0.06;
   hinge.add(handleBack);
 
+  // Brass Antique Keyhole / Lock Escutcheon Plate
+  const lockGeo = new THREE.BoxGeometry(0.05, 0.11, 0.09);
+  const lockMesh = new THREE.Mesh(lockGeo, brassMetalMat);
+  lockMesh.position.set(leafWidth - 0.18, -0.14, 0);
+  hinge.add(lockMesh);
   // Solid Brass Plaque with Room Number & Title (Mounted flush on front face of door leaf)
   const tagText = `${roomNumber} ${label ? '• ' + label.slice(0, 16) : ''}`;
   const plaque = createPlaqueMesh(tagText, '#ffd700', 'rgba(25, 18, 12, 0.98)', 1.32, 0.28);
@@ -259,6 +290,7 @@ export function createDoor(x, y, z, rotY = 0, roomNumber = '227', label = '') {
   backPlaque.rotation.y = Math.PI;
   backPlaque.position.set(leafWidth / 2, 0.65, -0.045);
   hinge.add(backPlaque);
+  const prereq = DOOR_PREREQUISITES[roomNumber] || null;
   group.userData = {
     isDoor: true,
     hinge,
@@ -266,9 +298,13 @@ export function createDoor(x, y, z, rotY = 0, roomNumber = '227', label = '') {
     currentAngle: 0,
     targetAngle: 0,
     roomNumber,
-    label
+    label,
+    requiredTeacher: prereq?.requiredTeacher || null,
+    prereqTeacherName: prereq?.prereqTeacherName || '',
+    prereqRoom: prereq?.prereqRoom || '',
+    teacherName: prereq?.teacherName || '',
+    collisionBox: null
   };
-
   return group;
 }
 

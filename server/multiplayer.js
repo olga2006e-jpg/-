@@ -93,10 +93,16 @@ export function setupMultiplayer(wss) {
 
         clients.set(username, clientState);
 
+        const passedTeachers = ['kanev', 'akhmetova', 'korshunov'].filter(teacherId => {
+          const mem = db.getAgentMemory(username, teacherId);
+          return mem && mem.lessonState === 'DONE';
+        });
+
         // Send auth success, inventory, world metadata, and canonical byte sizing
         ws.send(JSON.stringify({
           type: 'AUTH_SUCCESS',
           username,
+          passedTeachers,
           totalWorldChunks: TOTAL_WORLD_CHUNKS,        // 100
           totalWorldBytes: TOTAL_WORLD_CANONICAL_BYTES, // Canonical serialized bytes of all chunks
           maxClientCachePercent: 10,                  // 10%

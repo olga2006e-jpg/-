@@ -42,6 +42,8 @@ class GameApp {
     this.nearbyNpc = null;
     this.heldProp = null;
     this.nearbyProp = null;
+    this.nearbyDoor = null;
+    this.passedTeachers = new Set();
     this._camDir = new THREE.Vector3();
     this._holdPos = new THREE.Vector3();
     this.minimap.onModalStateChange = () => this.ui.syncModal();
@@ -118,6 +120,9 @@ class GameApp {
         this.ui.updateInventory(msg.inventory);
         this.collectedIds=new Set(msg.inventory.map(i=>i.id));
       }
+      if (Array.isArray(msg.passedTeachers)) {
+        this.passedTeachers = new Set(msg.passedTeachers);
+      }
       if (Array.isArray(msg.movedProps)) {
         for (const m of msg.movedProps) {
           if (m.isHeld) {
@@ -144,6 +149,12 @@ class GameApp {
 
     this.network.onAgentReply = (replyData) => {
       this.ui.showAgentReply(replyData);
+      if (replyData && replyData.lessonState === 'DONE' && replyData.agentId) {
+        if (!this.passedTeachers.has(replyData.agentId)) {
+          this.passedTeachers.add(replyData.agentId);
+          this.ui.addNotification(`🎓 Зачёт сдан! ${replyData.agentName || 'Преподаватель'} открывает вам доступ к следующей аудитории!`);
+        }
+      }
     };
 
     this.network.onPlayersListChanged = (remoteList) => {
@@ -199,12 +210,18 @@ class GameApp {
         }
       }
 
-      if (e.code === 'KeyE' && !this.ui.isModalOpen()) {
-        if (this.nearbyNpc) {
+      if ((e.code === 'KeyE' || e.code === 'KeyF') && !this.ui.isModalOpen()) {
+        if (this.nearbyDoor) {
+          const res = this.chunkManager.toggleDoor(this.nearbyDoor, this.passedTeachers);
+          if (res.isLocked) {
+            this.ui.addNotification(res.message);
+          } else if (res.success) {
+            this.ui.addNotification(res.isOpen ? `🚪 Дверь открыта: ${res.label}` : `🚪 Дверь закрыта: ${res.label}`);
+          }
+        } else if (this.nearbyNpc) {
           this.ui.openDialogue(this.nearbyNpc);
         } else if (this.nearSafe) {
           this.ui.openSafeModal();
-
         }
       }
 
@@ -321,20 +338,35 @@ class GameApp {
         this.heldProp.mesh.rotation.y = this.controls.camera.rotation.y;
         this.ui.showCustomPrompt(`Поставить ${this.heldProp.label}`, 'G');
       } else if (!this.nearbyNpc) {
-        // A. Founders' Safe in Council Hall
-        const distToSafe = Math.hypot(playerPos.x - 7, playerPos.z - 7);
-        this.nearSafe = distToSafe < 3.8;
+        // A. Door Proximity (Interactive Door opening on [E])
+        const door = this.chunkManager.findNearbyDoor(playerPos, 3.2);
+        this.nearbyDoor = door;
 
-        if (this.nearSafe) {
-          this.ui.showCustomPrompt('Открыть сейф основателей', 'E');
-        } else {
-          // B. Movable Prop Proximity
-          const prop = this.chunkManager.findNearbyMovableProp(playerPos, 2.5);
-          this.nearbyProp = prop;
-          if (prop) {
-            this.ui.showCustomPrompt(`Взять ${prop.userData.label || 'предмет'}`, 'G');
+        if (this.nearbyDoor) {
+          const dData = this.nearbyDoor.userData;
+          if (dData.isOpen) {
+            this.ui.showCustomPrompt(`Закрыть дверь [E]`, 'E');
+          } else if (dData.requiredTeacher && !this.passedTeachers.has(dData.requiredTeacher)) {
+            this.ui.showCustomPrompt(`🔒 Заперто • Сдайте зачёт в ${dData.prereqRoom} [E]`, 'E');
           } else {
-            this.ui.hideInteractionPrompt();
+            this.ui.showCustomPrompt(`Открыть дверь • Ауд. ${dData.roomNumber} [E]`, 'E');
+          }
+        } else {
+          // B. Founders' Safe in Council Hall
+          const distToSafe = Math.hypot(playerPos.x - 7, playerPos.z - 7);
+          this.nearSafe = distToSafe < 3.8;
+
+          if (this.nearSafe) {
+            this.ui.showCustomPrompt('Открыть сейф основателей', 'E');
+          } else {
+            // C. Movable Prop Proximity
+            const prop = this.chunkManager.findNearbyMovableProp(playerPos, 2.5);
+            this.nearbyProp = prop;
+            if (prop) {
+              this.ui.showCustomPrompt(`Взять ${prop.userData.label || 'предмет'}`, 'G');
+            } else {
+              this.ui.hideInteractionPrompt();
+            }
           }
         }
       }
