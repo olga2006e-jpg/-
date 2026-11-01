@@ -118,29 +118,43 @@ ${persona.name}:`;
     // 1. Record in-memory active dialogue session (fast RAM, auto-expires on idle)
     SessionDialogueCache.addTurn(username, agentId, userMessage, responseText);
 
-    // 2. Persist ONLY compact state (facts learned, quest progression, turns count) to SQLite
-    db.updateAgentMemory(username, agentId, mem => {
-      mem.turnsCount = (mem.turnsCount || 0) + 1;
-      // Never store bulky conversational transcripts in SQLite!
-      mem.history = [];
+    // 2. Event detection: did the player learn a new fact or trigger a key lesson state?
+    const currentMem = db.getAgentMemory(username, agentId);
+    const lower = responseText.toLowerCase();
+    const newFacts = [];
 
-      // Only mark facts present in the answer; asking a question is not learning it.
-      const lower = responseText.toLowerCase();
-      mem.factsKnown = mem.factsKnown || [];
-      mem.discussedTopics = mem.discussedTopics || [];
+    for (const fact of (persona.factsCatalog || [])) {
+      if (!currentMem.factsKnown.includes(fact.id) &&
+          (lower.includes(fact.text.toLowerCase()) || lower.includes(fact.title.toLowerCase()))) {
+        newFacts.push(fact);
+      }
+    }
 
-      for (const fact of (persona.factsCatalog || [])) {
-        if (!mem.factsKnown.includes(fact.id) &&
-            (lower.includes(fact.text.toLowerCase()) || lower.includes(fact.title.toLowerCase()))) {
-          mem.factsKnown.push(fact.id);
+    const hasNewFact = newFacts.length > 0;
+    const isFirstEncounter = (currentMem.turnsCount || 0) === 0;
+    const isStateTransition = currentMem.lessonState === 'RIDDLE' || currentMem.lessonState === 'DONE';
+
+    // EVENT-DRIVEN PERSISTENCE:
+    // Only write to SQLite if an actual event happened (new fact learned, riddle solved, first meeting).
+    // Casual chatter and repeated questions are stored exclusively in fast RAM!
+    if (hasNewFact || isFirstEncounter || isStateTransition) {
+      db.updateAgentMemory(username, agentId, mem => {
+        mem.turnsCount = (mem.turnsCount || 0) + 1;
+        mem.history = [];
+        mem.factsKnown = mem.factsKnown || [];
+        mem.discussedTopics = mem.discussedTopics || [];
+
+        for (const fact of newFacts) {
+          if (!mem.factsKnown.includes(fact.id)) {
+            mem.factsKnown.push(fact.id);
+          }
           if (!mem.discussedTopics.includes(fact.title)) {
             mem.discussedTopics.push(fact.title);
           }
         }
-      }
-
-      mem.lastTopic = userMessage.trim().slice(0, 60);
-    });
+        mem.lastTopic = userMessage.trim().slice(0, 60);
+      });
+    }
   }
 }
 

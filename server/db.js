@@ -53,9 +53,12 @@ class SQLiteStorage {
     this.sqlite = new DatabaseSync(this.dbPath);
 
     // Pragmas for performance and data safety
+    // Pragmas for maximum performance, concurrency and data safety
     this.sqlite.exec('PRAGMA journal_mode = WAL;');
     this.sqlite.exec('PRAGMA synchronous = NORMAL;');
-
+    this.sqlite.exec('PRAGMA cache_size = -8000;'); // 8MB page cache in RAM
+    this.sqlite.exec('PRAGMA temp_store = MEMORY;'); // Temp tables & sorting in RAM
+    this.sqlite.exec('PRAGMA busy_timeout = 5000;'); // Wait up to 5s before throwing SQLITE_BUSY
     this.sqlite.exec(`
       CREATE TABLE IF NOT EXISTS users (
         username TEXT PRIMARY KEY,
@@ -254,21 +257,29 @@ class SQLiteStorage {
     };
   }
 
+  static round2(val, fallback = 0) {
+    return Number.isFinite(val) ? Math.round(val * 100) / 100 : fallback;
+  }
+
   saveUser(user) {
     if (!user || !user.username) return;
     const current = this.getUser(user.username);
     const merged = {
       ...current,
       ...user,
+      x: SQLiteStorage.round2(user.x ?? current?.x, 0),
+      y: SQLiteStorage.round2(user.y ?? current?.y, 1.6),
+      z: SQLiteStorage.round2(user.z ?? current?.z, 10.5),
+      rotY: SQLiteStorage.round2(user.rotY ?? current?.rotY, 0),
       lastSeen: Date.now()
     };
     this.stmtSaveUser.run(
       merged.username,
       merged.color || '#8be9fd',
-      merged.x ?? 0,
-      merged.y ?? 1.6,
-      merged.z ?? 10.5,
-      merged.rotY ?? 0,
+      merged.x,
+      merged.y,
+      merged.z,
+      merged.rotY,
       merged.score ?? 0,
       JSON.stringify(merged.inventory || []),
       JSON.stringify(merged.discoveredSecrets || []),
@@ -278,6 +289,19 @@ class SQLiteStorage {
     );
   }
 
+  saveUsersBatch(usersList) {
+    if (!Array.isArray(usersList) || usersList.length === 0) return;
+    this.sqlite.exec('BEGIN IMMEDIATE;');
+    try {
+      for (const u of usersList) {
+        this.saveUser(u);
+      }
+      this.sqlite.exec('COMMIT;');
+    } catch (err) {
+      try { this.sqlite.exec('ROLLBACK;'); } catch (_) {}
+      throw err;
+    }
+  }
   addItemToInventory(username, item) {
     const user = this.getUser(username);
     if (!user) return false;
@@ -461,6 +485,18 @@ class JsonStorage {
       ...user,
       lastSeen: Date.now()
     };
+    this.save();
+  }
+
+  saveUsersBatch(usersList) {
+    if (!Array.isArray(usersList) || usersList.length === 0) return;
+    for (const user of usersList) {
+      this.data.users[user.username] = {
+        ...this.data.users[user.username],
+        ...user,
+        lastSeen: Date.now()
+      };
+    }
     this.save();
   }
 

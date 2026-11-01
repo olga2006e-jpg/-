@@ -156,10 +156,11 @@ export function setupMultiplayer(wss) {
           return;
         }
 
-        player.x = x;
-        player.y = y;
-        player.z = z;
-        player.rotY = Number.isFinite(rotY) ? rotY : player.rotY;
+        const round2 = (v) => Math.round(v * 100) / 100;
+        player.x = round2(x);
+        player.y = round2(y);
+        player.z = round2(z);
+        player.rotY = Number.isFinite(rotY) ? round2(rotY) : player.rotY;
         player.dirty = true;
         player.lastUpdate = Date.now();
         player.currentChunk = worldToChunkCoord(player.x, player.z);
@@ -407,9 +408,10 @@ export function setupMultiplayer(wss) {
   // Periodic Background Auto-Save (every 5 seconds)
   // ==========================================
   const autoSaveInterval = setInterval(() => {
+    const dirtyUsers = [];
     for (const [, p] of clients.entries()) {
       if (p.dirty) {
-        db.saveUser({
+        dirtyUsers.push({
           username: p.username,
           color: p.color,
           x: p.x,
@@ -419,6 +421,9 @@ export function setupMultiplayer(wss) {
         });
         p.dirty = false;
       }
+    }
+    if (dirtyUsers.length > 0) {
+      db.saveUsersBatch(dirtyUsers);
     }
   }, 5000);
 
