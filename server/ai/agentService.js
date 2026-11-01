@@ -45,6 +45,8 @@ export async function detectActiveOllama() {
 
   const candidateHosts = [];
   if (currentEnvHost) candidateHosts.push(currentEnvHost.replace(/\/$/, ''));
+  // Приоритетный ноутбук с Ollama (IP 172.16.236.14)
+  candidateHosts.push("http://172.16.236.14:11434");
   if (!candidateHosts.includes(LOCAL_OLLAMA)) candidateHosts.push(LOCAL_OLLAMA);
 
   const preferredModel = process.env.OLLAMA_MODEL || "qwen2.5:0.5b";
@@ -113,7 +115,7 @@ function extractActions(text) {
 
 async function fetchChatFromHost(host, model, npc, finalPrompt) {
   const response = await fetch(`${host}/api/chat`, {
-    signal: AbortSignal.timeout(4500),
+    signal: AbortSignal.timeout(8500),
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

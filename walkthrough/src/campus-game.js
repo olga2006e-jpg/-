@@ -155,7 +155,7 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
       if(onlineCampus)network.send({type:'CAMPUS_ACTION',agentId:npc.id,text});
       else{const pos=npc.id==='kanev'?{x:28,z:-2.4}:npc.id==='korshunov'?{x:27,z:19}:{x:-27,z:14};applyMutation({id:crypto.randomUUID(),mutationType:text.includes('стойку')?'SPAWN_SERVER_RACK':'SPAWN_LIGHT_BEAM',...pos,y:0,message:'Преподаватель изменил окружение по вашей просьбе.'});}
     }));body.append(actions);
-    const form=el('form','','game-input-row'),input=el('input');input.id='campus-dialogue-input';input.placeholder=quiz?'Ваш ответ…':'Ваш вопрос преподавателю…';input.maxLength=300;input.required=true;input.autocomplete='off';input.setAttribute('aria-label','Вопрос преподавателю');const send=el('button','Отправить →','game-primary');send.disabled=pending.has(npc.id);form.append(input,send);form.onsubmit=e=>{e.preventDefault();const text=input.value.trim();if(text)ask(npc,text);};body.append(form);requestAnimationFrame(()=>{log.scrollTop=log.scrollHeight;if(activeModal==='dialogue'&&!pending.has(npc.id))input.focus();});
+    const form=el('form','','game-input-row'),input=el('input');input.id='campus-dialogue-input';input.placeholder=quiz?'Ваш ответ…':'Ваш вопрос преподавателю…';input.maxLength=300;input.required=true;input.autocomplete='off';input.setAttribute('aria-label','Вопрос преподавателю');const send=el('button','Отправить →','game-primary');send.disabled=false;form.append(input,send);form.onsubmit=e=>{e.preventDefault();const text=input.value.trim();if(text){input.value='';ask(npc,text);}};body.append(form);requestAnimationFrame(()=>{log.scrollTop=log.scrollHeight;if(activeModal==='dialogue'&&!pending.has(npc.id))input.focus();});
   }
   function applyProgress(progress,feedback,agentId){
     const wasWon=state.won;for(const npc of TEACHERS)state.progress[npc.id]=Math.max(0,Math.min(3,Number(progress[npc.id])||0));
@@ -179,8 +179,8 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
     if(group){group.scale.setScalar(type==='SPAWN_SERVER_RACK'?.6:.3);if(type==='SPAWN_LIGHT_BEAM')group.scale.set(.65,.45,.65);hookLight(group);}if(msg.message)toast(msg.message);
   }
   function ask(npc,text){
-    if(pending.has(npc.id))return;addTurn(npc.id,'user',text);
-    if(quiz){toast('Выберите вариант ответа в карточке задания.');return;}
+    if(pending.has(npc.id)){clearTimeout(pending.get(npc.id));pending.delete(npc.id);}addTurn(npc.id,'user',text);
+    quiz=false; // переключаем из режима квиза в свободный диалог с ИИ
     if(network.isConnected()){
       const timeout=setTimeout(()=>{pending.delete(npc.id);addTurn(npc.id,'agent','Ответ сервера не пришёл вовремя. Можно повторить вопрос или пройти локальное задание.');},20000);pending.set(npc.id,timeout);network.sendAgentChat(npc.id,text);renderDialogue();return;
     }
