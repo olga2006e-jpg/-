@@ -6,6 +6,9 @@ import { ChunkManager } from './chunkManager.js';
 import { NetworkClient } from './network.js';
 import { UIManager } from './ui.js';
 import { MinimapManager } from './minimap.js';
+import { PhysicsWorld } from './physics.js';
+import { AnimatedPropsManager } from './animatedProps.js';
+import { ReactiveMobsManager } from './reactiveMobs.js';
 
 class GameApp {
   constructor() {
@@ -34,6 +37,13 @@ class GameApp {
     // 6. Interactive Minimap & Campus Blueprint
     this.minimap = new MinimapManager();
 
+    // 7. Interactive Physics, Animated Props & Reactive Mobs
+    this.physics = new PhysicsWorld(this.gameScene.scene);
+    this.physics.setNetwork(this.network);
+    this.animatedProps = new AnimatedPropsManager(this.gameScene.scene);
+    this.animatedProps.spawnDefaultCampusProps();
+    this.reactiveMobs = new ReactiveMobsManager(this.gameScene.scene);
+
     // Clock
     this.clock = new THREE.Clock();
     this.lastNetworkMoveTime = 0;
@@ -52,6 +62,7 @@ class GameApp {
     document.addEventListener('pointerlockchange',()=>document.body.classList.toggle('locked',Boolean(document.pointerLockElement)));
     this.wireCallbacks();
     this.setupKeyBindings();
+    this.setupTelemetryAndMobs();
 
     // Start loop
     this.animate = this.animate.bind(this);
@@ -184,6 +195,32 @@ class GameApp {
         this.ui.addNotification(`Исследователь ${username} переставил предмет`);
       }
     };
+
+    this.network.onWorldMutation = (mutation) => {
+      this.animatedProps.mutationHandler.handleMutation(mutation);
+      if (mutation.message) {
+        this.ui.addNotification(mutation.message);
+      }
+    };
+
+    this.network.onPropThrown = (msg) => {
+      this.physics.handleRemoteThrow(msg.propId, msg.startPos, msg.velocity);
+    };
+
+    this.network.onWorldSettingsChanged = (settings) => {
+      if (settings.fogDensity !== undefined && this.gameScene.scene.fog) {
+        this.gameScene.scene.fog.far = Math.max(30, 115 / settings.fogDensity);
+      }
+      if (settings.gravity !== undefined) {
+        this.physics.gravity = 9.8 * settings.gravity;
+      }
+    };
+
+    this.network.onPong = (msg) => {
+      if (msg.clientTime) {
+        this.currentPing = Math.round(Date.now() - msg.clientTime);
+      }
+    };
   }
 
   setupKeyBindings() {
@@ -202,8 +239,15 @@ class GameApp {
           this.ui.openDialogue(this.nearbyNpc);
         } else if (this.nearSafe) {
           this.ui.openSafeModal();
-
+        } else {
+          this.physics.interact(this.gameScene.camera, this.myUsername);
         }
+      }
+
+      // Throw held object with [F] with inertia & ballistic arc
+      if (e.code === 'KeyF' && !this.ui.isModalOpen()) {
+        const vel = this.controls.velocity || new THREE.Vector3();
+        this.physics.throwHeldObject(this.gameScene.camera, vel, 14.0);
       }
 
       // Pick up or place movable prop with [G]
@@ -274,6 +318,69 @@ class GameApp {
     }
   }
 
+  setupTelemetryAndMobs() {
+    const defaultMobs = [
+      { id: 'bat_01', type: 'BAT', name: 'Призрачный нетопырь', x: 2, y: 4.2, z: 5, radius: 4.5, speed: 2.2 },
+      { id: 'bat_02', type: 'BAT', name: 'Призрачный нетопырь', x: -3, y: 4.5, z: 8, radius: 3.8, speed: 2.0 },
+      { id: 'bat_03', type: 'BAT', name: 'Призрачный нетопырь', x: 0, y: 4.4, z: -15, radius: 5.0, speed: 2.5 },
+      { id: 'bat_04', type: 'BAT', name: 'Призрачный нетопырь', x: 6, y: 4.6, z: -20, radius: 4.0, speed: 2.1 },
+      { id: 'bat_05', type: 'BAT', name: 'Пещерный нетопырь', x: -18, y: 4.3, z: 4, radius: 3.5, speed: 1.9 },
+      { id: 'bat_06', type: 'BAT', name: 'Пещерный нетопырь', x: 16, y: 4.5, z: -2, radius: 4.2, speed: 2.3 },
+      { id: 'bat_07', type: 'BAT', name: 'Архивный нетопырь', x: -44, y: 4.6, z: 3, radius: 3.0, speed: 2.4 },
+      { id: 'bat_08', type: 'BAT', name: 'Архивный нетопырь', x: -50, y: 4.4, z: -20, radius: 4.8, speed: 2.0 },
+      { id: 'bat_09', type: 'BAT', name: 'Спектральный нетопырь', x: 45, y: 4.5, z: -22, radius: 4.0, speed: 2.5 },
+      { id: 'bat_10', type: 'BAT', name: 'Спектральный нетопырь', x: 70, y: 4.7, z: -25, radius: 3.6, speed: 2.2 },
+      { id: 'bat_11', type: 'BAT', name: 'Высотный нетопырь', x: 22, y: 4.8, z: -46, radius: 5.2, speed: 2.6 },
+      { id: 'bat_12', type: 'BAT', name: 'Высотный нетопырь', x: -26, y: 4.5, z: -50, radius: 4.4, speed: 2.1 },
+      { id: 'bat_13', type: 'BAT', name: 'Хэллоуинский нетопырь', x: 4, y: 4.3, z: 20, radius: 3.9, speed: 2.3 },
+      { id: 'bat_14', type: 'BAT', name: 'Хэллоуинский нетопырь', x: -20, y: 4.6, z: 22, radius: 4.1, speed: 1.8 },
+      { id: 'bat_15', type: 'BAT', name: 'Хэллоуинский нетопырь', x: 18, y: 4.4, z: 18, radius: 4.5, speed: 2.2 },
+      { id: 'cat_01', type: 'CAT', name: 'Кот Учёный', x: 4.5, y: 0.15, z: 6.2, rotY: 0.5, furColor: '#1a1829', eyeColor: '#50fa7b' },
+      { id: 'cat_02', type: 'CAT', name: 'Тайный кот', x: -5.0, y: 0.15, z: 4.0, rotY: 1.2, furColor: '#2b213a', eyeColor: '#ffb86c' },
+      { id: 'cat_03', type: 'CAT', name: 'Кот кафедры ИУ-5', x: 2.5, y: 0.15, z: -18.0, rotY: 3.14, furColor: '#161324', eyeColor: '#8be9fd' },
+      { id: 'cat_04', type: 'CAT', name: 'Кот кафедры ИУ-5', x: -46.0, y: 0.15, z: -26.0, rotY: 0.8, furColor: '#211c33', eyeColor: '#50fa7b' },
+      { id: 'cat_05', type: 'CAT', name: 'Буфетный кот', x: 21.0, y: 0.15, z: -3.5, rotY: 2.1, furColor: '#ffb86c', eyeColor: '#50fa7b' },
+      { id: 'cat_06', type: 'CAT', name: 'Буфетный кот', x: 26.5, y: 0.15, z: 2.0, rotY: -0.4, furColor: '#2d2440', eyeColor: '#ff79c6' },
+      { id: 'cat_07', type: 'CAT', name: 'Музейный кот', x: -51.0, y: 0.15, z: -2.0, rotY: 1.5, furColor: '#181528', eyeColor: '#f1fa8c' },
+      { id: 'cat_08', type: 'CAT', name: 'Лабораторный кот', x: 50.5, y: 0.15, z: -21.0, rotY: -1.2, furColor: '#1f1a30', eyeColor: '#50fa7b' },
+      { id: 'cat_09', type: 'CAT', name: 'Радиевый кот', x: 74.0, y: 0.15, z: -22.5, rotY: 0.2, furColor: '#1b2a26', eyeColor: '#50fa7b' },
+      { id: 'cat_10', type: 'CAT', name: 'Обсерваторный кот', x: 26.0, y: 0.15, z: -45.0, rotY: 2.7, furColor: '#171426', eyeColor: '#8be9fd' },
+      { id: 'cat_11', type: 'CAT', name: 'Математический кот', x: -22.0, y: 0.15, z: -46.5, rotY: -2.2, furColor: '#281c38', eyeColor: '#ff79c6' },
+      { id: 'cat_12', type: 'CAT', name: 'Коридорный кот', x: -20.5, y: 0.15, z: 2.5, rotY: 0.0, furColor: '#1e1b2e', eyeColor: '#ffb86c' },
+      { id: 'cat_13', type: 'CAT', name: 'Коридорный кот', x: -2.0, y: 0.15, z: 22.0, rotY: -1.0, furColor: '#191629', eyeColor: '#50fa7b' },
+      { id: 'cat_14', type: 'CAT', name: 'Привратный кот', x: 20.0, y: 0.15, z: 16.0, rotY: 1.8, furColor: '#26203a', eyeColor: '#8be9fd' },
+      { id: 'cat_15', type: 'CAT', name: 'Привратный кот', x: -18.0, y: 0.15, z: 20.0, rotY: -0.6, furColor: '#181525', eyeColor: '#50fa7b' },
+      { id: 'shadow_01', type: 'SHADOW_STUDENT', name: 'Тень первокурсника', x: 1.0, y: 0.0, z: 12.0, pathRadius: 6.0 },
+      { id: 'shadow_02', type: 'SHADOW_STUDENT', name: 'Тень дипломника', x: -4.0, y: 0.0, z: -14.0, pathRadius: 8.0 },
+      { id: 'shadow_03', type: 'SHADOW_STUDENT', name: 'Призрак лаборанта', x: -16.0, y: 0.0, z: -2.0, pathRadius: 5.0 },
+      { id: 'shadow_04', type: 'SHADOW_STUDENT', name: 'Призрак старосты', x: 18.0, y: 0.0, z: 6.0, pathRadius: 7.0 },
+      { id: 'shadow_05', type: 'SHADOW_STUDENT', name: 'Тень отличника', x: -42.0, y: 0.0, z: -22.0, pathRadius: 6.5 },
+      { id: 'shadow_06', type: 'SHADOW_STUDENT', name: 'Тень физика', x: 44.0, y: 0.0, z: -25.0, pathRadius: 7.5 },
+      { id: 'shadow_07', type: 'SHADOW_STUDENT', name: 'Тень химика', x: 68.0, y: 0.0, z: -21.0, pathRadius: 5.5 },
+      { id: 'shadow_08', type: 'SHADOW_STUDENT', name: 'Тень астронома', x: 20.0, y: 0.0, z: -44.0, pathRadius: 6.0 },
+      { id: 'shadow_09', type: 'SHADOW_STUDENT', name: 'Тень математика', x: -20.0, y: 0.0, z: -47.0, pathRadius: 6.5 },
+      { id: 'shadow_10', type: 'SHADOW_STUDENT', name: 'Тень библиотекаря', x: -46.0, y: 0.0, z: -4.0, pathRadius: 5.0 }
+    ];
+
+    this.reactiveMobs.loadMobs(defaultMobs);
+
+    this.physics.createInteractiveProp('prop_flask_blue', 'flask', new THREE.Vector3(1.5, 0.2, 9.0));
+    this.physics.createInteractiveProp('prop_orb_arcane', 'crystal_orb', new THREE.Vector3(-1.8, 0.2, 8.5));
+    this.physics.createInteractiveProp('prop_book_grimoire', 'book', new THREE.Vector3(0.5, 0.2, 11.0));
+
+    setInterval(() => {
+      if (this.network && this.network.isConnected()) {
+        const fps = this.currentFps || 60;
+        const ping = this.currentPing || 16;
+        const loaded = this.chunkManager.loadedChunks ? this.chunkManager.loadedChunks.size : 0;
+        const memoryMB = (typeof performance !== 'undefined' && performance.memory)
+          ? Math.round(performance.memory.usedJSHeapSize / 1048576)
+          : 64;
+        this.network.sendTelemetry(fps, ping, loaded, memoryMB);
+      }
+    }, 2000);
+  }
+
   animate() {
     requestAnimationFrame(this.animate);
 
@@ -340,6 +447,30 @@ class GameApp {
     }
 
     this.gameScene.update(delta, elapsed);
+
+    // 6. Step physics, animated props, and reactive mobs
+    this.frameCount = (this.frameCount || 0) + 1;
+    this.fpsTimer = (this.fpsTimer || 0) + delta;
+    if (this.fpsTimer >= 1.0) {
+      this.currentFps = Math.round(this.frameCount / this.fpsTimer);
+      this.frameCount = 0;
+      this.fpsTimer = 0;
+      this.network.sendPing();
+    }
+
+    if (this.physics) {
+      this.physics.update(delta, this.gameScene.camera);
+    }
+    if (this.animatedProps) {
+      this.animatedProps.update(delta);
+    }
+    if (this.reactiveMobs) {
+      this.reactiveMobs.update(delta, playerPos, {
+        isSprinting: Boolean(this.controls && this.controls.isSprinting),
+        lanternOn: Boolean(this.controls && this.controls.playerBody && this.controls.playerBody.lanternActive),
+        isChatting: Boolean(document.activeElement?.matches('input,textarea'))
+      });
+    }
 
     // 7. Update Minimap Radar & Location Badge
     const remoteList = Array.from(this.network.remotePlayers.values()).map(p => ({

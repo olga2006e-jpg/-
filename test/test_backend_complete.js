@@ -12,8 +12,8 @@ const __dirname = path.dirname(__filename);
 // Configure separate test database file
 const TEST_DB_PATH = path.resolve(__dirname, '../data/test_verification.db');
 if (fs.existsSync(TEST_DB_PATH)) {
-  fs.unlinkSync(TEST_DB_PATH);
-}
+    try { try { try { fs.unlinkSync(TEST_DB_PATH); } catch (e) {} } catch (e) {} } catch (e) {}
+  }
 process.env.SQLITE_PATH = TEST_DB_PATH;
 
 // Import server modules after environment setup
@@ -286,7 +286,9 @@ async function runTestSuite() {
   // ----------------------------------------------------
   console.log('\n🧪 [Check 5] AI fallback without Ollama (Heuristic Rule Engine)...');
   {
-    const res = await AgentService.chat('Alice', 'kanev', 'Расскажи про транспортный уровень модели OSI');
+    const oldHost = process.env.OLLAMA_HOST; process.env.OLLAMA_HOST = 'http://127.0.0.1:59999';
+    let res;
+    try { res = await AgentService.chat('Alice', 'kanev', 'Расскажи про транспортный уровень модели OSI'); } finally { process.env.OLLAMA_HOST = oldHost; }
     assert.strictEqual(res.usedLLM, false, 'Must flag usedLLM as false');
     assert.strictEqual(res.provider, 'heuristic_rule_engine', 'Provider must be heuristic_rule_engine');
     assert(!res.reply.toLowerCase().includes('я языковая модель'), 'Must never claim to be an LLM');
@@ -496,7 +498,7 @@ async function runTestSuite() {
 
   // Cleanup test database
   if (fs.existsSync(TEST_DB_PATH)) {
-    fs.unlinkSync(TEST_DB_PATH);
+    try { fs.unlinkSync(TEST_DB_PATH); } catch (e) {}
   }
 
   console.log('\n====================================================');

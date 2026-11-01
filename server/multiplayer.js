@@ -12,8 +12,10 @@ import {
   placeProp,
   getMovedProps
 } from './world.js';
-import { AgentService } from './ai/agentService.js';
-import { AGENT_PERSONAS } from './ai/personalities.js';
+import { generateResponse, AgentService } from './ai/agentService.js';
+import { memory } from './ai/memory.js';
+import { personalities, AGENT_PERSONAS } from './ai/personalities.js';
+import { adminState } from './adminState.js';
 
 export function setupMultiplayer(wss) {
   // Map of username -> { ws, username, color, x, y, z, rotY, currentChunk, dirty, lastUpdate, replaced }
@@ -285,13 +287,13 @@ export function setupMultiplayer(wss) {
           return;
         }
 
-        if (!AGENT_PERSONAS[agentId]) {
+        if (!personalities[agentId] && !AGENT_PERSONAS[agentId]) {
           ws.send(JSON.stringify({ type: 'ERROR', message: `Unknown agent persona: "${agentId}"` }));
           return;
         }
 
-        const question = text.trim().slice(0, 500);
-        if (!question) return;
+        const question = (text || '').trim().slice(0, 500);
+        if (!agentId || !question) return;
 
         // Notify client that NPC is typing/thinking
         ws.send(JSON.stringify({
@@ -300,24 +302,60 @@ export function setupMultiplayer(wss) {
         }));
 
         try {
-          const aiResult = await AgentService.chat(authenticatedUser, agentId, question);
+          const npcData = personalities[agentId] || AGENT_PERSONAS[agentId];
+          if (!npcData) throw new Error("Персонаж не найден");
+
+          const memoryContext = memory.getNextFact(authenticatedUser, agentId, npcData);
+          const checkResult = memory.checkAnswer(authenticatedUser, agentId, question, npcData);
+
+          if (checkResult !== null) {
+            ws.send(JSON.stringify({
+              type: 'AGENT_REPLY',
+              agentId: agentId,
+              agentName: npcData.name,
+              reply: checkResult.message,
+              actions: [] // На ответы на задачи не триггерим действия
+            }));
+            return;
+          }
+
+          const aiResult = await generateResponse(
+            agentId, question, memoryContext.text, memoryContext.type
+          );
+
           ws.send(JSON.stringify({
             type: 'AGENT_REPLY',
-            ...aiResult
+            agentId: agentId,
+            agentName: npcData.name,
+            reply: aiResult.text,
+            actions: aiResult.actions || [],
+            usedLLM: aiResult.source === 'ollama'
           }));
+
+          // Trigger dynamic world mutation if agent invoked action
+          if (aiResult.actions && aiResult.actions.includes('SPAWN_LIGHT_BEAM')) {
+            const mutation = adminState.recordMutation({
+              mutationType: 'SPAWN_LIGHT_BEAM',
+              targetX: 7,
+              targetY: 0,
+              targetZ: 7,
+              author: npcData.name,
+              message: `✨ ${npcData.name} призвал световой маяк к Сейфу Основателей!`
+            });
+            broadcast({ type: 'WORLD_MUTATION', ...mutation });
+          }
+
         } catch (err) {
           console.error('[AI Error in multiplayer.js]', err.message);
-          // Gracefully deliver fallback without breaking chat or multiplayer
-          const fallback = AgentService.generateAdaptiveFallback(
-            AGENT_PERSONAS[agentId],
-            db.getAgentMemory(authenticatedUser, agentId),
-            question
-          );
+          const npcData = personalities[agentId] || AGENT_PERSONAS[agentId] || { name: 'Призрак', fallback: ['Призрак заколебался в тумане...'] };
+          const fallbackList = npcData.fallback || npcData.fallbackResponses || ['Призрак заколебался в тумане...'];
+          const fallback = fallbackList[Math.floor(Math.random() * fallbackList.length)];
           ws.send(JSON.stringify({
             type: 'AGENT_REPLY',
             agentId,
-            agentName: AGENT_PERSONAS[agentId].name,
+            agentName: npcData.name,
             reply: fallback,
+            actions: [],
             usedLLM: false,
             provider: 'heuristic_rule_engine',
             error: false
@@ -505,5 +543,28 @@ export function setupMultiplayer(wss) {
     }
   }
 
-  return { clients, gracefulShutdown };
+  function broadcastWorldSettings(settings) {
+    broadcast({ type: 'WORLD_SETTINGS_CHANGED', settings });
+  }
+
+  function broadcastAgentUpdate(agentId, config) {
+    broadcast({ type: 'AGENT_CONFIG_UPDATED', agentId, config });
+  }
+
+  function broadcastMutation(mutation) {
+    broadcast({ type: 'WORLD_MUTATION', ...mutation });
+  }
+
+  function broadcastNotification(message) {
+    broadcast({ type: 'NOTIFICATION', message });
+  }
+
+  return {
+    clients,
+    gracefulShutdown,
+    broadcastWorldSettings,
+    broadcastAgentUpdate,
+    broadcastMutation,
+    broadcastNotification
+  };
 }

@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель Администратора — Haunted Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0c14;
+      --card-bg: rgba(18, 22, 36, 0.9);
+      --card-border: rgba(189, 147, 249, 0.22);
+      --purple: #bd93f9;
+      --orange: #ffb86c;
+      --green: #50fa7b;
+      --cyan: #8be9fd;
+      --pink: #ff79c6;
+      --red: #ff5555;
+      --text: #f8f8f2;
+      --text-muted: #8a8ca0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: radial-gradient(circle at 50% 10%, #171b30 0%, #0a0c14 85%);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 24px 32px 60px 32px;
+    }
+
+    /* Header */
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 18px;
+      border-bottom: 2px solid var(--card-border);
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      font-size: 32px;
+      filter: drop-shadow(0 0 12px var(--orange));
+    }
+
+    .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .header-pills {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill.live {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .dot-live {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* KPIs Row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .kpi-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .kpi-val.green { color: var(--green); }
+    .kpi-val.cyan { color: var(--cyan); }
+    .kpi-val.orange { color: var(--orange); }
+
+    .kpi-lbl {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* Main Grid */
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 22px;
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      margin-bottom: 22px;
+    }
+
+    .panel-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--orange);
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+    }
+
+    /* Table */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      font-family: 'JetBrains Mono', monospace;
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .badge-fps {
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+    }
+
+    .fps-good { background: rgba(80, 250, 123, 0.18); color: var(--green); border: 1px solid var(--green); }
+    .fps-warn { background: rgba(255, 184, 108, 0.18); color: var(--orange); border: 1px solid var(--orange); }
+    .fps-bad { background: rgba(255, 85, 85, 0.18); color: var(--red); border: 1px solid var(--red); }
+
+    /* Controls & Forms */
+    .control-row {
+      margin-bottom: 16px;
+    }
+
+    .control-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .slider-val {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--purple);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--purple);
+    }
+
+    select, textarea, input[type="text"] {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+    }
+
+    select:focus, textarea:focus, input[type="text"]:focus {
+      border-color: var(--purple);
+    }
+
+    textarea {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .btn {
+      background: rgba(189, 147, 249, 0.2);
+      border: 1px solid var(--purple);
+      color: #fff;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: var(--purple);
+      color: #0a0c14;
+    }
+
+    .btn.green {
+      border-color: var(--green);
+      background: rgba(80, 250, 123, 0.15);
+      color: var(--green);
+    }
+
+    .btn.green:hover {
+      background: var(--green);
+      color: #0a0c14;
+    }
+
+    .btn.orange {
+      border-color: var(--orange);
+      background: rgba(255, 184, 108, 0.15);
+      color: var(--orange);
+    }
+
+    .btn.orange:hover {
+      background: var(--orange);
+      color: #0a0c14;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mood-selector {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .mood-pill {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      background: rgba(0, 0, 0, 0.3);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .mood-pill.active {
+      border-color: var(--orange);
+      color: var(--orange);
+      background: rgba(255, 184, 108, 0.15);
+      font-weight: 700;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(20, 25, 45, 0.95);
+      border: 1px solid var(--green);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="admin-header">
+    <div class="brand">
+      <div class="brand-logo">🎃</div>
+      <div>
+        <div class="brand-title">Haunted Academy — Панель Администратора</div>
+        <div class="brand-sub">World Control & Agent Intelligence Center</div>
+      </div>
+    </div>
+    <div class="header-pills">
+      <div class="pill live"><span class="dot-live"></span> СЕРВЕР ОНЛАЙН</div>
+      <div class="pill" id="pill-uptime">Аптайм: 0 сек</div>
+      <a href="/" target="_blank" class="btn" style="text-decoration:none">🎮 Войти в Игру</a>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-val cyan" id="kpi-players">0</div>
+      <div class="kpi-lbl">Подключено Игроков</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-val green" id="kpi-fps">60.0</div>
+      <div class="kpi-lbl">Средний FPS Клиентов</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-val orange" id="kpi-ping">0 ms</div>
+      <div class="kpi-lbl">Средний Пинг (RTT)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-val" id="kpi-chunks">100</div>
+      <div class="kpi-lbl">Всего Чанков Мира</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-val green" id="kpi-tick">20 Hz</div>
+      <div class="kpi-lbl">Тикрейт Сервера</div>
+    </div>
+  </div>
+
+  <!-- Admin Grid -->
+  <div class="admin-grid">
+
+    <!-- Left Column: Players Table + Mutations -->
+    <div>
+      
+      <!-- Panel 1: Live Connected Clients -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>👥 Активные Клиенты (Live FPS + Ping)</span>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">Автообновление: 1.5 сек</span>
+        </div>
+        <div class="table-wrapper">
+          <table id="players-table">
+            <thead>
+              <tr>
+                <th>Игрок</th>
+                <th>IP / Сеть</th>
+                <th>FPS</th>
+                <th>Ping</th>
+                <th>Кэш (Чанки)</th>
+                <th>Координаты</th>
+              </tr>
+            </thead>
+            <tbody id="players-body">
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">Ожидание подключений клиентов...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Panel 2: World Mutations & Atmosphere -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>⚡ Быстрые Мутации Мира (Действия Агентов)</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+          Запускайте динамические трансформации окружения, которые видят все игроки в реальном времени.
+        </p>
+        <div class="btn-group">
+          <button class="btn green" onclick="triggerMutation('SPAWN_LIGHT_BEAM', 7, 0, 7, 'Золотой луч к Сейфу Основателей!')">
+            🌟 Зажечь луч к Сейфу
+          </button>
+          <button class="btn" onclick="triggerMutation('SPAWN_SERVER_RACK', -48, 0, -24, 'Серверная стойка кафедры ИУ-5 материализована!')">
+            🖥️ Спавн Серверной Стойки
+          </button>
+          <button class="btn purple" onclick="triggerMutation('TRANSFORM_ROOM', 0, 0, 0, 'Рунический круг Врат Вечности активирован!')">
+            🔮 Рунический Портал
+          </button>
+          <button class="btn orange" onclick="triggerMutation('CLEAR_FOG', 0, 0, 0, 'Туман рассеян волшебным бризом!')">
+            💨 Рассеять туман
+          </button>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <div class="control-label">📢 Глобальное Оповещение Игрокам:</div>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="broadcast-msg" placeholder="Текст сообщения для бегущей строки..." value="Внимание всем исследователям: парадоксы времени усиливаются!">
+            <button class="btn orange" style="white-space: nowrap;" onclick="sendBroadcast()">Отправить всем</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Universe Editor + Agent Intelligence -->
+    <div>
+      
+      <!-- Panel 3: World Parameters Editor -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>🌌 Редактор Вселенной</span>
+          <button class="btn" style="padding: 4px 10px; font-size: 11px;" onclick="applyWorldSettings()">Сохранить в мир</button>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Плотность Тумана (Fog Density)</span>
+            <span class="slider-val" id="val-fog">0.022</span>
+          </div>
+          <input type="range" id="slider-fog" min="0.005" max="0.08" step="0.002" value="0.022" oninput="document.getElementById('val-fog').textContent = this.value">
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Интенсивность Освещения (Ambient Light)</span>
+            <span class="slider-val" id="val-light">1.15</span>
+          </div>
+          <input type="range" id="slider-light" min="0.2" max="2.5" step="0.05" value="1.15" oninput="document.getElementById('val-light').textContent = this.value">
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Гравитация Мира (м/с²)</span>
+            <span class="slider-val" id="val-gravity">9.8</span>
+          </div>
+          <input type="range" id="slider-gravity" min="1.0" max="20.0" step="0.5" value="9.8" oninput="document.getElementById('val-gravity').textContent = this.value">
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">Погода и Атмосфера</div>
+          <select id="select-weather">
+            <option value="clear">Ясная хэллоуинская ночь</option>
+            <option value="spectral_fog">Густой спектральный туман</option>
+            <option value="halloween_eclipse">Кровавое затмение (Eclipse)</option>
+            <option value="neon_aurora">Неоновое сияние кафедр</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Panel 4: Agent Behavior Controller -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>🤖 Управление Агентами-Персонажами</span>
+          <button class="btn green" style="padding: 4px 10px; font-size: 11px;" onclick="saveAgentConfig()">Применить к ИИ</button>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">Выберите Персонажа</div>
+          <select id="select-agent" onchange="onAgentSelect(this.value)">
+            <option value="kanev">Канев А.И. (Сети и РИП)</option>
+            <option value="akhmetova">Ахметова Ф.Х. (Высшая математика)</option>
+            <option value="korshunov">Коршунов В.М. (Фотоника)</option>
+            <option value="einstein">Альберт Эйнштейн (Физика)</option>
+            <option value="herodotus">Геродот (История инженерии)</option>
+            <option value="bufetchitsa">Тётя Клава (Столовая ГУК)</option>
+            <option value="curie">Мария Кюри (Радиохимия)</option>
+          </select>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">Настроение и Стиль Поведения (Mood)</div>
+          <div class="mood-selector">
+            <div class="mood-pill" id="mood-normal" onclick="setMood('normal')">Обычный</div>
+            <div class="mood-pill" id="mood-helpful" onclick="setMood('helpful')">Помогать (Hint)</div>
+            <div class="mood-pill" id="mood-strict" onclick="setMood('strict')">Строгий (Strict)</div>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">Системный Промпт Агента (Prompt)</div>
+          <textarea id="agent-prompt" rows="4"></textarea>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="toast">Параметры сохранены!</div>
+
+  <script>
+    let currentAgents = {};
+    let selectedMood = 'normal';
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    async function fetchMetrics() {
+      try {
+        const res = await fetch('/api/admin/metrics');
+        const data = await res.json();
+        if (!data.success) return;
+
+        // KPIs
+        document.getElementById('kpi-players').textContent = data.server.activePlayersCount;
+        document.getElementById('kpi-fps').textContent = data.server.avgFps.toFixed(1);
+        document.getElementById('kpi-ping').textContent = data.server.avgPingMs + ' ms';
+        document.getElementById('pill-uptime').textContent = `Аптайм: ${data.server.uptimeSeconds} сек`;
+
+        // Players Table
+        const tbody = document.getElementById('players-body');
+        if (data.players.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">Нет активных подключений. Откройте игру в браузере!</td></tr>';
+        } else {
+          tbody.innerHTML = data.players.map(p => {
+            const fpsClass = p.fps >= 50 ? 'fps-good' : p.fps >= 30 ? 'fps-warn' : 'fps-bad';
+            return `
+              <tr>
+                <td style="color:#fff; font-weight:700;">👤 ${p.username}</td>
+                <td style="color:var(--text-muted);">${p.ip || '127.0.0.1'}</td>
+                <td><span class="badge-fps ${fpsClass}">${p.fps} FPS</span></td>
+                <td style="color:${p.ping < 50 ? 'var(--green)' : 'var(--orange)'};">${p.ping} ms</td>
+                <td><span style="color:var(--cyan);">${p.loadedChunks || 9} / 10</span> (${((p.loadedChunks||9)*10).toFixed(0)}%)</td>
+                <td style="color:var(--text-muted);">${p.x.toFixed(1)}, ${p.z.toFixed(1)}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Agents Cache
+        if (data.agents) {
+          data.agents.forEach(a => {
+            currentAgents[a.id] = a;
+          });
+          if (!document.getElementById('agent-prompt').dataset.loaded) {
+            onAgentSelect(document.getElementById('select-agent').value);
+            document.getElementById('agent-prompt').dataset.loaded = 'true';
+          }
+        }
+
+      } catch (err) {
+        console.warn('Metrics polling error:', err);
+      }
+    }
+
+    function onAgentSelect(id) {
+      const a = currentAgents[id];
+      if (!a) return;
+      document.getElementById('agent-prompt').value = a.systemPrompt || '';
+      setMood(a.mood || 'normal');
+    }
+
+    function setMood(m) {
+      selectedMood = m;
+      document.querySelectorAll('.mood-pill').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById(`mood-${m}`);
+      if (activeEl) activeEl.classList.add('active');
+    }
+
+    async function applyWorldSettings() {
+      const body = {
+        fogDensity: parseFloat(document.getElementById('slider-fog').value),
+        lightIntensity: parseFloat(document.getElementById('slider-light').value),
+        gravity: parseFloat(document.getElementById('slider-gravity').value),
+        weather: document.getElementById('select-weather').value
+      };
+
+      try {
+        const res = await fetch('/api/admin/world', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✅ Параметры вселенной обновлены и переданы клиентам!');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка сохранения параметров');
+      }
+    }
+
+    async function saveAgentConfig() {
+      const agentId = document.getElementById('select-agent').value;
+      const body = {
+        agentId,
+        mood: selectedMood,
+        systemPrompt: document.getElementById('agent-prompt').value
+      };
+
+      try {
+        const res = await fetch('/api/admin/agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (currentAgents[agentId]) {
+            currentAgents[agentId].mood = selectedMood;
+            currentAgents[agentId].systemPrompt = body.systemPrompt;
+          }
+          showToast(`✅ Агент ${agentId} обновлен! Настроение: ${selectedMood}`);
+        }
+      } catch (e) {
+        showToast('❌ Ошибка обновления агента');
+      }
+    }
+
+    async function triggerMutation(mutationType, targetX, targetY, targetZ, message) {
+      try {
+        const res = await fetch('/api/admin/mutate-world', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mutationType, targetX, targetY, targetZ, message })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✨ Мутация активирована: ${mutationType}`);
+        }
+      } catch (e) {
+        showToast('❌ Ошибка активации мутации');
+      }
+    }
+
+    async function sendBroadcast() {
+      const msg = document.getElementById('broadcast-msg').value;
+      if (!msg) return;
+
+      try {
+        const res = await fetch('/api/admin/broadcast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('📢 Оповещение разослано всем игрокам!');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка отправки оповещения');
+      }
+    }
+
+    // Auto-poll metrics every 1.5 seconds
+    setInterval(fetchMetrics, 1500);
+    fetchMetrics();
+  </script>
+</body>
+</html>

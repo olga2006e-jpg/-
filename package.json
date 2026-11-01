@@ -9,13 +9,16 @@
     "test": "node test/test_backend_complete.js",
     "build": "vite build",
     "dev": "vite",
-    "server": "node server/index.js"
+    "server": "node server/index.js",
+    "walk": "vite --config vite.walk.config.js",
+    "build:walk": "vite build --config vite.walk.config.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^5.3.0",
+    "mathjs": "^15.2.0",
     "three": "^0.187.0",
     "ws": "^8.22.0"
   },

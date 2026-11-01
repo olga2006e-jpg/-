@@ -1,64 +1,160 @@
-import { AGENT_PERSONAS } from './personalities.js';
-import { MemoryManager, memory as lessonMemory } from './memory.js';
+// server/ai/agentService.js
+import { personalities, AGENT_PERSONAS } from './personalities.js';
+import { evaluate } from 'mathjs';
+import { MemoryManager } from './memory.js';
 
-export const getOllamaHost = () =>
-  (process.env.OLLAMA_HOST || process.env.OLLAMA_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
+const DEFAULT_REMOTE_OLLAMA = "http://172.16.236.14:11434";
+const LOCAL_OLLAMA = "http://127.0.0.1:11434";
 
-export const getOllamaModel = () =>
-  process.env.OLLAMA_MODEL || 'qwen2.5:0.5b';
+export const getOllamaHost = () => {
+  return (process.env.OLLAMA_URL || process.env.OLLAMA_HOST || DEFAULT_REMOTE_OLLAMA).replace(/\/$/, '');
+};
 
-export async function askOllama(persona, prompt) {
-  const host = getOllamaHost();
+export const getOllamaModel = () => {
+  return process.env.OLLAMA_MODEL || "qwen2.5:0.5b";
+};
+
+function trySolveMath(text) {
+  const mathRegex = /[-+]?[0-9]*\.?[0-9]+(?:[\/\^\*\+\-][0-9\.]+)+/g;
+  const matches = text.match(mathRegex);
+  if (!matches) return null;
+  try {
+    return { expression: matches[0], result: evaluate(matches[0]).toString() };
+  } catch (e) {
+    return null;
+  }
+}
+
+function extractActions(text) {
+  const actionRegex = /\[ACTION:\s*([A-Z_]+)\]/g;
+  const actions = [];
+  let match;
+  while ((match = actionRegex.exec(text)) !== null) {
+    actions.push(match[1]);
+  }
+  const cleanText = text.replace(actionRegex, '').trim();
+  return { cleanText, actions };
+}
+
+async function fetchChatFromHost(host, npc, finalPrompt) {
   const model = getOllamaModel();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
+  const response = await fetch(`${host}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        { role: "system", content: npc.systemPrompt },
+        { role: "user", content: finalPrompt }
+      ],
+      stream: false,
+      options: { temperature: 0.5, num_predict: 80 }
+    })
+  });
+
+  if (!response.ok) throw new Error(`Ollama HTTP ${response.status}`);
+  const data = await response.json();
+  return (data.message?.content || data.response || "").trim();
+}
+
+async function askOllama(npc, userText, contextType) {
+  let moodPrompt = "";
+  if (npc.mood === 'helpful') moodPrompt = "СИСТЕМНАЯ ИНСТРУКЦИЯ: Будь максимально полезен. Прямо намекни на цифру кода. ";
+  else if (npc.mood === 'strict') moodPrompt = "СИСТЕМНАЯ ИНСТРУКЦИЯ: Будь строг. Не давай прямых ответов, заставляй думать. ";
+
+  let promptPrefix = "";
+  if (contextType === "TASK") promptPrefix = "Сейчас ты задаешь задачу. Не решай её. ";
+  if (contextType === "RIDDLE") promptPrefix = "Сейчас ты загадываешь загадку. ";
+
+  const finalPrompt = promptPrefix + moodPrompt + userText;
+  const primaryHost = getOllamaHost();
+
   try {
-    const response = await fetch(`${host}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        stream: false,
-        messages: [
-          { role: 'system', content: persona.systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        options: { temperature: 0.7, num_predict: 120 }
-      }),
-      signal: controller.signal
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    try {
+      return await fetchChatFromHost(primaryHost, npc, finalPrompt);
+    } finally {
+      clearTimeout(timeout);
+    }
+  } catch (err) {
+    // If remote host fails and differs from localhost, try localhost as backup
+    if (primaryHost !== LOCAL_OLLAMA) {
+      try {
+        return await fetchChatFromHost(LOCAL_OLLAMA, npc, finalPrompt);
+      } catch (localErr) {
+        throw err;
+      }
+    }
+    throw err;
+  }
+}
+
+export async function generateResponse(npcId, userText, context = "", contextType = "STORY") {
+  const npc = personalities[npcId] || AGENT_PERSONAS[npcId];
+  if (!npc) throw new Error("Персонаж не найден");
+
+  // МАГИЯ MATHJS: Мгновенный ответ без нейросети
+  const mathResult = trySolveMath(userText);
+  if (mathResult) {
+    console.log(`[AI-Mathjs] Мгновенный ответ на ${mathResult.expression}`);
+    return { 
+      text: `Верно! ${mathResult.expression} действительно равно ${mathResult.result}. Ты отлично справляешься, мой юный математик!`, 
+      source: "mathjs", 
+      actions: [] 
+    };
+  }
+
+  let fullPrompt = context ? `[Тема: ${context}] Игрок говорит: ${userText}` : userText;
+
+  try {
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
+    const rawText = await Promise.race([
+      askOllama(npc, fullPrompt, contextType),
+      timeoutPromise
+    ]);
+
+    // Извлекаем действия и очищаем текст
+    let { cleanText, actions } = extractActions(rawText);
+    
+    // === Если нейросеть написала только тег, подставляем текст ===
+    if (!cleanText && actions.length > 0) {
+      cleanText = "Я чувствую твою растерянность... Позволь мне помочь. Взгляни туда, куда укажет свет!";
+    } else if (!cleanText) {
+      cleanText = "Хм, мои мысли разбегаются... Задай вопрос еще раз!";
+    }
+
+    console.log(`[AI-Ollama] Response generated. Actions: [${actions.join(', ')}]`);
+    return { text: cleanText, source: "ollama", actions };
+
+  } catch (error) {
+    console.warn(`[AI-Fallback] Ollama failed: ${error.message}. Using fallback.`);
+    let fallbackText = "";
+    const lower = userText.toLowerCase();
+
+    // Contextual matching for heuristic fallback
+    const matchingFact = (npc.facts || []).find(f => {
+      const words = f.toLowerCase().split(/\s+/);
+      return words.some(w => w.length > 3 && lower.includes(w));
     });
-    if (!response.ok) throw new Error(`Ollama HTTP ${response.status}`);
-    const data = await response.json();
-    const text = data.message?.content?.trim();
-    if (!text) throw new Error('Ollama returned an empty answer');
-    return text;
-  } finally {
-    clearTimeout(timer);
+
+    if (matchingFact) {
+      fallbackText = `Приветствую! По этому вопросу: ${matchingFact} В сетях TCP и модели OSI важен каждый уровень.`;
+    } else {
+      const fallbackList = npc.fallback || npc.fallbackResponses || ["Призрак задумался..."];
+      fallbackText = fallbackList[Math.floor(Math.random() * fallbackList.length)];
+    }
+
+    let actions = [];
+    if (userText.toLowerCase().match(/застрял|помог|где искать/)) {
+      actions.push("SPAWN_LIGHT_BEAM");
+    }
+    return { text: fallbackText, source: "fallback", actions };
   }
 }
 
-// Keep the interface used by the team's standalone service.
-export async function generateResponse(npcId, userText, context = '') {
-  const npc = AGENT_PERSONAS[npcId];
-  if (!npc) throw new Error('Персонаж не найден');
-  try {
-    return {
-      text: await askOllama(npc, context ? `${context}\nИгрок: ${userText}` : userText),
-      source: 'ollama'
-    };
-  } catch {
-    return {
-      text: `${npc.factsCatalog[0].title}. ${npc.factsCatalog[0].text}`,
-      source: 'fallback'
-    };
-  }
-}
-
+// AgentService class with health check and chat compatibility
 export class AgentService {
-  /**
-   * Check Ollama connectivity and whether the requested model is pulled and ready.
-   * Completely separated from query execution for health checks and /api/status.
-   */
   static async checkOllamaHealth() {
     const host = getOllamaHost();
     const model = getOllamaModel();
@@ -71,17 +167,11 @@ export class AgentService {
       error: null
     };
 
-    let timeoutId = null;
     try {
       const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 2000);
-      if (timeoutId && typeof timeoutId.unref === 'function') {
-        timeoutId.unref();
-      }
-
-      const res = await fetch(`${host}/api/tags`, {
-        signal: controller.signal
-      });
+      const timer = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`${host}/api/tags`, { signal: controller.signal });
+      clearTimeout(timer);
 
       if (res.ok) {
         status.serviceAvailable = true;
@@ -98,133 +188,28 @@ export class AgentService {
       }
     } catch (err) {
       status.serviceAvailable = false;
-      status.error = err.name === 'AbortError' ? 'Connection timeout (2s)' : err.message;
-    } finally {
-      clearTimeout(timeoutId);
+      status.error = err.message;
     }
-
     return status;
   }
 
-  /**
-   * Main interaction entry point with timeout, safe fallback, and adaptive state updates.
-   */
   static async chat(username, agentId, userMessage) {
-    if (!AGENT_PERSONAS[agentId]) throw new Error(`Unknown agent persona: "${agentId}"`);
-    const { prompt, memory, persona } = MemoryManager.buildPrompt(username, agentId, userMessage);
-    const model = getOllamaModel();
+    const persona = personalities[agentId] || AGENT_PERSONAS[agentId];
+    if (!persona) throw new Error(`Unknown persona ${agentId}`);
 
-    let reply = '';
-    let usedLLM = false;
-    let provider = 'heuristic_rule_engine';
-
-    if (memory.lessonState === 'RIDDLE') {
-      reply = lessonMemory.checkRiddle(username, agentId, userMessage).message;
-    } else if (
-      persona.riddle &&
-      memory.lessonState !== 'DONE' &&
-      persona.factsCatalog.length > 0 &&
-      persona.factsCatalog.every(f => memory.factsKnown.includes(f.id))
-    ) {
-      reply = lessonMemory.getNextFact(username, agentId, persona).text;
-    } else {
-      // Try local Ollama inference
-      try {
-        const text = await askOllama(persona, prompt);
-        if (text) {
-          reply = text;
-          usedLLM = true;
-          provider = `ollama:${model}`;
-          console.log(`[AI-Ollama] Response generated for ${username} by ${persona.name}`);
-        }
-      } catch (err) {
-        // Fall back gracefully
-      }
-
-      if (!usedLLM) {
-        if (memory.lessonState === 'DONE') {
-          const lower = userMessage.toLowerCase();
-          const fact =
-            persona.factsCatalog.find(f =>
-              f.title.toLowerCase().split(/\s+/).some(w => w.length > 4 && lower.includes(w))
-            ) || persona.factsCatalog[0];
-          reply = `Загадку вы уже решили. Вернёмся к предмету: ${fact.title}. ${fact.text}`;
-        } else if (persona.factsCatalog && persona.factsCatalog.length > 0 && persona.riddle) {
-          reply = lessonMemory.getNextFact(username, agentId, persona).text;
-        } else {
-          reply = this.generateAdaptiveFallback(persona, memory, userMessage);
-        }
-        console.log(`[AI-Engine] Adaptive rule response for ${username} by ${persona.name}`);
-      }
-    }
-
-    // Save memory and dialogue history
-    MemoryManager.recordResponse(username, agentId, userMessage, reply);
-    const updatedMemory = MemoryManager.getContext(username, agentId);
+    const res = await generateResponse(agentId, userMessage);
+    MemoryManager.recordResponse(username, agentId, userMessage, res.text);
+    const mem = MemoryManager.getContext(username, agentId);
 
     return {
       agentId,
       agentName: persona.name,
-      reply,
-      usedLLM,
-      provider,
-      knownFactsCount: (updatedMemory.factsKnown || []).length,
-      discussedTopics: updatedMemory.discussedTopics || [],
-      turnsCount: updatedMemory.turnsCount || 1,
-      lessonState: updatedMemory.lessonState || 'STORY'
+      reply: res.text,
+      usedLLM: res.source === 'ollama',
+      provider: res.source === 'ollama' ? `ollama:${getOllamaModel()}` : 'heuristic_rule_engine',
+      actions: res.actions || [],
+      turnsCount: mem.turnsCount || 1,
+      error: false
     };
-  }
-
-  /**
-   * Local Rule Engine:
-   * - Considers question keywords and topics
-   * - Considers player memory and prior turns
-   * - Does NOT call itself an LLM
-   */
-  static generateAdaptiveFallback(persona, memory, userMessage) {
-    const knownSet = new Set(memory.factsKnown || []);
-    const userLower = (userMessage || '').toLowerCase();
-
-    // 1. Check if user is asking about a specific catalog fact
-    for (const fact of (persona.factsCatalog || [])) {
-      const keywords = [
-        ...(fact.keywords || []),
-        ...fact.title.toLowerCase().split(/\s+/).filter(w => w.length > 3)
-      ];
-      if (keywords.some(kw => userLower.includes(kw))) {
-        if (knownSet.has(fact.id)) {
-          return `Мы уже касались темы "${fact.title}", коллега ${memory.username}. Напомню суть: ${fact.text} Что еще из неизведанного тебя интересует?`;
-        } else {
-          return `Именно об этом я и хотел поведать! По поводу "${fact.title}": ${fact.text} Запомни это, знание пригодится у Врат!`;
-        }
-      }
-    }
-
-    // 2. Conversation progress prefix
-    let prefix = '';
-    if (memory.turnsCount === 0) {
-      prefix = `Приветствую в стенах Академии, ${memory.username}! `;
-    } else if (memory.turnsCount === 1) {
-      prefix = `Рад продолжить наш научный диспут. `;
-    } else {
-      const last = memory.lastTopic ? ` После наших размышлений о «${memory.lastTopic}» ` : ' ';
-      prefix = `Мы уже обсудили немало тайн.${last}Давай углубимся дальше. `;
-    }
-
-    // 3. Offer next unlearned fact
-    const remainingFacts = (persona.factsCatalog || []).filter(f => !knownSet.has(f.id));
-    if (remainingFacts.length > 0) {
-      const nextFact = remainingFacts[0];
-      return `${prefix}Знаешь ли ты, что говорит наука о таком явлении, как «${nextFact.title}»? ${nextFact.text}`;
-    }
-
-    // 4. All core facts learned -> give relevant clue or thematic wisdom
-    if (persona.clue) {
-      return `${prefix}Все ключевые принципы мы с тобой уже разобрали. Не забывай мою подсказку к Вратам: «${persona.clue}». Команда ждет твоих открытий!`;
-    }
-
-    const fallbacks = persona.fallbackResponses || ['Знания вечны, пока жив хотя бы один ищущий разум.'];
-    const idx = (memory.turnsCount || 0) % fallbacks.length;
-    return `${prefix}${fallbacks[idx]}`;
   }
 }

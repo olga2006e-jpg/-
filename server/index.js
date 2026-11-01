@@ -9,6 +9,7 @@ import { setupMultiplayer } from './multiplayer.js';
 import { TOTAL_WORLD_CHUNKS, TOTAL_WORLD_CANONICAL_BYTES } from './world.js';
 import { AgentService } from './ai/agentService.js';
 import { db } from './db.js';
+import { createAdminRouter } from './adminRoutes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3001;
@@ -79,6 +80,12 @@ app.get('/api/status', async (req, res) => {
   });
 });
 
+// Serve Admin Dashboard
+app.get('/admin', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'admin/index.html'));
+});
+app.use('/admin', express.static(path.resolve(__dirname, 'admin')));
+
 // Serve frontend: if dist exists serve dist, otherwise serve client root
 const distPath = path.resolve(__dirname, '../dist');
 const clientPath = path.resolve(__dirname, '../client');
@@ -92,7 +99,8 @@ if (fs.existsSync(distPath)) {
 // HTTP & WebSocket Server
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
-setupMultiplayer(wss);
+const multiplayer = setupMultiplayer(wss);
+app.use('/api/admin', createAdminRouter(multiplayer));
 
 // Detect LAN IP
 function getLocalIPs() {

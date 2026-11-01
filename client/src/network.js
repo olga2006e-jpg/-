@@ -23,6 +23,10 @@ export class NetworkClient {
     this.onNotification = null;
     this.onVictory = null;
     this.onCodeIncorrect = null;
+    this.onWorldMutation = null;
+    this.onPropThrown = null;
+    this.onWorldSettingsChanged = null;
+    this.onPong = null;
   }
 
   connect(token, myUsername) {
@@ -118,6 +122,22 @@ export class NetworkClient {
   sendPropPlace(propId, x, y, z, rotY = 0) {
     this.send({ type: 'PROP_PLACE', propId, x, y, z, rotY });
   }
+
+  sendTelemetry(fps, ping, loadedChunks = 0, memoryMB = 0) {
+    this.send({
+      type: 'CLIENT_TELEMETRY',
+      fps,
+      ping,
+      loadedChunks,
+      memoryMB
+    });
+  }
+
+  sendPing(time = Date.now()) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'PING', time }));
+    }
+  }
   handleMessage(msg) {
     switch (msg.type) {
       case 'AUTH_FAIL':
@@ -183,6 +203,22 @@ export class NetworkClient {
 
       case 'PROP_PLACED':
         if (this.onPropPlaced) this.onPropPlaced(msg);
+        break;
+
+      case 'PROP_THROWN':
+        if (this.onPropThrown) this.onPropThrown(msg);
+        break;
+
+      case 'WORLD_MUTATION':
+        if (this.onWorldMutation) this.onWorldMutation(msg);
+        break;
+
+      case 'WORLD_SETTINGS_CHANGED':
+        if (this.onWorldSettingsChanged) this.onWorldSettingsChanged(msg.settings);
+        break;
+
+      case 'PONG':
+        if (this.onPong) this.onPong(msg);
         break;
     }
   }

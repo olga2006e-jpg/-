@@ -1,3 +1,4 @@
+import { getMobsInChunk, REACTIVE_MOBS } from './mobs.js';
 // Single-level educational pavilion. The server retains a 10×10 sector world.
 export const TOTAL_CHUNKS_X = 10;
 export const TOTAL_CHUNKS_Z = 10;
@@ -435,8 +436,13 @@ export function getChunk(cx, cz) {
   const chunk = generateChunk(cx, cz);
   if (!chunk) return null;
   const byteSize = getChunkByteSize(cx, cz);
+  const mobs = getMobsInChunk(cx, cz);
   return {
     ...chunk,
-    byteSize
+    byteSize,
+    mobs,
+    reactiveNpcs: mobs
   };
 }
+
+export { REACTIVE_MOBS };

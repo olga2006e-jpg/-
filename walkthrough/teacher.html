@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Преподаватель — 3D-персонаж</title>
+  <link rel="icon" href="data:,">
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;color:#3d413e;background:#e0e4df}canvas{display:block}header{position:absolute;top:28px;left:32px;right:32px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}header>a{pointer-events:auto;color:inherit;text-decoration:none;font-size:12px}header small{font-size:9px;letter-spacing:2px;color:#6d786e}.caption{position:absolute;left:32px;bottom:35px;pointer-events:none}.caption small{font-size:9px;letter-spacing:2px;color:#79877b}.caption h1{font:36px Georgia,serif;font-weight:400;margin:12px 0}.caption p{font-size:12px;color:#788278;line-height:1.7}nav{position:absolute;right:30px;bottom:32px;display:flex;gap:8px;flex-wrap:wrap;max-width:450px;justify-content:flex-end}button{font:11px Arial,sans-serif;color:#4a554a;padding:12px 15px;border:1px solid #9caa9b66;background:#f6faf2d9;border-radius:4px;cursor:pointer}button:hover{background:#fff}button:disabled{opacity:.5;cursor:wait}button:focus-visible{outline:2px solid #8e7553;outline-offset:4px}@media(max-width:700px){header{left:16px;right:16px}.caption{left:16px;bottom:100px}.caption h1{font-size:27px}nav{right:16px;bottom:20px}}
+  </style>
+</head>
+<body>
+  <header><a href="/">← В корпус</a><small>ПЕРСОНАЖ / 3D</small></header>
+  <div class="caption"><small>ПО ВАШИМ ФОТОГРАФИЯМ</small><h1>Преподаватель</h1><p>Мышь — вращение · колесо — приближение<br>Стилизованная модель</p></div>
+  <nav><button id="portrait">Лицо</button><button id="profile">Профиль</button><button id="full">В полный рост</button><button id="export">Скачать GLB ↓</button></nav>
+  <script type="module" src="/src/teacher-viewer.js"></script>
+</body>
+</html>
