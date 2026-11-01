@@ -610,11 +610,11 @@
             const fpsClass = p.fps >= 50 ? 'fps-good' : p.fps >= 30 ? 'fps-warn' : 'fps-bad';
             return `
               <tr>
-                <td style="color:#fff; font-weight:700;">👤 ${p.username}</td>
+                <td style="color:#fff; font-weight:700;">👤 ${String(p.username).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</td>
                 <td style="color:var(--text-muted);">${p.ip || '127.0.0.1'}</td>
                 <td><span class="badge-fps ${fpsClass}">${p.fps} FPS</span></td>
                 <td style="color:${p.ping < 50 ? 'var(--green)' : 'var(--orange)'};">${p.ping} ms</td>
-                <td><span style="color:var(--cyan);">${p.loadedChunks || 9} / 10</span> (${((p.loadedChunks||9)*10).toFixed(0)}%)</td>
+                <td><span style="color:var(--cyan);">${p.loadedChunks === 0 ? 'Статическая карта' : (p.loadedChunks ?? 0) + ' / 10'}</span></td>
                 <td style="color:var(--text-muted);">${p.x.toFixed(1)}, ${p.z.toFixed(1)}</td>
               </tr>
             `;

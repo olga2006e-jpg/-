@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#eee8dc">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23eee8dc'/%3E%3Ctext x='14' y='48' font-size='45' font-family='Georgia' fill='%2388643c'%3EБ%3C/text%3E%3C/svg%3E">
-  <title>Главное здание — прогулка по первому этажу</title>
+  <title>Ночь в Бауманке — экспедиция по главному зданию</title>
   <link rel="stylesheet" href="/src/style.css">
+  <link rel="stylesheet" href="/src/game.css">
 </head>
 <body>
   <main id="scene" aria-label="Трёхмерная прогулка по главному зданию"></main>
@@ -17,7 +18,7 @@
   <footer class="walk-controls"><span><kbd>W A S D</kbd> идти</span><span><kbd>Мышь</kbd> осмотреться</span><span><kbd>Shift</kbd> быстрее</span><button id="reset-button"><kbd>R</kbd> к началу</button><button id="sound-button" aria-pressed="false">Звук выключен</button></footer>
   <button class="resume" id="resume">Нажмите, чтобы продолжить прогулку <span>↗</span></button>
   <section class="welcome" id="welcome" aria-label="Начало прогулки">
-    <div class="welcome-card"><div class="eyebrow">ЗНАКОМЫЕ КОРИДОРЫ</div><h2>Первый этаж.<br><em>Своим шагом.</em></h2><p>От правой лестницы через галерею<br>к Красной площади.</p><button id="start-button">Начать прогулку <span>→</span></button><small>WASD — движение · мышь — обзор · Esc — курсор</small></div>
+    <div class="welcome-card"><div class="eyebrow">ГЛАВНОЕ ЗДАНИЕ / ПОСЛЕ ЗАКАТА</div><h2>Ночь<br><em>в Бауманке.</em></h2><p>Знакомые коридоры в непривычном свете.<br>Три преподавателя, девять вопросов<br>и сессия, которую предстоит сдать.</p><button id="start-button">Начать экспедицию <span>→</span></button><small>WASD — движение · E — взаимодействие · Esc — курсор</small><div class="welcome-note"><span>ПЕРВЫЙ ЭТАЖ</span><span>СВОБОДНОЕ ИССЛЕДОВАНИЕ</span></div></div>
   </section>
   <section class="map-overlay hidden" id="map-overlay" role="dialog" aria-modal="true" aria-labelledby="map-heading">
     <div class="map-card"><div class="map-header"><div><span class="eyebrow">ПЕРВЫЙ ЭТАЖ</span><h2 id="map-heading">Ваш маршрут</h2></div><button id="map-close" aria-label="Закрыть карту">×</button></div><svg id="floor-map" viewBox="0 0 680 660" role="img" aria-label="Горизонтальный коридор соединяет две боковые лестницы; длинные коридоры ведут к выходам, слева Красная площадь и столовая">

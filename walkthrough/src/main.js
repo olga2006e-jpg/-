@@ -3,7 +3,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { makeMaterials } from './materials.js';
 import { makeWorld, START } from './world.js';
 import { WalkController } from './controller.js';
-import { createTeacher } from './teacher.js';
+
 import { decorateHalloween } from './halloween.js';
 import { createCampusGame } from './campus-game.js';
 
@@ -28,14 +28,14 @@ function start(){
   materials.daylight.color.set('#8b9fb9');
   for(const light of world.lights){light.intensity*=.66;light.userData.originalIntensity=light.intensity;}
   const effects=decorateHalloween(scene,world,materials,controller);
-  const teacher=createTeacher();teacher.group.position.set(25.65,0,-.9);teacher.group.rotation.y=.87;scene.add(teacher.group);
-  world.obstacles.push({x1:25.37,x2:25.93,z1:-1.18,z2:-.62});
+  const teacher={group:new THREE.Group(),update(){}};
   controller.teleport(START.x,START.z,START.yaw);
   let mapOpen=false,started=false,lastUI=0,lastLightUpdate=-1,audioContext=null,sound=false;
 
   let shadowLight=null;
+  const lightPosition=new THREE.Vector3();
   function nearestLights(){
-    const ordered=world.lights.map(light=>({light,distance:light.position.distanceToSquared(camera.position)})).sort((a,b)=>a.distance-b.distance);
+    const ordered=world.lights.map(light=>({light,distance:light.getWorldPosition(lightPosition).distanceToSquared(camera.position)})).sort((a,b)=>a.distance-b.distance);
     let architecture=0,decor=0;
     for(const {light}of ordered){const decoration=light.userData.shadowEligible===false;light.visible=!light.userData.inactive&&(decoration?decor++<3:architecture++<7);}
     const closest=ordered.find(o=>o.light.userData.shadowEligible!==false)?.light;
@@ -102,7 +102,7 @@ function start(){
   });
   const game=createCampusGame({scene,camera,renderer,world,materials,controller,teacher,effects,onMap:()=>toggleMap(true),
     onPause:paused=>{if(paused&&mapOpen)toggleMap(false);controller.enabled=started&&!paused;controller.mapOpen=mapOpen||paused;},
-    onBrightness:value=>{renderer.toneMappingExposure=.78*value;},
+    onBrightness:value=>{renderer.toneMappingExposure=.68*value;},
   });
   let previous=performance.now();
   function frame(now){

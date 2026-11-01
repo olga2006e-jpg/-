@@ -16,10 +16,12 @@ import { generateResponse, AgentService } from './ai/agentService.js';
 import { memory } from './ai/memory.js';
 import { personalities, AGENT_PERSONAS } from './ai/personalities.js';
 import { adminState } from './adminState.js';
+import {createCampusService,CAMPUS_MAP} from './campus.js';
 
 export function setupMultiplayer(wss) {
   // Map of username -> { ws, username, color, x, y, z, rotY, currentChunk, dirty, lastUpdate, replaced }
   const clients = new Map();
+  const campus=createCampusService(clients);
 
   wss.on('connection', (ws, req) => {
     let authenticatedUser = null;
@@ -136,6 +138,8 @@ export function setupMultiplayer(wss) {
 
       const player = clients.get(authenticatedUser);
       if (!player) return;
+      try { if(await campus.handle(player,msg))return; }
+      catch(error){console.error('[Campus]',error.message);ws.send(JSON.stringify({type:'CAMPUS_ERROR',message:'Не удалось обработать действие. Попробуйте ещё раз.'}));return;}
 
       // ==========================================
       // 2. Position & Movement Validation
@@ -482,6 +486,8 @@ export function setupMultiplayer(wss) {
         const active = clients.get(authenticatedUser);
         // Only clean up and broadcast if THIS socket is the active one!
         if (active && active.ws === ws) {
+          if(active.mapId===CAMPUS_MAP)campus.leave(active);
+          adminState.removeClient(authenticatedUser);
           db.saveUser({
             username: authenticatedUser,
             x: active.x,
@@ -507,6 +513,7 @@ export function setupMultiplayer(wss) {
   // ==========================================
   const autoSaveInterval = setInterval(() => {
     for (const [, p] of clients.entries()) {
+      if(p.mapId===CAMPUS_MAP)campus.save(p);
       if (p.dirty) {
         db.saveUser({
           username: p.username,
@@ -525,6 +532,7 @@ export function setupMultiplayer(wss) {
   // 20 Hz State Broadcast Loop
   // ==========================================
   const TICK_RATE_MS = 50; // 20 times per second
+  let campusTick=0;
   const broadcastInterval = setInterval(() => {
     if (clients.size === 0) return;
 
@@ -537,6 +545,7 @@ export function setupMultiplayer(wss) {
         y: p.y,
         z: p.z,
         rotY: p.rotY
+        ,mapId:p.mapId||'pavilion'
       });
     }
 
@@ -550,6 +559,7 @@ export function setupMultiplayer(wss) {
         p.ws.send(payload);
       }
     }
+    if(++campusTick%6===0)campus.tick();
   }, TICK_RATE_MS);
 
   // Graceful shutdown helper
@@ -559,6 +569,7 @@ export function setupMultiplayer(wss) {
     clearInterval(broadcastInterval);
 
     for (const [, p] of clients.entries()) {
+      if(p.mapId===CAMPUS_MAP)campus.save(p);
       db.saveUser({
         username: p.username,
         color: p.color,
@@ -613,6 +624,7 @@ export function setupMultiplayer(wss) {
   }
 
   function broadcastMutation(mutation) {
+    campus.mutate(mutation);
     broadcast({ type: 'WORLD_MUTATION', ...mutation });
   }
 

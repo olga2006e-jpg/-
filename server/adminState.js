@@ -2,6 +2,7 @@
 // Centralized server state for Administrator Dashboard & World Controller
 
 import { personalities, AGENT_PERSONAS } from './ai/personalities.js';
+import {db} from './db.js';
 
 export const adminState = {
   // World parameters editable by Admin in real-time
@@ -26,9 +27,9 @@ export const adminState = {
     this.clientsTelemetry.set(username, {
       ...existing,
       username,
-      fps: Number(data.fps) || existing.fps || 60,
-      ping: Number(data.ping) || existing.ping || 5,
-      loadedChunks: Number(data.loadedChunks) || existing.loadedChunks || 9,
+      fps: Number.isFinite(Number(data.fps)) ? Math.max(0,Number(data.fps)) : existing.fps ?? 0,
+      ping: Number.isFinite(Number(data.ping)) ? Math.max(0,Number(data.ping)) : existing.ping ?? 0,
+      loadedChunks: Number.isFinite(Number(data.loadedChunks)) ? Number(data.loadedChunks) : existing.loadedChunks ?? 0,
       memoryMB: Number(data.memoryMB) || existing.memoryMB || 0,
       drawCalls: Number(data.drawCalls) || existing.drawCalls || 0,
       x: Number(data.x ?? existing.x ?? 0),
@@ -70,7 +71,7 @@ export const adminState = {
       },
       world: { ...this.world },
       players,
-      agents: Object.values(personalities).map(p => ({
+      agents: Object.values(personalities).filter(p=>['kanev','korshunov','maslennikov'].includes(p.id)).map(p => ({
         id: p.id,
         name: p.name,
         mood: p.mood || 'normal',
@@ -90,6 +91,7 @@ export const adminState = {
     if (newSettings.ambientColor !== undefined) this.world.ambientColor = String(newSettings.ambientColor);
     if (newSettings.gravity !== undefined) this.world.gravity = Number(newSettings.gravity);
     if (newSettings.weather !== undefined) this.world.weather = String(newSettings.weather);
+    db.saveQuestProgress({extra:{settings:this.world}},'admin-world-settings');
     return { ...this.world };
   },
 
@@ -107,6 +109,7 @@ export const adminState = {
       AGENT_PERSONAS[agentId].systemPrompt = agent.systemPrompt;
       if (config.name) AGENT_PERSONAS[agentId].name = config.name;
     }
+    db.saveQuestProgress({extra:{config:{mood:agent.mood,systemPrompt:agent.systemPrompt,name:agent.name}}},'admin-agent:'+agentId);
 
     return agent;
   },
@@ -123,3 +126,8 @@ export const adminState = {
     return record;
   }
 };
+const storedWorld=db.getQuestProgress('admin-world-settings').settings;
+if(storedWorld)Object.assign(adminState.world,storedWorld);
+for(const id of ['kanev','korshunov','maslennikov']){
+  const config=db.getQuestProgress('admin-agent:'+id).config;if(config)adminState.updateAgentConfig(id,config);
+}

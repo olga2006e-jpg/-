@@ -1,6 +1,6 @@
 # 🏛️ ПОЛНОЕ ТЕХНИЧЕСКОЕ ОПИСАНИЕ СИСТЕМЫ: «НОЧЬ В БАУМАНКЕ» (HAUNTED ACADEMY)
-> **Версия:** 2.0 (актуально на 1 ноября 2026, ветка `feature/latest-defense`)  
-> **Стек:** Node.js, Express, WebSocket (`ws`), SQLite (`node:sqlite`), Three.js, Math.js, Ollama, Vite  
+> **Версия:** 2.0 (актуально на 1 ноября 2026, ветка `feature/latest-defense`)
+> **Стек:** Node.js, Express, WebSocket (`ws`), SQLite (`node:sqlite`), Three.js, Math.js, Ollama, Vite
 > **Верификация:** 14/14 автоматических тестов пройдено (`npm test`), сборка Vite за 390 мс.
 
 ---

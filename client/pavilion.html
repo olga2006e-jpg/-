@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0c0817">
+<title>🎃 Ночь в Академии • Хэллоуин — Заброшенный Университет</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="before-login">
+<div id="game-container">
+</div>
+<div id="crosshair">
+</div>
+<header class="topbar">
+<a class="brand" href="/" aria-label="Начало">🎃<span>НОЧЬ В БАУМАНКЕ • ХЭЛЛОУИН<small>АКАДЕМИЯ ТЕНЕЙ & УЧЕБНЫЙ ПАВИЛЬОН</small>
+</span>
+</a>
+<div class="session">
+<span class="status-dot">
+</span>
+<span id="connection-status" role="status">Ожидание входа</span>
+<span class="floor-label">ЭТАЖ 01</span>
+</div>
+</header>
+<aside class="left-rail">
+<section class="hud-panel mission">
+<div class="eyebrow">🎃 ХЭЛЛОУИНСКАЯ ЭКСПЕДИЦИЯ / 01</div>
+<h2>Знания открывают двери.</h2>
+<p>Исследуйте три мистические лаборатории, найдите четыре подсказки и откройте Сейф Основателей в холле.</p>
+<div class="progress-label">
+<span>Собрано подсказок</span>
+<b id="inventory-count">0 / 4</b>
+</div>
+<progress id="quest-progress" max="4" value="0">
+</progress>
+<button id="inventory-button" class="text-button">Посмотреть находки <span>↗</span>
+</button>
+</section>
+<section class="hud-panel team">
+<div class="eyebrow">👻 ВАША КОМАНДА ИССЛЕДОВАТЕЛЕЙ</div>
+<div id="players-list">
+<span class="muted">Пока никого нет</span>
+</div>
+</section>
+</aside>
+<aside class="right-rail">
+<section id="minimap-panel" class="hud-panel">
+<div class="panel-heading">
+<span class="eyebrow">🧭 НАВИГАЦИЯ ЗАМКА</span>
+<button id="minimap-expand-btn" class="icon-button" title="Открыть карту — M">↗</button>
+</div>
+<canvas id="minimap-canvas" width="260" height="200">
+</canvas>
+<div id="minimap-location-badge">Центральный холл</div>
+<div class="map-legend">
+<span>● Вы</span>
+<span>👻 Призрак</span>
+<span>M — карта</span>
+</div>
+</section>
+<details id="cache-monitor" class="hud-panel">
+<summary>Стриминг мира <span id="metric-cache-percent">0%</span>
+</summary>
+<div class="metric-row">Секторов мира <b id="metric-total-chunks">100</b>
+</div>
+<div class="metric-row">В памяти <b id="metric-loaded-chunks">0 / 10</b>
+</div>
+<div id="metric-badge" class="metric-badge">Ожидание данных</div>
+<p class="fineprint">Доля по числу секторов, не по объёму данных.</p>
+<div id="metric-zone">
+</div>
+</details>
+</aside>
+<div id="interaction-prompt">
+<kbd id="prompt-key">E</kbd>
+<span id="prompt-text">
+</span>
+</div>
+<section id="chat-container" class="hud-panel">
+<div class="eyebrow">🦇 КОМАНДНЫЙ КАНАЛ СВЯЗИ</div>
+<div id="chat-messages" role="log" aria-live="polite">
+</div>
+<form id="chat-form">
+<input id="chat-input" maxlength="300" aria-label="Сообщение команде" placeholder="Enter — написать команде" autocomplete="off">
+<button aria-label="Отправить">↑</button>
+</form>
+</section>
+<div id="resume-hint">Нажмите на мир, чтобы осмотреться</div>
+<footer class="controls">
+<span>
+<kbd>W A S D</kbd> движение</span>
+<span>
+<kbd>Space</kbd> прыжок</span>
+<span>
+<kbd>E</kbd> диалог</span>
+<span><kbd>G</kbd> взять / переставить</span>
+<span>
+<kbd>V</kbd> вид со стороны / 1-е лицо</span>
+<span>
+<kbd>M</kbd> карта</span>
+<span>
+<kbd>Esc</kbd> курсор</span>
+<button id="lantern-button">Фонарь 🕯️ <kbd>L</kbd>
+</button>
+</footer>
+<div id="login-modal" class="modal-overlay">
+<div class="login-layout">
+<section class="login-story">
+<div class="eyebrow">🎃 АКАДЕМИЯ ТЕНЕЙ • ХЭЛЛОУИН 2026</div>
+<h1>Университет в ночь<br><em>Хэллоуина.</em>
+</h1>
+<p>Заброшенные аудитории после полуночи. Призраки великих ученых и мыслителей.<br>Одна тайна, которую проще раскрыть вместе.</p>
+<div class="story-map" aria-hidden="true">
+<span class="map-line horizontal">
+</span>
+<span class="map-line vertical">
+</span>
+<div class="sketch-room north">02<small>МАТЕМАТИКА</small>
+</div>
+<div class="sketch-room west">01<small>ТЕХНОЛОГИИ</small>
+</div>
+<div class="sketch-room center">Б<small>ВЫ ЗДЕСЬ</small>
+</div>
+<div class="sketch-room east">03<small>СВЕТ</small>
+</div>
+</div>
+<div class="story-foot">
+<span>01 ЭТАЖ</span>
+<span>03 ЛАБОРАТОРИИ</span>
+<span>ВАША КОМАНДА</span>
+</div>
+</section>
+<section class="login-card">
+<span class="edition">🎃 HALLOWEEN EDITION / 2026</span>
+<h2>Ваша экспедиция<br>начинается здесь.</h2>
+<p>Войдите со своим паролем, зарегистрируйтесь или продолжите как гость.</p>
+<div class="auth-tabs" role="tablist">
+<button type="button" class="auth-tab active" id="tab-login" data-mode="login">Вход</button>
+<button type="button" class="auth-tab" id="tab-register" data-mode="register">Регистрация</button>
+<button type="button" class="auth-tab" id="tab-guest" data-mode="guest">Гость</button>
+</div>
+<form id="login-form">
+<label for="username-input">Имя исследователя</label>
+<input id="username-input" placeholder="Как вас зовут?" maxlength="20" required autocomplete="username">
+<div id="password-field-wrap">
+<label for="password-input" id="password-label">Пароль</label>
+<input id="password-input" type="password" placeholder="Введите пароль (для защищённых аккаунтов)" maxlength="50" autocomplete="current-password">
+</div>
+<fieldset>
+<legend>Аура вашего исследователя</legend>
+<div class="color-picker">
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#8be9fd" aria-label="Голубой" checked>
+<span style="--swatch:#8be9fd">
+</span>
+</label>
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#ffb86c" aria-label="Янтарный" >
+<span style="--swatch:#ffb86c">
+</span>
+</label>
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#50fa7b" aria-label="Зелёный" >
+<span style="--swatch:#50fa7b">
+</span>
+</label>
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#bd93f9" aria-label="Лавандовый" >
+<span style="--swatch:#bd93f9">
+</span>
+</label>
+<label class="color-opt">
+<input type="radio" name="avatar-color" value="#ff79c6" aria-label="Розовый" >
+<span style="--swatch:#ff79c6">
+</span>
+</label>
+</div>
+</fieldset>
+<button class="primary" id="login-submit">Войти в Академию 🎃 <span>→</span>
+</button>
+<p id="login-status" role="status" aria-live="polite">
+</p>
+</form>
+<div class="login-note">
+<span>🕯️</span> Локальный мир без интернета. Адаптивный ИИ.<br>Найдите 4 артефакта и откройте Сейф Врат!</div>
+</section>
+</div>
+</div>
+<div id="dialogue-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="dialogue-name">
+<section class="dialogue-card">
+<div class="dialogue-header">
+<div class="avatar">👻</div>
+<div>
+<div class="eyebrow">👻 ДИАЛОГ С ПРИЗРАКОМ УЧЕНОГО</div>
+<h2 id="dialogue-name">
+</h2>
+<p id="dialogue-role">
+</p>
+</div>
+<button id="dialogue-close" class="close-btn" aria-label="Закрыть">×</button>
+</div>
+<div class="dialogue-body">
+<div id="dialogue-history">
+</div>
+<div id="dialogue-typing" class="hidden" role="status">Собеседник обдумывает ответ…</div>
+</div>
+<div class="dialogue-footer">
+<div id="ai-mode" class="fineprint">Задайте вопрос по теме собеседника</div>
+<div id="quick-questions">
+</div>
+<form id="dialogue-form">
+<input id="dialogue-input" maxlength="300" placeholder="Что вы хотите узнать?" aria-label="Вопрос преподавателю" required>
+<button class="primary">Спросить 🎃 ↗</button>
+</form>
+</div>
+</section>
+</div>
+<div id="map-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="map-title">
+<section class="map-card">
+<div class="panel-heading">
+<div>
+<div class="eyebrow">🎃 ОДИН ЭТАЖ / ТРИ НАПРАВЛЕНИЯ</div>
+<h2 id="map-title">Учебный павильон Академии</h2>
+</div>
+<button id="map-modal-close" class="close-btn" aria-label="Закрыть">×</button>
+</div>
+<canvas id="full-map-canvas" width="900" height="560">
+</canvas>
+<p class="fineprint">Голубой — вы · цветные точки — команда · ромбы — призраки · M / Esc — закрыть</p>
+</section>
+</div>
+<div id="inventory-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="inventory-title">
+<section class="compact-card">
+<div class="panel-heading">
+<div>
+<div class="eyebrow">🎃 ВАША ЭКСПЕДИЦИЯ</div>
+<h2 id="inventory-title">Найденные артефакты и подсказки</h2>
+</div>
+<button class="close-btn" id="inventory-close" aria-label="Закрыть">×</button>
+</div>
+<div id="inventory-list">
+</div>
+<button id="open-safe" class="primary">Ввести код сейфа 🗝️ →</button>
+</section>
+</div>
+<div id="safe-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="safe-title">
+<section class="compact-card">
+<div class="panel-heading">
+<div>
+<div class="eyebrow">🗝️ ТАЙНА ХЭЛЛОУИНСКИХ ВРАТ</div>
+<h2 id="safe-title">Сейф Основателей</h2>
+</div>
+<button id="safe-modal-close" class="close-btn" aria-label="Закрыть">×</button>
+</div>
+<p>Четыре мистические находки — четыре цифры шифра (2327). Спросите призраков или найдите артефакты в залах.</p>
+<form id="safe-form">
+<input id="safe-code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="· · · ·" aria-label="Четырёхзначный код" required>
+<button class="primary">Открыть сейф 🗝️ →</button>
+</form>
+<p id="safe-status-msg" role="status">
+</p>
+</section>
+</div>
+<div id="victory-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+<section class="compact-card victory">
+<div class="eyebrow">🎃 ЭКСПЕДИЦИЯ ЗАВЕРШЕНА</div>
+<div class="victory-mark">🗝️</div>
+<h2 id="victory-title">Врата открыты!<br>Тайны призраков познаны.</h2>
+<p id="victory-message">
+</p>
+<button id="victory-close" class="primary">Продолжить исследование 🎃 →</button>
+</section>
+</div>
+<script type="module" src="/src/main.js">
+</script>
+</body>
+</html>

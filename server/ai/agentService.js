@@ -54,6 +54,7 @@ function extractActions(text) {
 async function fetchChatFromHost(host, npc, finalPrompt) {
   const model = getOllamaModel();
   const response = await fetch(`${host}/api/chat`, {
+    signal: AbortSignal.timeout(4500),
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

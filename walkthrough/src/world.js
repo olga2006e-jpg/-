@@ -70,6 +70,9 @@ export function makeWorld(scene, materials) {
     detail.centralStair();
     // A small playable classroom behind an existing corridor door.
     region(13.3,18.1,-7.1,-1.84);b.floor(15.7,-4.48,4.8,5.24);b.ceiling(15.7,-4.48,4.8,5.24);
+    // Adjacent walkable rectangles must not permit walking through the wall
+    // beside the classroom door.
+    obstacles.push({x1:13.2,x2:15,z1:-2.08,z2:-1.82},{x1:16.4,x2:18.2,z1:-2.08,z2:-1.82});
     b.wallX(13.3,18.1,-7.2);b.wallZ(13.2,-7.2,-2);b.wallZ(18.2,-7.2,-2);
     b.frame(15.7,2.25,-7.05,3.3,1.6,new THREE.MeshStandardMaterial({color:'#344d47'}),0,'wood');
     b.label(15.7,2.45,-6.99,'ЗНАНИЯ ОТКРЫВАЮТ ДВЕРИ',2.8,.22,0,{background:'#344d47',color:'#e4e0c7',size:68});
@@ -83,16 +86,8 @@ export function makeWorld(scene, materials) {
   }
 
   function crestMaterial(){
-    const c=document.createElement('canvas');c.width=512;c.height=640;const ctx=c.getContext('2d');
-    ctx.clearRect(0,0,512,640);
-    ctx.fillStyle='#aa8c3c';ctx.beginPath();ctx.moveTo(100,80);ctx.lineTo(412,80);ctx.lineTo(396,400);ctx.quadraticCurveTo(330,545,256,590);ctx.quadraticCurveTo(155,530,116,400);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#244b76';ctx.beginPath();ctx.moveTo(119,104);ctx.lineTo(393,104);ctx.lineTo(375,397);ctx.quadraticCurveTo(319,515,256,553);ctx.quadraticCurveTo(177,510,136,394);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#d8ba52';ctx.font='bold 70px Georgia';ctx.textAlign='center';ctx.fillText('МГТУ',256,230);ctx.font='108px Georgia';ctx.fillText('Б',256,365);ctx.font='42px Georgia';ctx.fillText('1830',256,458);
-    for(let side of [-1,1])for(let i=0;i<13;i++){
-      ctx.save();ctx.translate(256+side*(180-25*Math.sin(i/13*Math.PI)),130+i*27);ctx.rotate(side*(.4+i*.06));ctx.fillStyle=i%2?'#bc9f4b':'#818f64';ctx.beginPath();ctx.ellipse(0,0,12,26,side*.6,0,Math.PI*2);ctx.fill();ctx.restore();
-    }
-    const map=new THREE.CanvasTexture(c);map.colorSpace=THREE.SRGBColorSpace;
-    return new THREE.MeshStandardMaterial({map,transparent:true,roughness:.55,metalness:.15});
+    const crestMap=new THREE.TextureLoader().load(new URL('../../client/src/assets/bmstu-crest.svg',import.meta.url).href);crestMap.colorSpace=THREE.SRGBColorSpace;
+    return new THREE.MeshStandardMaterial({map:crestMap,transparent:true,roughness:.7,side:THREE.DoubleSide});
   }
 
   function cofferedCeiling(x,z,w,d,cool=false,base=0){

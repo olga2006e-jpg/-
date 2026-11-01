@@ -1,6 +1,6 @@
 /**
  * professorQuest.js — Модуль квеста «Сдача сессии трем преподавателям»
- * 
+ *
  * 3 преподавателя:
  * 1. Канев К.Ю. — строгий, требовательный, но справедливый ("Ты умеешь говорить? Ну, говори! Не молчи!", "Быстрее!")
  * 2. Коршунов В.М. — много знает, любит поболтать, зовет в бар ("А ты в бар не хочешь?", "Когда в бар пойдем?")
@@ -281,11 +281,11 @@ export class ProfessorQuestManager {
       prog.correctCount += 1;
     }
 
-    prog.currentQuestion += 1;
+    if (isCorrect) prog.currentQuestion += 1;
     let creditEarnedNow = false;
 
     // Если студент ответил на 3 вопроса
-    if (prog.currentQuestion >= prof.questions.length) {
+    if (prog.currentQuestion >= prof.questions.length && prog.correctCount >= prof.questions.length) {
       this.state.credits[profId] = true;
       creditEarnedNow = true;
     }
