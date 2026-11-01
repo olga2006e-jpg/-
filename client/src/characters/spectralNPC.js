@@ -12,7 +12,7 @@ import * as THREE from 'three';
 
 const PROF_THEMES = {
   kanev: {
-    name: 'Призрак Канева К.Ю.',
+    name: 'Призрак Канева А.И.',
     auraColor: 0x38bdf8,      // Неоновый синий (сети/ОС)
     coreColor: 0x0284c7,
     eyeColor: 0xbae6fd,

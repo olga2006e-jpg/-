@@ -355,6 +355,12 @@ export class PhysicsWorld {
     let restitution = 0.55;
 
     switch (typeName) {
+      case 'pumpkin': {
+        const skin=new THREE.MeshStandardMaterial({color:0xd77d2d,roughness:.75});
+        mainMesh=new THREE.Mesh(new THREE.SphereGeometry(.28,16,12),skin);mainMesh.scale.set(1.15,.94,1.1);
+        const stem=new THREE.Mesh(new THREE.CylinderGeometry(.025,.04,.13,7),new THREE.MeshStandardMaterial({color:0x647447}));stem.position.y=.29;stem.rotation.z=.2;mainMesh.add(stem);
+        mass=1.4;restitution=.48;break;
+      }
       case 'flask': {
         // Alchemical Glass Flask with glowing potion
         const bodyGeo = new THREE.SphereGeometry(0.24, 16, 16);

@@ -7,9 +7,11 @@ export class WalkController {
     this.keys=new Set();this.velocity=new THREE.Vector2();this.enabled=false;this.mapOpen=false;this.dragging=false;
     this.eyeHeight=1.66;this.eyeY=this.eyeHeight;this.distance=0;this.stepDistance=0;
     this.onStep=null;
+    this.airHeight=0;this.jumpVelocity=0;this.grounded=true;this.gravity=9.8;
     window.addEventListener('keydown',e=>{
       if(e.target.matches?.('input,textarea,select,[contenteditable="true"]'))return;
       if(e.target.matches?.('input,textarea,button')&&e.code==='Space')return;
+      if(e.code==='Space'&&this.enabled&&!this.mapOpen){e.preventDefault();if(this.grounded&&!e.repeat){this.jumpVelocity=5.2;this.grounded=false;}}
       if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight'].includes(e.code)){
         if(this.enabled&&!this.mapOpen)e.preventDefault();this.keys.add(e.code);
       }
@@ -50,7 +52,7 @@ export class WalkController {
   }
   teleport(x,z,yaw=this.yaw){
     if(!this.canWalk(x,z))return false;
-    this.x=x;this.z=z;this.yaw=yaw;this.pitch=0;this.eyeY=(this.floorAt(x,z)||0)+this.eyeHeight;this.stop();this.updateCamera(0);return true;
+    this.airHeight=0;this.jumpVelocity=0;this.grounded=true;this.x=x;this.z=z;this.yaw=yaw;this.pitch=0;this.eyeY=(this.floorAt(x,z)||0)+this.eyeHeight;this.stop();this.updateCamera(0);return true;
   }
   update(dt){
     if(!this.enabled||this.mapOpen){this.stop();this.updateCamera(0);return;}
@@ -66,7 +68,8 @@ export class WalkController {
     const nextZ=this.z+this.velocity.y*dt;if(this.canWalk(this.x,nextZ))this.z=nextZ;else this.velocity.y=0;
     const travelled=Math.hypot(this.x-oldX,this.z-oldZ);this.distance+=travelled;this.stepDistance+=travelled;
     if(this.stepDistance>.67){this.stepDistance=0;this.onStep?.();}
-    const targetY=(this.floorAt(this.x,this.z)||0)+this.eyeHeight;
+    if(!this.grounded){this.jumpVelocity-=this.gravity*dt;this.airHeight+=this.jumpVelocity*dt;if(this.airHeight>2.05){this.airHeight=2.05;this.jumpVelocity=Math.min(0,this.jumpVelocity);}if(this.airHeight<=0){this.airHeight=0;this.jumpVelocity=0;this.grounded=true;}}
+    const targetY=(this.floorAt(this.x,this.z)||0)+this.eyeHeight+this.airHeight;
     this.eyeY=THREE.MathUtils.lerp(this.eyeY,targetY,1-Math.exp(-16*dt));
     this.updateCamera(magnitude?Math.sin(this.distance*9)*.009:0);
   }

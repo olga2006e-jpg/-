@@ -27,8 +27,8 @@ export const adminState = {
     this.clientsTelemetry.set(username, {
       ...existing,
       username,
-      fps: Number.isFinite(Number(data.fps)) ? Math.max(0,Number(data.fps)) : existing.fps ?? 0,
-      ping: Number.isFinite(Number(data.ping)) ? Math.max(0,Number(data.ping)) : existing.ping ?? 0,
+      fps: typeof data.fps==='number'&&Number.isFinite(data.fps) ? Math.max(0,data.fps) : existing.fps ?? null,
+      ping: typeof data.ping==='number'&&Number.isFinite(data.ping) ? Math.max(0,data.ping) : existing.ping ?? null,
       loadedChunks: Number.isFinite(Number(data.loadedChunks)) ? Number(data.loadedChunks) : existing.loadedChunks ?? 0,
       memoryMB: Number(data.memoryMB) || existing.memoryMB || 0,
       drawCalls: Number(data.drawCalls) || existing.drawCalls || 0,
@@ -46,7 +46,7 @@ export const adminState = {
 
   // Get aggregated metrics for dashboard
   getMetricsSnapshot(serverUptimeSeconds = 0) {
-    const players = Array.from(this.clientsTelemetry.values());
+    const players = Array.from(this.clientsTelemetry.values()).map(p=>({...p,telemetryAgeMs:Date.now()-p.lastSeen,isStale:Date.now()-p.lastSeen>10000}));
     const count = players.length;
 
     let totalFps = 0;
@@ -56,8 +56,9 @@ export const adminState = {
       totalPing += p.ping;
     }
 
-    const avgFps = count > 0 ? Number((totalFps / count).toFixed(1)) : 60;
-    const avgPing = count > 0 ? Math.round(totalPing / count) : 0;
+    const fpsSamples=players.filter(p=>!p.isStale&&p.fps!==null),pingSamples=players.filter(p=>!p.isStale&&p.ping!==null);
+    const avgFps = fpsSamples.length ? Number((fpsSamples.reduce((n,p)=>n+p.fps,0)/fpsSamples.length).toFixed(1)) : null;
+    const avgPing = pingSamples.length ? Math.round(pingSamples.reduce((n,p)=>n+p.ping,0)/pingSamples.length) : null;
 
     return {
       server: {
@@ -129,5 +130,6 @@ export const adminState = {
 const storedWorld=db.getQuestProgress('admin-world-settings').settings;
 if(storedWorld)Object.assign(adminState.world,storedWorld);
 for(const id of ['kanev','korshunov','maslennikov']){
-  const config=db.getQuestProgress('admin-agent:'+id).config;if(config)adminState.updateAgentConfig(id,config);
+  const config=db.getQuestProgress('admin-agent:'+id).config;
+  if(config){config.name=personalities[id].name;config.systemPrompt=config.systemPrompt?.replaceAll('Канев Константин Юрьевич','Канев Антон Игоревич').replaceAll('Коршунов В.М.','Коршунов Владислав Михайлович');adminState.updateAgentConfig(id,config);}
 }

@@ -100,7 +100,7 @@ function start(){
   window.addEventListener('resize',()=>{
     camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);
   });
-  const game=createCampusGame({scene,camera,renderer,world,materials,controller,teacher,effects,onMap:()=>toggleMap(true),
+  const game=createCampusGame({scene,camera,renderer,world,materials,controller,teacher,effects,onMap:()=>toggleMap(true),onBegin:begin,
     onPause:paused=>{if(paused&&mapOpen)toggleMap(false);controller.enabled=started&&!paused;controller.mapOpen=mapOpen||paused;},
     onBrightness:value=>{renderer.toneMappingExposure=.68*value;},
   });

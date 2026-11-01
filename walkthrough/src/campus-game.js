@@ -7,6 +7,8 @@ import {NetworkClient} from '../../client/src/network.js';
 import {Builder} from './builder.js';
 import {ARTIFACTS,TEACHERS,PROFESSORS,CAMPUS_QUEST_KEY} from './quest-data.js';
 import {SpectralProfessorNPC} from '../../client/src/characters/spectralNPC.js';
+import {CAMPUS_PROPS} from '../../shared/campusProps.js';
+import {createCornerMap} from './corner-map.js';
 const crestUrl=new URL('../../client/src/assets/bmstu-crest.svg',import.meta.url).href;
 
 const $=id=>document.getElementById(id);
@@ -26,7 +28,7 @@ class CampusConnection extends NetworkClient{
   }
 }
 
-export function createCampusGame({scene,camera,renderer,world,materials,controller,teacher,effects,onMap,onPause,onBrightness,onSound}){
+export function createCampusGame({scene,camera,renderer,world,materials,controller,teacher,effects,onMap,onPause,onBrightness,onSound,onBegin}){
   let saved={};try{saved=JSON.parse(localStorage.getItem(CAMPUS_QUEST_KEY)||'{}')||{};}catch{}
   const state={items:new Set((Array.isArray(saved.items)?saved.items:[]).filter(id=>ARTIFACTS.some(a=>a.id===id))),passed:new Set((Array.isArray(saved.passed)?saved.passed:[]).filter(id=>TEACHERS.some(a=>a.id===id))),won:saved.won===true,name:typeof saved.name==='string'?saved.name.slice(0,20):'',brightness:Math.max(85,Math.min(140,Number(saved.brightness)||100))};
   state.progress=Object.fromEntries(TEACHERS.map(p=>[p.id,Math.max(0,Math.min(3,Number(saved.progress?.[p.id])||0))]));
@@ -43,8 +45,9 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
   const clock=animated.add(new GrandfatherClock(new THREE.Vector3(29.9,0,2.25),-Math.PI/2));clock.root.scale.setScalar(.7);hookLight(clock.root);
   const gyro=animated.add(new ArcaneGyroscope(new THREE.Vector3(14.3,.82,-5.1)));gyro.root.scale.setScalar(.37);hookLight(gyro.root);
   world.obstacles.push({x1:29.59,x2:30.22,z1:1.87,z2:2.64});
-  for(const [id,type,x,y,z] of [['campus_orb','crystal_orb',29,.25,1.35],['campus_book','book',-29.7,.25,-1.9],['campus_flask','flask',14.4,.88,-5.05]]){
-    const obj=physics.createInteractiveProp(id,type,new THREE.Vector3(x,y,z));obj.floorY=y;movable.push(obj);hookLight(obj.mesh);
+  for(const {id,type,x,y,z,name,radius} of CAMPUS_PROPS){
+    const obj=physics.createInteractiveProp(id,type,new THREE.Vector3(x,y,z));obj.floorY=y;obj.radius=radius;obj.name=name;movable.push(obj);hookLight(obj.mesh);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.32,.35,24),new THREE.MeshBasicMaterial({color:'#e1c28e',transparent:true,opacity:.35,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=-radius+.012;obj.mesh.add(ring);obj.marker=ring;
   }
   mobs.loadMobs([
     {id:'campus_cat_1',type:'CAT',name:'Кот музея',x:29.2,y:.05,z:.1,radius:.65},
@@ -84,7 +87,7 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
   b.flush();
 
   const hud=el('div','','campus-hud');hud.id='campus-hud';hud.innerHTML=`
-    <div class="campus-toolbar"><span class="edition-pill">НОЧЬ В БАУМАНКЕ</span><button id="journal-button">Журнал <kbd>J</kbd></button><button id="chat-button">Чат <kbd>Enter</kbd><i id="chat-unread" hidden></i></button><button id="settings-button" aria-label="Настройки">Настройки</button><button id="connect-button"><i class="connection-dot"></i><span id="network-label">Подключиться</span></button></div>
+    <div class="campus-toolbar"><span class="edition-pill">НОЧЬ В БАУМАНКЕ</span><button id="journal-button">Журнал <kbd>J</kbd></button><button id="chat-button">Чат <kbd>Enter</kbd><i id="chat-unread" hidden></i></button><button id="settings-button" aria-label="Настройки">Настройки</button><button id="connect-button"><i class="connection-dot"></i><span id="network-label">Вход / регистрация</span></button></div>
     <aside class="quest-card"><div class="eyebrow">ЭКСПЕДИЦИЯ / 01</div><h2>Знания открывают двери.</h2><p id="quest-next">Три зачёта. Девять верных ответов.<br>Исследуйте знакомые коридоры.</p><div class="quest-count"><span>Получено зачётов</span><b id="clue-count">0 / 3</b></div><div class="quest-track"><span id="clue-track"></span></div><button id="quest-journal">Открыть журнал <span>↗</span></button></aside>
     <div id="campus-prompt" class="campus-prompt hidden"><kbd>E</kbd><span></span></div>
     <div id="campus-toast" class="campus-toast hidden" role="status" aria-live="polite"></div>
@@ -93,7 +96,10 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
     <div id="campus-modal" class="campus-modal hidden" role="dialog" aria-modal="true" aria-labelledby="campus-modal-title"><section class="campus-dialog"><header><div><div id="campus-modal-kicker" class="eyebrow"></div><h2 id="campus-modal-title"></h2></div><button id="campus-modal-close" aria-label="Закрыть">×</button></header><div id="campus-modal-body"></div></section></div>`;
   document.body.append(hud);
   const brandCrest=el('img','','brand-crest');brandCrest.src=crestUrl;brandCrest.alt='МГТУ';document.querySelector('.monogram').replaceChildren(brandCrest);
-  const admin=el('a','Админ-панель','admin-link');admin.href='/admin';admin.target='_blank';admin.rel='noopener';document.querySelector('.campus-toolbar').append(admin);
+  const admin=el('a','Админ-панель','admin-link');admin.href='/admin';admin.target='_blank';admin.rel='noopener';admin.hidden=true;document.querySelector('.campus-toolbar').append(admin);
+  fetch('/api/access',{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(data=>{admin.hidden=!data.isAdmin;}).catch(()=>{});
+  const miniMap=createCornerMap(world,controller,npcs,network,onMap);
+  const accountButton=el('button','Войти или зарегистрироваться →','account-start');accountButton.id='account-button';accountButton.onclick=()=>connectDialog();$('start-button').before(accountButton);$('start-button').textContent='Прогулка без входа';$('start-button').classList.add('offline-start');
   const prompt=$('campus-prompt'),body=$('campus-modal-body');
   const svgNS='http://www.w3.org/2000/svg',markers=document.createElementNS(svgNS,'g');markers.id='campus-map-markers';$('floor-map').insertBefore(markers,$('map-player'));
   const marker=(x,z,color,title,shape='circle')=>{
@@ -144,6 +150,11 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
       for(const [i,text]of q.options.entries()){const option=button(text,()=>submitExam(npc,i));option.classList.add('exam-option');panel.append(option);}body.append(panel);
     }else if(index===3)body.append(el('p','✓ Зачёт получен. Награда в журнале.','exam-complete'));
     const quick=el('div','','game-quick');for(const [q]of npc.topics)quick.append(button(q,()=>{quiz=false;ask(npc,q);}));quick.append(button(state.passed.has(npc.id)?'✓ Зачёт сдан':'Сдать зачёт',()=>{quiz=true;renderDialogue();}));body.append(quick);
+    const actions=el('div','','game-world-actions');actions.append(el('small','ПОПРОСИТЬ ИЗМЕНИТЬ МИР'));
+    for(const [label,text]of [['Освети дорогу','Освети дорогу, создай световой маяк'],['Создай серверную стойку','Создай серверную стойку']])actions.append(button(label,()=>{
+      if(onlineCampus)network.send({type:'CAMPUS_ACTION',agentId:npc.id,text});
+      else{const pos=npc.id==='kanev'?{x:28,z:-2.4}:npc.id==='korshunov'?{x:27,z:19}:{x:-27,z:14};applyMutation({id:crypto.randomUUID(),mutationType:text.includes('стойку')?'SPAWN_SERVER_RACK':'SPAWN_LIGHT_BEAM',...pos,y:0,message:'Преподаватель изменил окружение по вашей просьбе.'});}
+    }));body.append(actions);
     const form=el('form','','game-input-row'),input=el('input');input.id='campus-dialogue-input';input.placeholder=quiz?'Ваш ответ…':'Ваш вопрос преподавателю…';input.maxLength=300;input.required=true;input.autocomplete='off';input.setAttribute('aria-label','Вопрос преподавателю');const send=el('button','Отправить →','game-primary');send.disabled=pending.has(npc.id);form.append(input,send);form.onsubmit=e=>{e.preventDefault();const text=input.value.trim();if(text)ask(npc,text);};body.append(form);requestAnimationFrame(()=>{log.scrollTop=log.scrollHeight;if(activeModal==='dialogue'&&!pending.has(npc.id))input.focus();});
   }
   function applyProgress(progress,feedback,agentId){
@@ -194,25 +205,25 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
     const form=el('form','','game-input-row'),input=el('input');input.id='campus-chat-input';input.value=draft;input.placeholder='Сообщение команде…';input.maxLength=300;input.required=true;input.setAttribute('aria-label','Сообщение команде');form.append(input,el('button','Отправить →','game-primary'));form.onsubmit=e=>{e.preventDefault();const t=input.value.trim();if(t){network.sendChat(t);input.value='';}};body.append(form);log.scrollTop=log.scrollHeight;if(focused)input.focus();
   }
   function connectDialog(){
-    open('connect','Подключить чат и ИИ','СУЩЕСТВУЮЩИЙ СЕРВЕР ПРОЕКТА');body.append(el('p','Вход подключает командный чат и диалоги с преподавателями. Прогресс этой карты сохраняется на вашем устройстве.','game-lead'));
-    if(network.isConnected()){body.append(el('p','Вы вошли как '+state.name),button('Отключиться',()=>{network.ws.onclose=null;network.ws.close();network.isAuthenticated=false;onlineCampus=false;$('network-label').textContent='Подключиться';document.body.classList.remove('campus-online');close();}));return;}
-    const form=el('form','','campus-login-form'),mode=el('select');mode.id='campus-auth-mode';mode.setAttribute('aria-label','Режим входа');for(const [v,t]of [['guest','Гость'],['login','Вход'],['register','Регистрация']]){const o=el('option',t);o.value=v;mode.append(o);}
+    open('connect','Вход в Бауманку','АККАУНТ / СОХРАНЕНИЕ ПРОГРЕССА');body.append(el('p','Зарегистрируйтесь или войдите по паролю. Аккаунт сохраняет зачёты и положение на сервере. Для знакомства с миром доступен гостевой вход.','game-lead'));
+    if(network.isConnected()){body.append(el('p','Вы вошли как '+state.name),button('Выйти из аккаунта',()=>{fetch('/api/logout',{method:'POST',headers:{Authorization:'Bearer '+network.token}}).catch(()=>{});try{sessionStorage.removeItem('bauman-auth');}catch{}network.ws.onclose=null;network.ws.close();network.isAuthenticated=false;onlineCampus=false;$('network-label').textContent='Вход / регистрация';document.body.classList.remove('campus-online');close();}));return;}
+    const form=el('form','','campus-login-form'),mode=el('select');mode.id='campus-auth-mode';mode.setAttribute('aria-label','Режим входа');for(const [v,t]of [['login','Вход по паролю'],['register','Регистрация'],['guest','Гость']]){const o=el('option',t);o.value=v;mode.append(o);}
     const name=el('input'),pass=el('input'),status=el('p','','game-form-status'),submit=el('button','Подключиться →','game-primary');name.id='campus-auth-name';name.placeholder='Ваше имя';name.value=state.name;name.required=true;name.maxLength=20;name.autocomplete='username';name.setAttribute('aria-label','Имя');pass.id='campus-auth-password';pass.type='password';pass.placeholder='Пароль';pass.autocomplete='current-password';pass.setAttribute('aria-label','Пароль');pass.hidden=true;mode.onchange=()=>{pass.hidden=mode.value==='guest';pass.required=mode.value==='register';};form.append(mode,name,pass,submit,status);
     form.onsubmit=async e=>{e.preventDefault();submit.disabled=true;status.textContent='Подключаемся…';try{
-      const payload={username:name.value.trim(),color:'#94cfd3'};if(mode.value!=='guest'&&pass.value)payload.password=pass.value;
+      const payload={username:name.value.trim(),color:'#94cfd3',mode:mode.value};if(mode.value!=='guest'&&pass.value)payload.password=pass.value;
       const response=await fetch(mode.value==='register'?'/api/register':'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(7000)});
-      const result=await response.json();if(!response.ok||!result.success)throw new Error(result.error||'Ошибка входа');state.name=payload.username;persist();network.connect(result.token,state.name);
-    }catch{status.textContent='Не удалось войти. Проверьте имя, пароль и запуск сервера на порту 3001.';submit.disabled=false;}};body.append(form);
+      const result=await response.json();if(!response.ok||!result.success)throw new Error(result.error||'Ошибка входа');state.name=result.user.username;persist();try{sessionStorage.setItem('bauman-auth',JSON.stringify({token:result.token,name:state.name}));}catch{}network.connect(result.token,state.name);
+    }catch(error){status.textContent=error.message==='Failed to fetch'?'Сервер недоступен. Проверьте запуск на порту 3001.':error.message;submit.disabled=false;}};mode.onchange=()=>{pass.hidden=mode.value==='guest';pass.required=mode.value!=='guest';pass.autocomplete=mode.value==='register'?'new-password':'current-password';};mode.onchange();body.append(form);
   }
   function settings(){
     open('settings','Настроить вечер','СВЕТ / ЗВУК / УПРАВЛЕНИЕ');
     const label=el('label','','brightness-control');label.append(el('span','Яркость сцены'));const range=el('input');range.id='campus-brightness';range.type='range';range.min=85;range.max=140;range.value=state.brightness;const value=el('output',state.brightness+'%');range.oninput=()=>{state.brightness=Number(range.value);value.textContent=range.value+'%';onBrightness(state.brightness/100);};range.onchange=persist;label.append(range,value);body.append(label);
     const particles=el('label','','game-toggle'),check=el('input');check.type='checkbox';check.checked=effects.root.userData.particles!==false;check.onchange=()=>{effects.setParticles(check.checked);effects.root.userData.particles=check.checked;};particles.append(check,el('span','Светлячки'));body.append(particles);
-    body.append(el('p','WASD — движение · Shift — быстрее · E — взаимодействовать · G — взять предмет · F — бросить · L — фонарь · J — журнал · M — карта · Tab — скрыть панели.','game-lead'));
+    body.append(el('p','WASD — движение · Shift — быстрее · Space — прыжок · E — взаимодействовать · G — взять предмет · F — бросить · L — фонарь · J — журнал · M — карта · Tab — скрыть панели.','game-lead'));
     body.append(button('Звук: '+(muted?'выключен':'включён'),()=>{$('sound-button').click();settings();}),button('Полный экран',()=>{if(document.fullscreenElement)document.exitFullscreen?.();else document.documentElement.requestFullscreen?.().catch(()=>toast('Полноэкранный режим недоступен.'));}));
     const reset=button('Начать квест заново',()=>{if(!reset.dataset.confirm){reset.dataset.confirm='yes';reset.textContent='Подтвердить сброс находок и заданий';return;}if(onlineCampus){toast('Для нового сетевого прохождения используйте новый аккаунт.');return;}state.items.clear();state.passed.clear();state.progress={kanev:0,korshunov:0,maslennikov:0};state.won=false;gateOpen=false;gateObstacle.active=true;controller.teleport(28,1.15,1.3);persist();refresh();journal();});reset.classList.add('game-reset');body.append(reset);
   }
-  network.onAuthSuccess=()=>{document.body.classList.add('campus-online');$('network-label').textContent=state.name;network.send({type:'CAMPUS_JOIN'});close();toast('Подключён мир Бауманки: игроки, квест и ИИ');};
+  network.onAuthSuccess=()=>{document.body.classList.add('campus-online');$('network-label').textContent=state.name;network.send({type:'CAMPUS_JOIN'});close();if(!started)onBegin?.();toast('Подключён мир Бауманки: игроки, квест и ИИ');};
   network.onCampus=msg=>{
     if(msg.type==='CAMPUS_STATE'){
       onlineCampus=true;applyProgress(msg.progress||{},msg.feedback,msg.agentId);gateOpen=Boolean(msg.doors?.classroom);gateObstacle.active=!gateOpen;
@@ -230,13 +241,13 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
   }
   function applySettings(settings){
     if(/^#[0-9a-f]{6}$/i.test(settings.ambientColor||''))for(const light of scene.children)if(light.isHemisphereLight)light.color.set(settings.ambientColor).lerp(new THREE.Color('#c4cce1'),.6);
-    if(Number.isFinite(settings.gravity))physics.gravity=Math.max(1,Math.min(20,settings.gravity));
+    if(Number.isFinite(settings.gravity))controller.gravity=physics.gravity=Math.max(1,Math.min(20,settings.gravity));
     if(Number.isFinite(settings.fogDensity))scene.fog.far=Math.max(40,Math.min(150,95*.022/Math.max(.005,settings.fogDensity)));
     if(Number.isFinite(settings.lightIntensity)){adminBrightness=Math.max(.6,Math.min(1.5,settings.lightIntensity/1.15));onBrightness(state.brightness/100*adminBrightness);}
   }
   network.onWorldSettingsChanged=applySettings;network.onMutation=applyMutation;network.onNotification=toast;
   network.onConfig=msg=>{const npc=npcs.find(p=>p.id===msg.agentId);if(npc){npc.name=msg.config.name||npc.name;npc.greetings[0]=`Настроение: ${msg.config.mood||'normal'}. `+PROFESSORS[npc.id].greetings[0];if(activeNpc?.id===npc.id)renderDialogue();}toast('Администратор обновил поведение преподавателя.');};
-  network.onConnectionError=message=>{onlineCampus=false;network.isAuthenticated=false;onlineCampus=false;$('network-label').textContent='Подключиться';document.body.classList.remove('campus-online');for(const [id,timer]of pending){clearTimeout(timer);pending.delete(id);addTurn(id,'agent','Связь с сервером прервалась. Учебные карточки и задания доступны без подключения.');}if(activeModal==='connect'){const status=body.querySelector('.game-form-status');if(status)status.textContent=message;const submit=body.querySelector('button[type="submit"],form button');if(submit)submit.disabled=false;}else toast(message);};
+  network.onConnectionError=message=>{onlineCampus=false;network.isAuthenticated=false;onlineCampus=false;$('network-label').textContent='Вход / регистрация';document.body.classList.remove('campus-online');for(const [id,timer]of pending){clearTimeout(timer);pending.delete(id);addTurn(id,'agent','Связь с сервером прервалась. Учебные карточки и задания доступны без подключения.');}if(activeModal==='connect'){const status=body.querySelector('.game-form-status');if(status)status.textContent=message;const submit=body.querySelector('button[type="submit"],form button');if(submit)submit.disabled=false;}else toast(message);};
   network.onAgentReply=data=>{const timer=pending.get(data.agentId);if(!timer)return;clearTimeout(timer);pending.delete(data.agentId);lastAiLabel=data.usedLLM?'Ответ локальной языковой модели':'Ответ алгоритма сервера';addTurn(data.agentId,'agent',data.reply||'Ответ не получен. Попробуйте ещё раз.');};
   network.onChatMessage=msg=>{chatLog.push({sender:String(msg.sender||'Команда'),text:String(msg.text||'')});if(chatLog.length>40)chatLog.shift();if(activeModal==='chat')renderChat();else $('chat-unread').hidden=false;};
   network.onParticipants=list=>{const changed=list.map(p=>p.username).sort().join('|')!==participants.map(p=>p.username).sort().join('|');participants=list;if(changed&&activeModal==='chat')renderChat();};
@@ -259,7 +270,7 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
     const held=physics.heldObject;if(!held)return;
     const dir=new THREE.Vector3();camera.getWorldDirection(dir);let x=controller.x+dir.x*.85,z=controller.z+dir.z*.85;
     if(!controller.canWalk(x,z)){x=controller.x;z=controller.z;}
-    const y=(controller.floorAt(x,z)??0)+.18;held.place(new THREE.Vector3(x,y,z),controller.yaw);held.floorY=y;physics.heldObject=null;if(onlineCampus)network.send({type:'CAMPUS_PROP',action:'place',propId:held.id,position:{x,y,z},rotY:controller.yaw});
+    const y=(controller.floorAt(x,z)??0)+held.radius;held.place(new THREE.Vector3(x,y,z),controller.yaw);held.floorY=y;physics.heldObject=null;if(onlineCampus)network.send({type:'CAMPUS_PROP',action:'place',propId:held.id,position:{x,y,z},rotY:controller.yaw});
   }
   window.addEventListener('keydown',e=>{
     if(e.code==='Escape'&&activeModal){e.preventDefault();close();return;}
@@ -285,10 +296,12 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
     const dd=Math.hypot(controller.x-15.7,controller.z+1.92);if(dd<1.7)candidates.push({type:'door',d:dd});
     candidates.sort((a,b)=>a.d-b.d);nearby=candidates[0];
     let key='E',text=nearby?(nearby.type==='npc'?'Поговорить · '+nearby.data.name:nearby.type==='artifact'?'Забрать · '+nearby.data.name:nearby.type==='safe'?'Сейф Основателей':gateOpen?'Закрыть аудиторию':state.passed.has('kanev')?'Открыть аудиторию':'Аудитория · нужен допуск Канева'):'';
-    if(physics.heldObject){key='G';text='Поставить предмет · F — бросить';}else if(!nearby&&physics.findNearbyInteractable(camera,1.8)){key='G';text='Взять предмет';}
+    if(physics.heldObject){key='G';text='Поставить предмет · F — бросить';}else if(!nearby&&physics.findNearbyInteractable(camera,1.8)){key='G';text='Взять · '+physics.findNearbyInteractable(camera,1.8).object.name;}
     prompt.classList.toggle('hidden',!text||Boolean(activeModal)||controller.mapOpen);prompt.querySelector('kbd').textContent=key;prompt.querySelector('span').textContent=text;
   }
   applyProgress(state.progress);refresh();onBrightness(state.brightness/100);
+  try{const auth=JSON.parse(sessionStorage.getItem('bauman-auth')||'null');if(auth?.token)fetch('/api/me',{headers:{Authorization:'Bearer '+auth.token},cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{if(data?.success){state.name=data.user.username;network.connect(auth.token,state.name);}else sessionStorage.removeItem('bauman-auth');}).catch(()=>{});}catch{}
+
   window.addEventListener('pagehide',persist);
   return {state,network,physics,animated,mobs,artifactMeshes,npcs,gate,gateObstacle,interact,journal,close,dialogue,
     isModalOpen:()=>Boolean(activeModal),
@@ -302,7 +315,7 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
       for(const npc of npcs){npc.mesh.visible=camera.position.distanceToSquared(npc.mesh.position)<35*35;if(npc.mesh.visible){npc.spectral.update(dt,camera.position);npc.mesh.position.y+=npc.y;}}
       for(const a of ARTIFACTS){const mesh=artifactMeshes.get(a.id);if(mesh?.visible){mesh.rotation.y=time*.45;mesh.position.y=a.y+Math.sin(time*1.7+a.x)*.06;}}
       if(state.won)safe.userData.wheelGroup.rotation.z=time*.3;
-      for(const obj of movable){obj.wasFlying=obj.state===PropState.FLYING;if(obj.state!==PropState.HELD){obj.mesh.userData.previousPosition=obj.mesh.position.clone();if(obj.state===PropState.FLYING)obj.floorY=(controller.floorAt(obj.mesh.position.x,obj.mesh.position.z)??0)+.18;}}
+      for(const obj of movable){obj.wasFlying=obj.state===PropState.FLYING;if(obj.state!==PropState.HELD){obj.mesh.userData.previousPosition=obj.mesh.position.clone();if(obj.state===PropState.FLYING)obj.floorY=(controller.floorAt(obj.mesh.position.x,obj.mesh.position.z)??0)+obj.radius;}}
       physics.update(dt,camera);
       for(const obj of movable)if(onlineCampus&&obj.wasFlying&&obj.state===PropState.RESTING)network.send({type:'CAMPUS_PROP',action:'settle',propId:obj.id,position:{...obj.mesh.position},rotY:obj.mesh.rotation.y});
       for(const obj of movable){if(obj.state===PropState.HELD)continue;const p=obj.mesh.position,old=obj.mesh.userData.previousPosition;if(controller.floorAt(p.x,p.z)===null||world.obstacles.some(o=>o.active!==false&&p.x>o.x1-.1&&p.x<o.x2+.1&&p.z>o.z1-.1&&p.z<o.z2+.1&&p.y<1.8)){
@@ -312,7 +325,8 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
       for(const data of remoteNpcState){const mob=mobs.mobs.get(data.id);if(mob){mob.group.position.lerp(new THREE.Vector3(data.x,data.y,data.z),Math.min(1,dt*10));mob.group.rotation.y=data.rotY;}}
       for(const mob of mobs.mobs.values()){const p=mob.group.position;if(controller.floorAt(p.x,p.z)===null){p.x=mob.basePos.x;p.z=mob.basePos.z;}p.y=Math.min(p.y,3.7);mob.group.visible=camera.position.distanceToSquared(p)<24*24;}
       if(!fpsTime)fpsTime=time;frames++;if(time-fpsTime>1){fps=Math.round(frames/(time-fpsTime));frames=0;fpsTime=time;$('campus-fps').textContent=`${fps} FPS${ping===null?'':' · '+ping+' мс'}`;}
-      if(started&&time-lastScan>.15){lastScan=time;scan();}
+      for(const obj of movable)if(obj.marker)obj.marker.visible=obj.state===PropState.RESTING;
+      if(started&&time-lastScan>.15){lastScan=time;scan();miniMap.update();}
       if(started&&time-lastSave>5){lastSave=time;persist();}
       if(network.isConnected()&&time-lastTelemetry>3){lastTelemetry=time;network.sendPing();network.send({type:'CLIENT_TELEMETRY',fps,ping:ping??0,loadedChunks:0,memoryMB:performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):0,drawCalls:renderer.info.render.calls,x:controller.x,y:camera.position.y,z:controller.z});}
     }

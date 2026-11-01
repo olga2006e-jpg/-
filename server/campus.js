@@ -2,6 +2,7 @@ import {db} from './db.js';
 import {PROFESSORS} from '../client/src/quest/professorQuest.js';
 import {adminState} from './adminState.js';
 import {generateResponse,classifyIntentActions} from './ai/agentService.js';
+import {CAMPUS_PROPS} from '../shared/campusProps.js';
 
 export const CAMPUS_MAP='bauman-v2';
 export const CAMPUS_PROFESSORS={kanev:{x:25.65,z:-.9},korshunov:{x:28.05,z:17},maslennikov:{x:-28.05,z:12}};
@@ -30,6 +31,17 @@ export function createCampusService(clients){
     if(msg.type==='CAMPUS_MOVE'){
       if(finitePosition(msg)){p.x=Math.round(msg.x*1000)/1000;p.y=msg.y;p.z=Math.round(msg.z*1000)/1000;p.rotY=Number.isFinite(msg.rotY)?msg.rotY:0;p.lastUpdate=Date.now();p.lanternOn=msg.lantern===true;if(msg.chatting)p.talkingUntil=Date.now()+1500;}return true;
     }
+    if(msg.type==='CAMPUS_ACTION'){
+      const professor=PROFESSORS[msg.agentId],where=CAMPUS_PROFESSORS[msg.agentId];
+      if(!professor||!near(p,where)){responseError(p,'Подойдите к преподавателю.');return true;}
+      if(Date.now()-(p.lastWorldAction||0)<1000)return true;p.lastWorldAction=Date.now();
+      const action=classifyIntentActions(String(msg.text||'').slice(0,200)).find(a=>['SPAWN_LIGHT_BEAM','SPAWN_SERVER_RACK'].includes(a));
+      if(!action){responseError(p,'Попросите осветить дорогу или создать серверную стойку.');return true;}
+      const pos=msg.agentId==='kanev'?{x:28,z:-2.4}:msg.agentId==='korshunov'?{x:27,z:19}:{x:-27,z:14};
+      mutate({mutationType:action,...pos,y:0,author:professor.name,message:action==='SPAWN_LIGHT_BEAM'?'По вашей просьбе преподаватель зажёг световой маяк.':'По вашей просьбе преподаватель создал серверную стойку.'});
+      db.updateAgentMemory(p.username,msg.agentId,m=>{m.turnsCount++;m.lastTopic=action;m.history=[...m.history,{role:'user',text:String(msg.text)},{role:'agent',text:'Создан объект: '+action}].slice(-10);});
+      return true;
+    }
     if(msg.type==='CAMPUS_ANSWER'){
       const prof=PROFESSORS[msg.agentId],where=CAMPUS_PROFESSORS[msg.agentId];
       if(!prof||!where||!near(p,where)) {responseError(p,'Подойдите к преподавателю, чтобы ответить.');return true;}
@@ -53,11 +65,11 @@ export function createCampusService(clients){
       world.doors.classroom=msg.open===true;worldSave();broadcast({type:'CAMPUS_DOOR_STATE',open:world.doors.classroom});return true;
     }
     if(msg.type==='CAMPUS_PROP'){
-      const allowed=['campus_orb','campus_book','campus_flask'];if(!allowed.includes(msg.propId))return true;
+      const definition=CAMPUS_PROPS.find(p=>p.id===msg.propId);if(!definition)return true;
       const previous=world.props[msg.propId];
       if(msg.action==='pickup'&&previous?.heldBy&&previous.heldBy!==p.username){send(p,{type:'CAMPUS_PROP_STATE',...previous});responseError(p,'Предмет уже держит другой игрок.');return true;}
       if(msg.action==='pickup'){
-        const origin=previous?.position||({campus_orb:{x:29,z:1.35},campus_book:{x:-29.7,z:-1.9},campus_flask:{x:14.4,z:-5.05}}[msg.propId]);if(!near(p,origin,3))return true;
+        const origin=previous?.position||definition;if(!near(p,origin,3))return true;
       }else if(msg.action==='settle'){if(previous?.username!==p.username||previous.heldBy)return true;}
       else if(previous?.heldBy!==p.username)return true;
       if(msg.action!=='pickup'&&(!finitePosition(msg.position)||(msg.action!=='settle'&&!near(p,msg.position,3))))return true;

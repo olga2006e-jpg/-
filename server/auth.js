@@ -23,6 +23,7 @@ const sessions = new Map();
 export class AuthManager {
   // Registration: creates new user with password or upgrades guest account
   static register(username, password, color = '#ff79c6') {
+    if(typeof username!=='string')return {error:'Укажите имя пользователя'};
     const cleanName = (username || '').trim().slice(0, 20);
     if (!cleanName || cleanName.length < 2) {
       return { error: 'Имя исследователя должно содержать от 2 до 20 символов' };
@@ -71,6 +72,7 @@ export class AuthManager {
 
   // Login: verifies password if account is password-protected, or allows guest login
   static login(username, color = '#ff79c6', password = null) {
+    if(username!==undefined&&typeof username!=='string')return {error:'Укажите имя пользователя'};
     const cleanName = (username || '').trim().slice(0, 20) || `Ghost_${Math.floor(Math.random() * 900 + 100)}`;
     const existing = db.getUser(cleanName);
 
@@ -151,6 +153,7 @@ export class AuthManager {
     if (!token) return null;
     const session = sessions.get(token);
     if (!session) return null;
+    if(session.createdAt&&Date.now()-session.createdAt>8*60*60*1000){sessions.delete(token);return null;}
     return typeof session === 'string' ? session : session.username;
   }
 

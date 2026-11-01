@@ -96,6 +96,7 @@ export function setupMultiplayer(wss) {
         };
 
         clients.set(username, clientState);
+        adminState.recordTelemetry(username,{},req?.socket?.remoteAddress);
 
         // Send auth success, inventory, world metadata, and canonical byte sizing
         ws.send(JSON.stringify({

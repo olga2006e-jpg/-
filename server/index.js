@@ -10,12 +10,21 @@ import { TOTAL_WORLD_CHUNKS, TOTAL_WORLD_CANONICAL_BYTES } from './world.js';
 import { AgentService } from './ai/agentService.js';
 import { db } from './db.js';
 import { createAdminRouter } from './adminRoutes.js';
+import {isHostAdmin,requireHostAdmin} from './adminAccess.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3001;
 
 const app = express();
 app.use(express.json());
+const publicUser=user=>({username:user.username,color:user.color,x:user.x,y:user.y,z:user.z,rotY:user.rotY});
+app.get('/api/access',(req,res)=>{res.set('Cache-Control','no-store');res.json({isAdmin:isHostAdmin(req)});});
+app.get('/api/me',(req,res)=>{
+  const token=(req.headers.authorization||'').replace(/^Bearer /,'');const username=AuthManager.verifyToken(token);
+  if(!username)return res.status(401).json({success:false,error:'Сессия завершена. Выполните вход.'});
+  res.set('Cache-Control','no-store');res.json({success:true,user:publicUser(db.getUser(username))});
+});
+app.post('/api/logout',(req,res)=>{AuthManager.logout((req.headers.authorization||'').replace(/^Bearer /,''));res.json({success:true});});
 
 // Enable CORS for local dev
 app.use((req, res, next) => {
@@ -34,7 +43,7 @@ app.post('/api/register', (req, res) => {
   res.json({
     success: true,
     token: auth.token,
-    user: auth.user,
+    user: publicUser(auth.user),
     authType: 'registered',
     isGuest: false,
     message: auth.message,
@@ -48,6 +57,7 @@ app.post('/api/register', (req, res) => {
 
 app.post('/api/login', (req, res) => {
   const { username, color, password } = req.body || {};
+  if(req.body?.mode==='login'&&!db.getUser(typeof username==='string'?username.trim().slice(0,20):'')?.passwordHash)return res.status(401).json({success:false,error:'Аккаунт не зарегистрирован. Выберите регистрацию или гостевой вход.'});
   const auth = AuthManager.login(username, color, password);
   if (auth.error) {
     return res.status(401).json({ success: false, error: auth.error });
@@ -55,7 +65,7 @@ app.post('/api/login', (req, res) => {
   res.json({
     success: true,
     token: auth.token,
-    user: auth.user,
+    user: publicUser(auth.user),
     authType: auth.authType || 'guest_session',
     isGuest: !!auth.isGuest,
     disclaimer: auth.disclaimer || 'Авторизованный вход',
@@ -81,6 +91,7 @@ app.get('/api/status', async (req, res) => {
 });
 
 // Serve Admin Dashboard
+app.use('/admin',requireHostAdmin);
 app.get('/admin', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'admin/index.html'));
 });

@@ -15,8 +15,8 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:3001',
-      '/admin': 'http://localhost:3001',
+      '/api': {target:'http://localhost:3001',xfwd:true},
+      '/admin': {target:'http://localhost:3001',xfwd:true},
       '/ws': { target: 'ws://localhost:3001', ws: true }
     }
   }

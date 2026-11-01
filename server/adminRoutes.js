@@ -3,9 +3,11 @@
 
 import express from 'express';
 import { adminState } from './adminState.js';
+import {requireHostAdmin} from './adminAccess.js';
 
 export function createAdminRouter(multiplayer) {
   const router = express.Router();
+  router.use(requireHostAdmin);
   const startTime = Date.now();
 
   // 1. Get real-time metrics & player telemetry

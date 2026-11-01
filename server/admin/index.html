@@ -597,8 +597,8 @@
 
         // KPIs
         document.getElementById('kpi-players').textContent = data.server.activePlayersCount;
-        document.getElementById('kpi-fps').textContent = data.server.avgFps.toFixed(1);
-        document.getElementById('kpi-ping').textContent = data.server.avgPingMs + ' ms';
+        document.getElementById('kpi-fps').textContent = data.server.avgFps === null ? '—' : data.server.avgFps.toFixed(1);
+        document.getElementById('kpi-ping').textContent = data.server.avgPingMs === null ? '—' : data.server.avgPingMs + ' ms';
         document.getElementById('pill-uptime').textContent = `Аптайм: ${data.server.uptimeSeconds} сек`;
 
         // Players Table
@@ -612,8 +612,8 @@
               <tr>
                 <td style="color:#fff; font-weight:700;">👤 ${String(p.username).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</td>
                 <td style="color:var(--text-muted);">${p.ip || '127.0.0.1'}</td>
-                <td><span class="badge-fps ${fpsClass}">${p.fps} FPS</span></td>
-                <td style="color:${p.ping < 50 ? 'var(--green)' : 'var(--orange)'};">${p.ping} ms</td>
+                <td><span class="badge-fps ${fpsClass}">${p.isStale || p.fps === null ? 'Ожидание данных' : p.fps + ' FPS'}</span></td>
+                <td style="color:${p.ping < 50 ? 'var(--green)' : 'var(--orange)'};">${p.isStale || p.ping === null ? '—' : p.ping + ' ms'}</td>
                 <td><span style="color:var(--cyan);">${p.loadedChunks === 0 ? 'Статическая карта' : (p.loadedChunks ?? 0) + ' / 10'}</span></td>
                 <td style="color:var(--text-muted);">${p.x.toFixed(1)}, ${p.z.toFixed(1)}</td>
               </tr>

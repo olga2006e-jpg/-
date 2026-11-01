@@ -112,6 +112,7 @@ export async function generateResponse(npcId, userText, context = "", contextTyp
 
   // МАГИЯ MATHJS: Мгновенный ответ без нейросети
   const mathResult = trySolveMath(userText);
+  if (mathResult && npcId !== 'kanev') return {text:'Точные вычисления выполняет Канев Антон Игоревич. Обратитесь к нему у правой лестницы.',source:'routing',actions:[]};
   if (mathResult) {
     console.log(`[AI-Mathjs] Мгновенный ответ на ${mathResult.expression}`);
     return { 
