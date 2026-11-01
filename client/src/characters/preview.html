@@ -2,16 +2,30 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Превью — Константин Юрьевич</title>
+  <title>Сравнение моделей: Человек vs Спектральные Призраки</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #1a1a2e; overflow: hidden; }
+    body { background: #0c0f1d; overflow: hidden; font-family: -apple-system, sans-serif; }
     canvas { display: block; }
-    #info {
+    #toolbar {
       position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-      color: #8aafd4; font-family: monospace; font-size: 13px;
-      background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 20px;
-      pointer-events: none;
+      display: flex; gap: 8px; background: rgba(15, 23, 42, 0.85);
+      padding: 8px 12px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px); z-index: 100;
+    }
+    button {
+      background: #1e293b; color: #cbd5e1; border: 1px solid #334155;
+      padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 13px;
+      font-weight: 500; transition: all 0.2s ease;
+    }
+    button:hover { background: #334155; color: #fff; }
+    button.active {
+      background: #3b82f6; color: #fff; border-color: #60a5fa;
+      box-shadow: 0 0 14px rgba(59, 130, 246, 0.5);
+    }
+    #hint {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      color: #64748b; font-size: 12px; pointer-events: none;
     }
   </style>
   <script type="importmap">
@@ -24,37 +38,171 @@
   </script>
 </head>
 <body>
-  <div id="info">🖱 ЛКМ — вращать &nbsp;|&nbsp; Колесо — зум &nbsp;|&nbsp; ПКМ — панорама</div>
+  <div id="toolbar">
+    <button id="btn-human">👤 Человек (Канев в поло)</button>
+    <button id="btn-kanev" class="active">👻 Призрак Канева (Синий)</button>
+    <button id="btn-korshunov">🍺 Призрак Коршунова (Янтарь)</button>
+    <button id="btn-maslennikov">📐 Призрак Масленникова (Фиолет)</button>
+  </div>
+  <div id="hint">🖱 ЛКМ — вращать | Колесо — зум | ПКМ — панорама</div>
 
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// ─── Сцена ───────────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(devicePixelRatio);
 renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.2;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x141428);
-scene.fog = new THREE.Fog(0x141428, 8, 25);
+scene.background = new THREE.Color(0x0a0c16);
+scene.fog = new THREE.Fog(0x0a0c16, 6, 20);
 
-const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.01, 100);
-camera.position.set(0, 1.1, 3.2);
-camera.lookAt(0, 1.0, 0);
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.05, 50);
+camera.position.set(0, 1.2, 3.2);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 1.0, 0);
 controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.minDistance = 0.5;
-controls.maxDistance = 8;
-controls.update();
+
+// Свет
+scene.add(new THREE.AmbientLight(0x223355, 1.2));
+const key = new THREE.DirectionalLight(0xffffff, 2.0);
+key.position.set(3, 4, 3);
+scene.add(key);
+
+// Платформа
+const floor = new THREE.Mesh(
+  new THREE.CircleGeometry(2.2, 36),
+  new THREE.MeshStandardMaterial({ color: 0x111625, roughness: 0.85 })
+);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+
+// ── Построение Спектрального Призрака ──────────────────────────────────────────
+function createSpectralGhost(colorHex, coreHex, eyeHex) {
+  const g = new THREE.Group();
+  
+  // Мантия
+  const robeMat = new THREE.MeshStandardMaterial({
+    color: coreHex,
+    emissive: colorHex,
+    emissiveIntensity: 0.75,
+    transparent: true,
+    opacity: 0.78,
+    roughness: 0.2
+  });
+  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.08, 1.15, 24, 6, true), robeMat);
+  robe.position.y = 1.0;
+  g.add(robe);
+
+  // Голова
+  const headMat = new THREE.MeshStandardMaterial({
+    color: coreHex,
+    emissive: colorHex,
+    emissiveIntensity: 0.9,
+    transparent: true,
+    opacity: 0.88
+  });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 16), headMat);
+  head.position.y = 1.62;
+  g.add(head);
+
+  // Глаза
+  const eyeMat = new THREE.MeshBasicMaterial({ color: eyeHex });
+  const eL = new THREE.Mesh(new THREE.SphereGeometry(0.026, 12, 12), eyeMat);
+  eL.position.set(-0.065, 1.64, 0.155);
+  const eR = eL.clone();
+  eR.position.x = 0.065;
+  g.add(eL, eR);
+
+  // Внутренний свет
+  const pLight = new THREE.PointLight(colorHex, 2.2, 4);
+  pLight.position.set(0, 1.3, 0);
+  g.add(pLight);
+
+  // Кольца на полу
+  const rings = [];
+  for (let i = 0; i < 3; i++) {
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 0.4 - i * 0.1,
+      wireframe: true
+    });
+    const r = new THREE.Mesh(new THREE.TorusGeometry(0.35 + i * 0.12, 0.008, 8, 32), ringMat);
+    r.rotation.x = Math.PI / 2;
+    r.position.y = 0.4 + i * 0.2;
+    g.add(r);
+    rings.push(r);
+  }
+
+  // Частицы
+  const particles = [];
+  for (let i = 0; i < 6; i++) {
+    const p = new THREE.Mesh(new THREE.OctahedronGeometry(0.035), eyeMat);
+    g.add(p);
+    particles.push({ mesh: p, angle: (i / 6) * Math.PI * 2, speed: 0.8 + i * 0.2, radius: 0.55 + (i % 2) * 0.12, yBase: 1.1 + (i % 3) * 0.2 });
+  }
+
+  return {
+    group: g,
+    update: (t, delta) => {
+      g.position.y = Math.sin(t * 1.5) * 0.09;
+      pLight.intensity = 1.8 + Math.sin(t * 3) * 0.5;
+      rings.forEach((r, idx) => {
+        r.rotation.z = t * (0.4 + idx * 0.2);
+      });
+      particles.forEach(p => {
+        p.angle += delta * p.speed;
+        p.mesh.position.x = Math.cos(p.angle) * p.radius;
+        p.mesh.position.z = Math.sin(p.angle) * p.radius;
+        p.mesh.position.y = p.yBase + Math.sin(t * 2 + p.angle) * 0.08;
+      });
+    }
+  };
+}
+
+// Создаем варианты
+const ghostKanev = createSpectralGhost(0x38bdf8, 0x0284c7, 0xbae6fd);
+const ghostKorshunov = createSpectralGhost(0xfbbf24, 0xd97706, 0xfef08a);
+const ghostMaslennikov = createSpectralGhost(0xa855f7, 0x7e22ce, 0xf3e8ff);
+
+// Заглушка человеческой модели
+const humanGroup = new THREE.Group();
+const humanMat = new THREE.MeshStandardMaterial({ color: 0x1a2744, roughness: 0.8 });
+const humanBody = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.16, 0.9, 14), humanMat);
+humanBody.position.y = 1.1;
+const humanHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 14), new THREE.MeshStandardMaterial({ color: 0xf5cba7 }));
+humanHead.position.y = 1.62;
+humanGroup.add(humanBody, humanHead);
+
+const models = {
+  human: { group: humanGroup, update: () => {} },
+  kanev: ghostKanev,
+  korshunov: ghostKorshunov,
+  maslennikov: ghostMaslennikov
+};
+
+let currentKey = 'kanev';
+scene.add(ghostKanev.group);
+
+function switchModel(key) {
+  scene.remove(models[currentKey].group);
+  currentKey = key;
+  scene.add(models[key].group);
+
+  document.querySelectorAll('#toolbar button').forEach(b => b.classList.remove('active'));
+  document.getElementById(`btn-${key}`).classList.add('active');
+}
+
+document.getElementById('btn-human').onclick = () => switchModel('human');
+document.getElementById('btn-kanev').onclick = () => switchModel('kanev');
+document.getElementById('btn-korshunov').onclick = () => switchModel('korshunov');
+document.getElementById('btn-maslennikov').onclick = () => switchModel('maslennikov');
 
 window.addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
@@ -62,276 +210,15 @@ window.addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
 });
 
-// ─── Освещение ───────────────────────────────────────────────────────────────
-const ambient = new THREE.AmbientLight(0x334466, 1.2);
-scene.add(ambient);
-
-const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
-keyLight.position.set(2, 4, 3);
-keyLight.castShadow = true;
-keyLight.shadow.mapSize.set(1024, 1024);
-keyLight.shadow.camera.near = 0.1;
-keyLight.shadow.camera.far = 20;
-scene.add(keyLight);
-
-const fillLight = new THREE.DirectionalLight(0x4466aa, 0.8);
-fillLight.position.set(-3, 2, -1);
-scene.add(fillLight);
-
-const rimLight = new THREE.DirectionalLight(0x88aaff, 1.2);
-rimLight.position.set(0, 3, -4);
-scene.add(rimLight);
-
-// Пол — небольшая платформа
-const floorGeo = new THREE.CircleGeometry(2.5, 48);
-const floorMat = new THREE.MeshStandardMaterial({ color: 0x1e1e3a, roughness: 0.9 });
-const floor = new THREE.Mesh(floorGeo, floorMat);
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
-scene.add(floor);
-
-// Тонкое кольцо вокруг персонажа
-const ringGeo = new THREE.TorusGeometry(0.55, 0.015, 8, 48);
-const ringMat = new THREE.MeshStandardMaterial({ color: 0x4466cc, emissive: 0x2233aa, emissiveIntensity: 0.6 });
-const ring = new THREE.Mesh(ringGeo, ringMat);
-ring.rotation.x = -Math.PI / 2;
-ring.position.y = 0.002;
-scene.add(ring);
-
-// ─── Палитра ─────────────────────────────────────────────────────────────────
-const C = {
-  skin: 0xf5cba7, skinDark: 0xe8b896,
-  hair: 0x2c1810,
-  poloBase: 0x1a2744, poloStripe: 0x8aafd4, poloButton: 0xd0d8e8,
-  collar: 0x162038,
-  pants: 0x1a1a2e,
-  shoe: 0x111111, shoeSole: 0x333333,
-  eyeWhite: 0xffffff, eyeIris: 0x3a2010, eyePupil: 0x080808,
-  brow: 0x2c1810, lip: 0xc08070,
-};
-
-function mat(color, rough = 0.8, metal = 0, emissive = 0, emissiveInt = 0) {
-  return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal,
-    emissive, emissiveIntensity: emissiveInt });
-}
-function box(w, h, d, color, rough) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, rough));
-  m.castShadow = true; return m;
-}
-function sphere(r, color, rough, wx=1, wy=1, wz=1) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 14), mat(color, rough));
-  m.scale.set(wx, wy, wz); m.castShadow = true; return m;
-}
-function cyl(rT, rB, h, color, rough, segs=14) {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(rT, rB, h, segs), mat(color, rough));
-  m.castShadow = true; return m;
-}
-
-// ─── Текстура полосок ─────────────────────────────────────────────────────────
-function makeStripeTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 64; canvas.height = 256;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#1a2744'; ctx.fillRect(0, 0, 64, 256);
-  ctx.fillStyle = '#7aa8cc';
-  for (let y = 4; y < 256; y += 18) ctx.fillRect(0, y, 64, 10);
-  ctx.fillStyle = 'rgba(255,255,255,0.2)';
-  for (let y = 4; y < 256; y += 18) ctx.fillRect(0, y+1, 64, 2);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(1, 3);
-  return tex;
-}
-
-// ─── Построение персонажа ─────────────────────────────────────────────────────
-const npcGroup = new THREE.Group();
-scene.add(npcGroup);
-
-// сохраняем части для анимации
-let torsoMesh, headGroup, leftArm, rightArm;
-
-function buildCharacter() {
-  // == ОБУВЬ ==
-  function makeShoe(side) {
-    const g = new THREE.Group();
-    const sole = box(0.14, 0.035, 0.30, C.shoeSole, 0.9); sole.position.set(0, 0.0175, 0.025); g.add(sole);
-    const upper = box(0.12, 0.07, 0.25, C.shoe, 0.9); upper.position.set(0, 0.07, 0.010); g.add(upper);
-    const toe = sphere(0.07, C.shoe, 0.9, 1.0, 0.55, 1.3); toe.position.set(0, 0.055, 0.125); g.add(toe);
-    g.position.set(side === 'L' ? -0.105 : 0.105, 0, 0);
-    return g;
-  }
-  npcGroup.add(makeShoe('L'), makeShoe('R'));
-
-  // == НОГИ ==
-  function makeLeg(side) {
-    const x = side === 'L' ? -0.105 : 0.105;
-    // Бедро
-    const thigh = new THREE.Group();
-    const tm = cyl(0.085, 0.075, 0.48, C.pants, 0.85); tm.position.y = 0.24; thigh.add(tm);
-    thigh.position.set(x, 0.52, 0); npcGroup.add(thigh);
-    // Голень
-    const shin = new THREE.Group();
-    const sm = cyl(0.07, 0.055, 0.44, C.pants, 0.85); sm.position.y = 0.22; shin.add(sm);
-    shin.position.set(x, 0.07, 0); npcGroup.add(shin);
-  }
-  makeLeg('L'); makeLeg('R');
-
-  // Пах
-  const crotch = box(0.24, 0.06, 0.17, C.pants, 0.85); crotch.position.set(0, 0.52, 0); npcGroup.add(crotch);
-  // Пояс
-  const belt = box(0.27, 0.04, 0.18, 0x111122, 0.9); belt.position.set(0, 0.91, 0); npcGroup.add(belt);
-
-  // == ТОРС ==
-  const torsoMat = new THREE.MeshStandardMaterial({ map: makeStripeTexture(), roughness: 0.85 });
-  const torsoGeo = new THREE.CylinderGeometry(0.175, 0.165, 0.46, 16);
-  torsoMesh = new THREE.Mesh(torsoGeo, torsoMat); torsoMesh.castShadow = true;
-  torsoMesh.position.set(0, 1.16, 0); npcGroup.add(torsoMesh);
-
-  // Плечи
-  const shL = sphere(0.095, C.poloBase, 0.8, 1.1, 0.9, 1.0); shL.position.set(-0.215, 1.35, 0); npcGroup.add(shL);
-  const shR = sphere(0.095, C.poloBase, 0.8, 1.1, 0.9, 1.0); shR.position.set( 0.215, 1.35, 0); npcGroup.add(shR);
-
-  // Низ рубашки
-  const shirtBot = cyl(0.168, 0.17, 0.05, C.poloBase, 0.85); shirtBot.position.set(0, 0.925, 0); npcGroup.add(shirtBot);
-
-  // == РУКИ ==
-  function makeHand() {
-    const g = new THREE.Group();
-    const palm = box(0.085, 0.095, 0.04, C.skin, 0.75); palm.position.y = -0.047; g.add(palm);
-    [-0.030, -0.010, 0.010, 0.030].forEach(x => {
-      const s1 = cyl(0.008, 0.009, 0.045, C.skin, 0.75); s1.position.set(x, -0.115, 0); g.add(s1);
-      const s2 = cyl(0.007, 0.008, 0.035, C.skinDark, 0.8); s2.position.set(x, -0.152, 0); g.add(s2);
-    });
-    return g;
-  }
-
-  function makeArm(side) {
-    const armG = new THREE.Group();
-    armG.position.set(side === 'L' ? -0.215 : 0.215, 1.35, 0);
-    const sleeve = cyl(0.065, 0.06, 0.155, C.poloBase, 0.85); sleeve.position.y = -0.077;
-    sleeve.rotation.z = side === 'L' ? 0.18 : -0.18; armG.add(sleeve);
-    const fore = cyl(0.052, 0.042, 0.26, C.skin, 0.75);
-    fore.position.set(side === 'L' ? -0.03 : 0.03, -0.265, 0); armG.add(fore);
-    const hand = makeHand(); hand.position.set(side === 'L' ? -0.045 : 0.045, -0.42, 0); armG.add(hand);
-    // большой палец
-    const thumb = cyl(0.009, 0.010, 0.040, C.skin, 0.75);
-    thumb.position.set(side === 'L' ? -0.05 : 0.05, -0.385, 0.005);
-    thumb.rotation.z = side === 'L' ? -0.6 : 0.6; armG.add(thumb);
-    npcGroup.add(armG);
-    return armG;
-  }
-  leftArm = makeArm('L');
-  rightArm = makeArm('R');
-
-  // == ШЕЯ ==
-  const neck = cyl(0.055, 0.065, 0.10, C.skin, 0.7); neck.position.set(0, 1.42, 0); npcGroup.add(neck);
-
-  // == ГОЛОВА ==
-  headGroup = new THREE.Group();
-  headGroup.position.set(0, 1.58, 0);
-
-  const skull = sphere(0.155, C.skin, 0.7, 1.0, 1.08, 0.95); headGroup.add(skull);
-  const chin = sphere(0.08, C.skin, 0.7, 0.7, 0.55, 0.75); chin.position.set(0, -0.115, 0.04); headGroup.add(chin);
-  const ckL = sphere(0.07, C.skinDark, 0.75, 1.1, 0.8, 0.85); ckL.position.set(-0.095, -0.02, 0.09); headGroup.add(ckL);
-  const ckR = ckL.clone(); ckR.position.x = 0.095; headGroup.add(ckR);
-
-  // Нос
-  const noseB = sphere(0.028, C.skinDark, 0.75, 1, 0.8, 1.2); noseB.position.set(0, -0.005, 0.145); headGroup.add(noseB);
-  const noseTip = sphere(0.022, C.skin, 0.75); noseTip.position.set(0, -0.022, 0.162); headGroup.add(noseTip);
-  const nostL = sphere(0.012, C.skinDark, 0.8); nostL.position.set(-0.020, -0.025, 0.155); headGroup.add(nostL);
-  const nostR = nostL.clone(); nostR.position.x = 0.020; headGroup.add(nostR);
-
-  // Рот
-  const mouth = box(0.06, 0.012, 0.01, C.lip, 0.9); mouth.position.set(0, -0.070, 0.148); headGroup.add(mouth);
-  const lipLow = sphere(0.025, C.lip, 0.8, 1.2, 0.55, 0.8); lipLow.position.set(0, -0.080, 0.147); headGroup.add(lipLow);
-
-  // Уши
-  const earL = sphere(0.032, C.skinDark, 0.8, 0.55, 0.85, 0.45); earL.position.set(-0.155, 0.005, 0); headGroup.add(earL);
-  const earR = earL.clone(); earR.position.x = 0.155; headGroup.add(earR);
-
-  // Глаза
-  function makeEye(side) {
-    const g = new THREE.Group();
-    const white = sphere(0.033, C.eyeWhite, 0.3, 1.0, 0.9, 0.7); g.add(white);
-    const iris = sphere(0.022, C.eyeIris, 0.2, 1.0, 0.9, 0.4); iris.position.z = 0.016; g.add(iris);
-    const pupil = sphere(0.012, C.eyePupil, 0.1, 1.0, 0.9, 0.4); pupil.position.z = 0.020; g.add(pupil);
-    const glint = sphere(0.006, 0xffffff, 0.0, 1.0, 1.0, 0.4); glint.position.set(0.006, 0.006, 0.024); g.add(glint);
-    const lid = box(0.07, 0.010, 0.005, 0x2a1808, 0.9); lid.position.set(0, 0.022, 0.025); g.add(lid);
-    g.position.set(side === 'L' ? -0.052 : 0.052, 0.03, 0.135);
-    g.rotation.y = side === 'L' ? -0.12 : 0.12;
-    return g;
-  }
-  headGroup.add(makeEye('L'), makeEye('R'));
-
-  // Брови
-  for (let i = 0; i < 5; i++) {
-    const bL = box(0.016, 0.008, 0.005, C.brow, 0.85);
-    bL.position.set(-0.05 + i*0.014, 0.072 + Math.abs(i-2)*0.003, 0.140 + Math.abs(i-2)*0.002);
-    headGroup.add(bL);
-    const bR = box(0.016, 0.008, 0.005, C.brow, 0.85);
-    bR.position.set(0.018 + i*0.014, 0.072 + Math.abs(i-2)*0.003, 0.140 + Math.abs(i-2)*0.002);
-    headGroup.add(bR);
-  }
-
-  // Волосы
-  const topHair = sphere(0.155, C.hair, 0.9, 1.02, 0.65, 0.98); topHair.position.set(0, 0.095, -0.01); headGroup.add(topHair);
-  // Зачёс вправо — пряди
-  [
-    [0.02, 0.155, 0.07,  0.3, 1.8, 0.6, 1.2],
-    [0.05, 0.152, 0.09,  0.5, 1.5, 0.55, 1.0],
-    [0.08, 0.145, 0.095, 0.7, 1.3, 0.5,  0.9],
-    [-0.01, 0.15, 0.08,  0.1, 1.4, 0.55, 1.1],
-  ].forEach(([x, y, z, rz, sx, sy, sz]) => {
-    const s = sphere(0.04, C.hair, 0.9, sx, sy, sz);
-    s.position.set(x, y, z); s.rotation.z = rz; headGroup.add(s);
-  });
-  const temL = sphere(0.05, C.hair, 0.9, 0.6, 0.85, 0.7); temL.position.set(-0.135, 0.06, 0.06); headGroup.add(temL);
-  const temR = sphere(0.05, C.hair, 0.9, 0.6, 0.85, 0.7); temR.position.set( 0.135, 0.06, 0.06); headGroup.add(temR);
-  const backH = sphere(0.145, C.hair, 0.9, 1.0, 0.7, 1.0); backH.position.set(0, 0.03, -0.11); headGroup.add(backH);
-
-  npcGroup.add(headGroup);
-
-  // == ВОРОТНИК ==
-  const collar = new THREE.Group(); collar.position.set(0, 1.43, 0);
-  const colRing = cyl(0.072, 0.07, 0.06, C.collar, 0.85, 12); colRing.position.y = 0.01; collar.add(colRing);
-  const fL = box(0.055, 0.045, 0.015, C.collar, 0.85);
-  fL.position.set(-0.028, 0.04, 0.060); fL.rotation.z = 0.25; fL.rotation.y = 0.2; collar.add(fL);
-  const fR = box(0.055, 0.045, 0.015, C.collar, 0.85);
-  fR.position.set(0.028, 0.04, 0.060); fR.rotation.z = -0.25; fR.rotation.y = -0.2; collar.add(fR);
-  const btn = sphere(0.008, C.poloButton, 0.3); btn.position.set(0, 0.005, 0.068); collar.add(btn);
-  npcGroup.add(collar);
-}
-
-buildCharacter();
-
-// ─── Анимация ─────────────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
   const t = clock.elapsedTime;
 
-  // Дыхание
-  if (torsoMesh) {
-    torsoMesh.scale.x = 1 + Math.sin(t * 1.1) * 0.013;
-    torsoMesh.scale.z = 1 + Math.sin(t * 1.1) * 0.015;
+  if (models[currentKey]) {
+    models[currentKey].update(t, delta);
   }
-  // Покачивание
-  npcGroup.rotation.y = Math.sin(t * 0.6) * 0.04;
-  npcGroup.position.y = Math.sin(t * 0.9) * 0.007;
-
-  // Руки
-  if (leftArm)  leftArm.rotation.z  =  0.18 + Math.sin(t * 0.9) * 0.03;
-  if (rightArm) rightArm.rotation.z = -0.18 - Math.sin(t * 0.9) * 0.03;
-
-  // Голова — лёгкий наклон
-  if (headGroup) {
-    headGroup.rotation.y = Math.sin(t * 0.5) * 0.08;
-    headGroup.rotation.x = Math.sin(t * 0.4) * 0.035;
-  }
-
-  // Кольцо на полу — пульсация
-  ring.material.emissiveIntensity = 0.4 + Math.sin(t * 2) * 0.25;
 
   controls.update();
   renderer.render(scene, camera);
