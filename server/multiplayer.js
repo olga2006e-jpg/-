@@ -361,7 +361,8 @@ export function setupMultiplayer(wss) {
             agentName: npcData.name,
             reply: aiResult.text,
             actions: aiResult.actions || [],
-            usedLLM: aiResult.source === 'ollama'
+            usedLLM: aiResult.source === 'ollama',
+            provider: aiResult.source === 'ollama' ? 'ollama' : (aiResult.provider || 'heuristic_rule_engine')
           }));
 
           // Trigger dynamic world mutations based on user request / agent action
