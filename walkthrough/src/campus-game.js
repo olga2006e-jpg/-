@@ -137,7 +137,7 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
     const passes=el('div','','passed-list');passes.append(el('h3','Учебные отметки'));for(const npc of TEACHERS)passes.append(el('span',`${state.passed.has(npc.id)?'✓':'○'} ${npc.name}`));body.append(passes);
     const actions=el('div','','game-actions');actions.append(button('Посмотреть карту',()=>{close();onMap();}),button('К сейфу — по левому коридору',()=>toast('Сейф стоит справа в холле у копицентра.')));body.append(actions);
   }
-  function addTurn(id,role,text){const h=histories.get(id)||[];h.push({role,text:String(text).slice(0,4000)});histories.set(id,h.slice(-30));persist();if(activeNpc?.id===id)renderDialogue();}
+  function addTurn(id,role,text){const h=histories.get(id)||[];h.push({role,text:String(text).slice(0,4000)});histories.set(id,h.slice(-30));persist();renderDialogue();}
   function dialogue(npc){activeNpc=npc;quiz=false;open('dialogue',npc.name,npc.role);activeNpc=npc;if(!histories.has(npc.id))histories.set(npc.id,[{role:'agent',text:npc.greeting}]);renderDialogue();}
   function renderDialogue(){
     if(!activeNpc)return;const npc=activeNpc;body.replaceChildren();const log=el('div','','campus-dialogue-log');log.setAttribute('role','log');
@@ -248,7 +248,16 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
   network.onWorldSettingsChanged=applySettings;network.onMutation=applyMutation;network.onNotification=toast;
   network.onConfig=msg=>{const npc=npcs.find(p=>p.id===msg.agentId);if(npc){npc.name=msg.config.name||npc.name;npc.greetings[0]=`Настроение: ${msg.config.mood||'normal'}. `+PROFESSORS[npc.id].greetings[0];if(activeNpc?.id===npc.id)renderDialogue();}toast('Администратор обновил поведение преподавателя.');};
   network.onConnectionError=message=>{onlineCampus=false;network.isAuthenticated=false;onlineCampus=false;$('network-label').textContent='Вход / регистрация';document.body.classList.remove('campus-online');for(const [id,timer]of pending){clearTimeout(timer);pending.delete(id);addTurn(id,'agent','Связь с сервером прервалась. Учебные карточки и задания доступны без подключения.');}if(activeModal==='connect'){const status=body.querySelector('.game-form-status');if(status)status.textContent=message;const submit=body.querySelector('button[type="submit"],form button');if(submit)submit.disabled=false;}else toast(message);};
-  network.onAgentReply=data=>{const timer=pending.get(data.agentId);if(!timer)return;clearTimeout(timer);pending.delete(data.agentId);lastAiLabel=data.usedLLM?'Ответ локальной языковой модели':'Ответ алгоритма сервера';addTurn(data.agentId,'agent',data.reply||'Ответ не получен. Попробуйте ещё раз.');};
+  network.onAgentReply=data=>{
+    console.log('[Client] Получен AGENT_REPLY:', data);
+    if(data.agentId && pending.has(data.agentId)){
+      clearTimeout(pending.get(data.agentId));
+      pending.delete(data.agentId);
+    }
+    lastAiLabel=data.usedLLM?'Ответ Qwen 2.5 (172.16.236.14)':'Ответ сервера';
+    addTurn(data.agentId,'agent',data.reply||'Ответ пустой');
+    renderDialogue();
+  };
   network.onChatMessage=msg=>{chatLog.push({sender:String(msg.sender||'Команда'),text:String(msg.text||'')});if(chatLog.length>40)chatLog.shift();if(activeModal==='chat')renderChat();else $('chat-unread').hidden=false;};
   network.onParticipants=list=>{const changed=list.map(p=>p.username).sort().join('|')!==participants.map(p=>p.username).sort().join('|');participants=list;if(changed&&activeModal==='chat')renderChat();};
   network.onPong=msg=>{if(msg.clientTime)ping=Date.now()-msg.clientTime;};
