@@ -36,3 +36,4 @@ code = code.replace(
 
 fs.writeFileSync(file, code, 'utf8');
 console.log('✅ walkthrough/src/campus-game.js обновлен!');
+

@@ -12,10 +12,13 @@ import { TOTAL_WORLD_CHUNKS, TOTAL_WORLD_CANONICAL_BYTES } from './world.js';
 import { AgentService } from './ai/agentService.js';
 import { db } from './db.js';
 import { createAdminRouter } from './adminRoutes.js';
-import {isHostAdmin,requireHostAdmin} from './adminAccess.js';
+import { isHostAdmin, requireHostAdmin } from './adminAccess.js';
+import fs from 'node:fs';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3001;
+const PORT_HTTPS = process.env.HTTPS_PORT || 3443;
 
 const app = express();
 app.use(express.json());
@@ -92,8 +95,8 @@ app.get('/api/status', async (req, res) => {
   });
 });
 
-// Serve Admin Dashboard
-app.use('/admin',requireHostAdmin);
+// Serve Admin Dashboard (доступ открыт для локальной сети и демонстрации)
+app.use('/admin', requireHostAdmin);
 app.get('/admin', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'admin/index.html'));
 });
@@ -102,7 +105,6 @@ app.use('/admin', express.static(path.resolve(__dirname, 'admin')));
 // Serve frontend: if dist exists serve dist, otherwise serve client root
 const distPath = path.resolve(__dirname, '../dist');
 const clientPath = path.resolve(__dirname, '../client');
-import fs from 'node:fs';
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
 } else {
@@ -133,14 +135,39 @@ server.listen(PORT, '0.0.0.0', () => {
   const ips = getLocalIPs();
   console.log('\n======================================================');
   console.log('🎃 HAUNTED ACADEMY — HACKATHON SERVER READY!');
-  console.log(`📡 Localhost:     http://localhost:${PORT}`);
+  console.log(`📡 Localhost HTTP:     http://localhost:${PORT}`);
+  console.log(`⚙️  Admin Dashboard:    http://localhost:${PORT}/admin`);
   if (ips.length > 0) {
     ips.forEach(ip => {
-      console.log(`🌐 LAN (Wi-Fi):   http://${ip}:${PORT}`);
+      console.log(`🌐 LAN HTTP:          http://${ip}:${PORT}`);
+      console.log(`⚙️  LAN Admin (Mac):   http://${ip}:${PORT}/admin`);
     });
   } else {
     console.log('🌐 LAN: (No active Wi-Fi / LAN interface detected, offline mode)');
   }
-  console.log('🤖 AI Endpoint:   Ollama on localhost:11434 (with smart offline fallback)');
+  console.log('🤖 AI Endpoint:       Ollama on localhost:11434 (with smart offline fallback)');
   console.log('======================================================\n');
 });
+
+// Запуск HTTPS и WSS (Dual Server: HTTP 3001 + HTTPS 3443)
+try {
+  const sslCerts = await getOrCreateSSLCert();
+  const httpsServer = https.createServer(sslCerts, app);
+  httpsServer.on('upgrade', (req, socket, head) => {
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit('connection', ws, req);
+    });
+  });
+  httpsServer.listen(PORT_HTTPS, '0.0.0.0', () => {
+    const ips = getLocalIPs();
+    console.log(`🔒 HTTPS Server:       https://localhost:${PORT_HTTPS}`);
+    console.log(`🔒 HTTPS Admin:        https://localhost:${PORT_HTTPS}/admin`);
+    ips.forEach(ip => {
+      console.log(`🔒 LAN HTTPS (Mac):    https://${ip}:${PORT_HTTPS}`);
+      console.log(`🔒 LAN Admin (Mac):    https://${ip}:${PORT_HTTPS}/admin`);
+    });
+    console.log('======================================================\n');
+  });
+} catch (e) {
+  console.warn('[HTTPS] Не удалось запустить HTTPS сервер:', e.message);
+}
