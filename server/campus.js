@@ -35,10 +35,14 @@ export function createCampusService(clients){
       const professor=PROFESSORS[msg.agentId],where=CAMPUS_PROFESSORS[msg.agentId];
       if(!professor||!near(p,where)){responseError(p,'Подойдите к преподавателю.');return true;}
       if(Date.now()-(p.lastWorldAction||0)<1000)return true;p.lastWorldAction=Date.now();
-      const action=classifyIntentActions(String(msg.text||'').slice(0,200)).find(a=>['SPAWN_LIGHT_BEAM','SPAWN_SERVER_RACK'].includes(a));
-      if(!action){responseError(p,'Попросите осветить дорогу или создать серверную стойку.');return true;}
+      const reqText = String(msg.text||'').toLowerCase();
+      if (reqText.includes('погас') || reqText.includes('выключ') || reqText.includes('потуш') || reqText.includes('убер')) {
+        mutate({mutationType:'CLEAR_MUTATIONS',author:professor.name,message:'По вашей просьбе световой маяк погашен.'});
+        return true;
+      }
+      const action='SPAWN_LIGHT_BEAM';
       const pos=msg.agentId==='kanev'?{x:28,z:-2.4}:msg.agentId==='korshunov'?{x:27,z:19}:{x:-27,z:14};
-      mutate({mutationType:action,...pos,y:0,author:professor.name,message:action==='SPAWN_LIGHT_BEAM'?'По вашей просьбе преподаватель зажёг световой маяк.':'По вашей просьбе преподаватель создал серверную стойку.'});
+      mutate({mutationType:'SPAWN_LIGHT_BEAM',...pos,y:0,author:professor.name,message:'По вашей просьбе преподаватель зажёг световой маяк.'});
       db.updateAgentMemory(p.username,msg.agentId,m=>{m.turnsCount++;m.lastTopic=action;m.history=[...m.history,{role:'user',text:String(msg.text)},{role:'agent',text:'Создан объект: '+action}].slice(-10);});
       return true;
     }

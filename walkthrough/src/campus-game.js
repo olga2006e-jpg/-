@@ -176,7 +176,7 @@ export function createCampusGame({scene,camera,renderer,world,materials,controll
     const pos=controller.floorAt(msg.x,msg.z)!==null?{x:msg.x,z:msg.z}:{x:type==='SPAWN_SERVER_RACK'?14.3:-24.3,z:type==='SPAWN_SERVER_RACK'?-6:2.4};
     if(type==='REVEAL_FORMULA'){const mark=new Builder(scene,materials);mark.label(pos.x,2.9,pos.z,'ЗАЧЁТ · '+(PROFESSORS[msg.params?.professor]?.name||'ЗНАНИЯ'),1.2,.2,0,{background:'#344443',color:'#e1c991',size:56});mark.flush();return;}
     animated.mutationHandler.handleMutation({...msg,...pos,mutationType:type});const record=animated.mutationHandler.activeMutations.get(msg.id),group=record?.root||record?.group||record?.mesh||(record?.isObject3D?record:null);
-    if(group){group.scale.setScalar(type==='SPAWN_SERVER_RACK'?.6:.3);if(type==='SPAWN_LIGHT_BEAM')group.scale.set(.2,.075,.2);hookLight(group);}if(msg.message)toast(msg.message);
+    if(group){group.scale.setScalar(type==='SPAWN_SERVER_RACK'?.6:.3);if(type==='SPAWN_LIGHT_BEAM')group.scale.set(.65,.45,.65);hookLight(group);}if(msg.message)toast(msg.message);
   }
   function ask(npc,text){
     if(pending.has(npc.id))return;addTurn(npc.id,'user',text);
